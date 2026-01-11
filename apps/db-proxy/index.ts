@@ -1,8 +1,11 @@
 import { serve } from "@hono/node-server"
+import dotenv from "dotenv"
 import { Hono } from "hono"
 import { Client } from "pg"
 
-const PORT = 8008
+dotenv.config()
+
+const PORT = process.env.PORT ? parseInt(process.env.PORT) : 8008
 
 const DATABASE_URL = process.env.DATABASE_URL
 if (!DATABASE_URL) {
@@ -27,6 +30,7 @@ async function main() {
     }
 
     const { sql, params, method } = await c.req.json()
+    console.log("Received query:", { sql, params, method })
 
     // prevent multiple queries
     const sqlBody = sql.replace(/;/g, "")
@@ -38,6 +42,7 @@ async function main() {
           values: params,
           rowMode: "array",
         })
+        console.log("Query result:", result.rows)
         return c.json(result.rows)
       }
 
@@ -46,11 +51,14 @@ async function main() {
           text: sqlBody,
           values: params,
         })
+        console.log("Execute result:", result.rowCount)
         return c.json(result.rows)
       }
 
+      console.log("Unknown method:", method)
       return c.json({ error: "Unknown method value" }, 500)
     } catch (e) {
+      console.error("Query error:", e)
       return c.json({ error: "error" }, 500)
     }
   })
@@ -62,6 +70,11 @@ async function main() {
     port: PORT,
   })
 }
+
+process.on("SIGINT", () => {
+  console.log("Received SIGINT signal. Performing graceful shutdown...")
+  process.exit(0)
+})
 
 main().catch((e) => {
   console.error(e)

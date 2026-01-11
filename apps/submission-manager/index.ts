@@ -138,6 +138,11 @@ async function main() {
   await loop()
 }
 
+process.on("SIGINT", () => {
+  console.log("Received SIGINT signal. Performing graceful shutdown...")
+  process.exit(0)
+})
+
 main().catch((e) => {
   console.error(e)
   process.exit(1)

@@ -6,23 +6,80 @@ services:
   submission-manager:
     build:
       context: .
-      dockerfile: ./apps/submission-manager//Dockerfile
+      dockerfile: ./apps/submission-manager/Dockerfile
     container_name: easyshell-dev-submission-manager
+    depends_on:
+      - db-proxy
     volumes:
       - /tmp/easyshell:/tmp/easyshell
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - easyshell
     environment:
-      APP: submission-manager
-      DATABASE_URL: ${DATABASE_URL}
+      DRIZZLE_PROXY_URL: http://db-proxy:8008
+      DRIZZLE_PROXY_TOKEN: token
+  website:
+    build:
+      context: .
+      dockerfile: ./apps/website/Dockerfile
+    container_name: easyshell-dev-website
+    depends_on:
+      - db-proxy
+      - session-manager
+    networks:
+      - easyshell
+    working_dir: /root/apps/website
+    entrypoint: ["node", "server.js"]
+    environment:
+      DRIZZLE_PROXY_URL: http://db-proxy:8008
+      DRIZZLE_PROXY_TOKEN: token
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: secret
+      DISCORD_CLIENT_ID: 1234
+      DISCORD_CLIENT_SECRET: secret
+      GITHUB_CLIENT_ID: 1234
+      GITHUB_CLIENT_SECRET: secret
+      GOOGLE_CLIENT_ID: 1234
+      GOOGLE_CLIENT_SECRET: secret
+      SESSION_MANAGER_URL: http://session-manager:4000
+      SESSION_MANAGER_TOKEN: token
+      RESEND_API_KEY: re_123
+      NEXT_PUBLIC_POSTHOG_KEY: phc_bzitaAZX5Eaw2uQbLhui58Wv5LyCjkln5u4zLR5VX5U
+      NEXT_PUBLIC_POSTHOG_HOST: https://us.i.posthog.com
+    ports:
+      - 3000:3000
   session-manager:
     build:
       context: ./apps/session-manager
     container_name: easyshell-dev-session-manager
     networks:
       - easyshell
-    ports:
-      - 4000:4000
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+  db:
+    container_name: easyshell-dev-db
+    image: postgres:17
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: easyshell
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    networks:
+      - easyshell
+  db-proxy:
+    container_name: easyshell-dev-db-proxy
+    build:
+      context: .
+      dockerfile: ./apps/db-proxy/Dockerfile
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://postgres:password@db/easyshell
+      TOKEN: token
+      PORT: 8008
+    depends_on:
+      - db
+    networks:
+      - easyshell

@@ -18,17 +18,20 @@ RUN npm ci
 COPY . .
 
 RUN apk add jq bash
-WORKDIR /root/apps/submission-manager
+WORKDIR /root/apps/website
 
 ENV PROJECT_ROOT=/root
+ENV APP=website
+ENV RESEND_API_KEY="re_123"
 RUN npm run cache
-RUN npx esbuild index.ts --bundle --platform=node --outfile=submission-manager.cjs
+RUN npm run build
 
 FROM node:22-alpine
 
-RUN apk add docker
+COPY --from=build /root/apps/website/.next/standalone /root
+COPY --from=build /root/apps/website/.next/static /root/.next/static
+COPY --from=build /root/apps/website/public /root/public
 
-COPY --from=build /root/apps/submission-manager/submission-manager.cjs /root/submission-manager.cjs
-
-ENV APP=submission-manager
-ENTRYPOINT ["node", "/root/submission-manager.cjs"]
+WORKDIR /root
+ENV APP=website
+ENTRYPOINT ["node", "./apps/website/server.js"]

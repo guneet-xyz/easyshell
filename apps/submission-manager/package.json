@@ -6,7 +6,7 @@
   "scripts": {
     "build": "npx esbuild index.ts --bundle --platform=node --outfile=submission-manager.cjs",
     "cache": "cd ../../packages/problems && npm run cache:submission-manager",
-    "start": "node submission-manager.cjs"
+    "start": "APP=submission-manager node submission-manager.cjs"
   },
   "dependencies": {
     "@easyshell/env": "0.1.0",

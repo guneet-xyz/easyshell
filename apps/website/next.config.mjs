@@ -1,5 +1,5 @@
-import { setupDevPlatform } from "@cloudflare/next-on-pages/next-dev"
 import createMDX from "@next/mdx"
+import path from "path"
 
 /** @type {import('next').NextConfig} */
 const config = {
@@ -7,13 +7,11 @@ const config = {
   reactStrictMode: false,
   experimental: {
     mdxRs: true,
+    outputFileTracingRoot: path.join(import.meta.dirname, "../../"),
   },
+  output: "standalone",
 }
 
 const withMDX = createMDX({})
-
-if (process.env.NODE_ENV === "development") {
-  await setupDevPlatform()
-}
 
 export default withMDX(config)

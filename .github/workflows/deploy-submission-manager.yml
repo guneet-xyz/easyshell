@@ -4,6 +4,7 @@ on:
     branches:
       - main
     paths:
+      - ".github/workflows/deploy-submission-manager.yml"
       - "packages/**"
       - "apps/submission-manager/**"
   workflow_dispatch:

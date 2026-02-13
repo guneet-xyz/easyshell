@@ -4,6 +4,7 @@ on:
     branches:
       - main
     paths:
+      - ".github/workflows/test-tsc.yml"
       - "**/*.js"
       - "**/*.ts"
       - "**/*.tsx"
@@ -14,6 +15,7 @@ on:
       - "**/*.json"
   pull_request:
     paths:
+      - ".github/workflows/test-tsc.yml"
       - "**/*.js"
       - "**/*.ts"
       - "**/*.tsx"

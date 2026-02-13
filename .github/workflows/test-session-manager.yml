@@ -2,8 +2,8 @@ name: test session-manager
 on:
   pull_request:
     paths:
-      - apps/session-manager/**
-
+      - ".github/workflows/test-entrypoint.yml"
+      - "apps/session-manager/**"
 jobs:
   test-session-manager:
     runs-on: ubuntu-latest

@@ -2,8 +2,8 @@ name: test entrypoint
 on:
   pull_request:
     paths:
-      - apps/entrypoint/**
-
+      - ".github/workflows/test-entrypoint.yml"
+      - "apps/entrypoint/**"
 jobs:
   test-entrypoint:
     runs-on: ubuntu-latest

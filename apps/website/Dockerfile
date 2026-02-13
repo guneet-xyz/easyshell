@@ -33,4 +33,11 @@ COPY --from=build /src/apps/website/public ./apps/website/public
 
 WORKDIR /app/apps/website
 
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+USER nextjs
+
+ENV APP="website"
+ENV HOSTNAME="0.0.0.0"
 ENTRYPOINT ["node", "server.js"]

@@ -8,3 +8,4 @@ bun.lock
 # I have no idea what this is or why it keeps popping up
 apps/queue-processor/core
 
+data

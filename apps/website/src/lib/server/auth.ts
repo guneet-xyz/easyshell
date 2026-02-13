@@ -9,7 +9,7 @@ import {
 import { MagicLink } from "@/components/emails/magic-link"
 import { db } from "@/db"
 import { env } from "@/env"
-import { resend } from "@/lib/server/resend"
+import { getResend } from "@/lib/server/resend"
 
 import { DrizzleAdapter } from "@auth/drizzle-adapter"
 import { count, eq } from "drizzle-orm"
@@ -293,6 +293,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     Resend({
       async sendVerificationRequest(params) {
         const { identifier, url } = params
+        const resend = getResend()
         await resend.emails.send({
           from: "no-reply@easyshell.sh",
           to: identifier,

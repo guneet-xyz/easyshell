@@ -25,7 +25,7 @@ export const metadata = {
 export default async function Page() {
   const user = (await auth())?.user
   if (!user) {
-    const pathname = getPathname()
+    const pathname = await getPathname()
     redirect(`/login?callback=${pathname}`)
   }
 

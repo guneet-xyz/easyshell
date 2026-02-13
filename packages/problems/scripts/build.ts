@@ -34,7 +34,7 @@ async function init() {
     `
 FROM alpine:3.21 AS build
 
-RUN apk add go
+RUN apk add --no-cache go
 
 COPY entrypoint /src/entrypoint
 
@@ -42,7 +42,7 @@ RUN go build -C /src/entrypoint -o /bin/entrypoint
 
 FROM alpine:3.21 AS base
 
-RUN apk add zip jq curl grep
+RUN apk add --no-cache zip jq curl grep
 
 COPY --from=build /bin/entrypoint /entrypoint
 `,

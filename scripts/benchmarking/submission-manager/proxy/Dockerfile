@@ -13,7 +13,7 @@ RUN npx esbuild benchmarking/submission-manager/proxy/index.ts --bundle --platfo
 
 FROM node:22-alpine
 
-RUN apk add docker
+RUN apk add --no-cache docker
 
 COPY --from=build /src/scripts/proxy.cjs /app/proxy.cjs
 

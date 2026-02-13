@@ -16,7 +16,7 @@ COPY package-lock.json package-lock.json
 
 RUN npm ci
 
-RUN apk add bash jq
+RUN apk add --no-cache bash jq
 
 COPY . .
 
@@ -27,7 +27,7 @@ RUN npm run cache
 RUN npx esbuild index.ts --bundle --platform=node --outfile=submission-manager.cjs
 
 FROM node:22-alpine
-RUN apk add docker
+RUN apk add --no-cache docker
 
 COPY --from=build /src/apps/submission-manager/submission-manager.cjs /app/submission-manager.cjs
 

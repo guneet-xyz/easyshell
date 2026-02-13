@@ -14,7 +14,7 @@ services:
       - easyshell
     environment:
       APP: submission-manager
-      DRIZZLE_PROXY_URL: http://easyshell-dev-db-proxy:8008
+      DRIZZLE_PROXY_URL: http://db-proxy:8008
       DRIZZLE_PROXY_TOKEN: token
     depends_on:
       db-proxy:

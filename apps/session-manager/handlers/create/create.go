@@ -40,7 +40,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	containerDir := path.Join(utils.WorkingDir, "sessions", req.ContainerName)
 	utils.Mkdirp(containerDir)
 
-	command := fmt.Sprintf("docker run -d --rm --name %s -m 10m --cpus 0.1 -v %s:/tmp/easyshell %s %s%s -mode session", req.ContainerName, containerDir, pullPolicy, utils.DockerRegistry, req.Image)
+	command := fmt.Sprintf("docker run -d --rm --name %s -m 10m --cpus 0.1 -v %s:/tmp/easyshell %s %s/easyshell/%s -mode session", req.ContainerName, containerDir, pullPolicy, utils.DockerRegistry, req.Image)
 
 	fmt.Println("Command: ", command)
 

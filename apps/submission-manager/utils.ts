@@ -70,7 +70,7 @@ export async function runSubmissionAndGetOutput({
     "--cpus",
     "0.1",
     ...[pullPolicy].filter((x) => x !== undefined),
-    `${env.DOCKER_REGISTRY}${image}`,
+    `${env.DOCKER_REGISTRY}/easyshell/${image}`,
     "-mode",
     "submission",
   ])

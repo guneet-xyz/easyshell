@@ -7,8 +7,8 @@ import { $ } from "execa"
 
 async function dockerPush(tag: string) {
   if (env.DOCKER_REGISTRY === "") return
-  await $`docker tag ${tag} ${env.DOCKER_REGISTRY}${tag}`
-  await $`docker push ${env.DOCKER_REGISTRY}${tag}`
+  await $`docker tag ${tag} ${env.DOCKER_REGISTRY}/easyshell/${tag}`
+  await $`docker push ${env.DOCKER_REGISTRY}/easyshell/${tag}`
 }
 
 async function pushProblemTasks(problem: string): Promise<Array<Task>> {

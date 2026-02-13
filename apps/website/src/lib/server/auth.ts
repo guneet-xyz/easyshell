@@ -293,7 +293,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     Resend({
       async sendVerificationRequest(params) {
         const { identifier, url } = params
-        var resend = getResend()
+        const resend = getResend()
         await resend.emails.send({
           from: "no-reply@easyshell.sh",
           to: identifier,

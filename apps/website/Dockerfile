@@ -24,6 +24,7 @@ ENV PROJECT_ROOT=/src
 RUN npm run build
 
 FROM node:22-alpine
+RUN apk add curl
 
 WORKDIR /app
 

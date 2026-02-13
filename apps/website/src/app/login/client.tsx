@@ -7,21 +7,22 @@ import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 import { toast } from "sonner"
 
-function validCallbackUrl(url: string): boolean {
-  return /^\/(?:[\w-]+\/?)*$/.test(url)
+function validCallbackUrl(url: string | null): boolean {
+  return url == undefined || /^\/(?:[\w-]+\/?)*$/.test(url)
 }
 
 export function Client({ loggedIn }: { loggedIn: boolean }) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  let callback = searchParams.get("callback") ?? "/"
+  let callback = searchParams.get("callback")
+
   if (!validCallbackUrl(callback)) {
     callback = "/"
   }
 
   if (callback === "/") {
     router.replace("/login")
-  } else {
+  } else if (callback != null) {
     router.replace(`/login?callback=${callback}`)
   }
 
@@ -29,12 +30,12 @@ export function Client({ loggedIn }: { loggedIn: boolean }) {
     if (loggedIn) {
       toast("You are already logged in")
       if (validCallbackUrl(callback)) {
-        router.push(callback)
+        router.push(callback ?? "/")
       }
     }
   }, [router, loggedIn, callback])
 
   if (loggedIn) return null
 
-  return <LoginForm callback={callback} />
+  return <LoginForm callback={callback ?? "/"} />
 }

@@ -16,19 +16,21 @@ COPY package-lock.json package-lock.json
 
 RUN npm ci
 
-RUN apk add bash jq
-
 COPY . .
 
-WORKDIR /src/apps/submission-manager
+WORKDIR /src/apps/website
 
 ENV PROJECT_ROOT=/src
-RUN npm run cache
-RUN npx esbuild index.ts --bundle --platform=node --outfile=submission-manager.cjs
+RUN npm run build
 
 FROM node:22-alpine
-RUN apk add docker
 
-COPY --from=build /src/apps/submission-manager/submission-manager.cjs /app/submission-manager.cjs
+WORKDIR /app
 
-ENTRYPOINT ["node", "/app/submission-manager.cjs"]
+COPY --from=build /src/apps/website/.next/standalone ./
+COPY --from=build /src/apps/website/.next/static ./apps/website/.next/static
+COPY --from=build /src/apps/website/public ./apps/website/public
+
+WORKDIR /app/apps/website
+
+ENTRYPOINT ["node", "server.js"]

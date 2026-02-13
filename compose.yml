@@ -1,12 +1,11 @@
 networks:
   easyshell:
     external: true
-
 services:
   submission-manager:
     build:
       context: .
-      dockerfile: ./apps/submission-manager//Dockerfile
+      dockerfile: ./apps/submission-manager/Dockerfile
     container_name: easyshell-dev-submission-manager
     volumes:
       - /tmp/easyshell:/tmp/easyshell
@@ -15,14 +14,77 @@ services:
       - easyshell
     environment:
       APP: submission-manager
-      DATABASE_URL: ${DATABASE_URL}
+      DRIZZLE_PROXY_URL: http://easyshell-dev-db-proxy:8008
+      DRIZZLE_PROXY_TOKEN: token
+    depends_on:
+      db-proxy:
+        condition: service_healthy
   session-manager:
     build:
       context: ./apps/session-manager
     container_name: easyshell-dev-session-manager
+    environment:
+      TOKEN: token
     networks:
       - easyshell
     ports:
       - 4000:4000
     volumes:
+      - /tmp/easyshell:/tmp/easyshell
       - /var/run/docker.sock:/var/run/docker.sock
+  db:
+    container_name: easyshell-dev-db
+    image: postgres:17
+    environment:
+      POSTGRES_PASSWORD: password
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    restart: always
+    ports:
+      - 5432:5432
+    networks:
+      - easyshell
+  db-proxy:
+    build:
+      context: .
+      dockerfile: ./apps/db-proxy/Dockerfile
+    container_name: easyshell-dev-db-proxy
+    environment:
+      DATABASE_URL: postgres://postgres:password@db/easyshell
+      TOKEN: token
+    networks:
+      - easyshell
+    ports:
+      - 8008:8008
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8008/health"]
+      interval: 5s
+      timeout: 1s
+      retries: 3
+  website:
+    build:
+      context: .
+      dockerfile: ./apps/website/Dockerfile
+    container_name: easyshell-dev-website
+    environment:
+      APP: website
+      AUTH_TRUST_HOST: true
+      DRIZZLE_PROXY_URL: http://db-proxy:8008
+      DRIZZLE_PROXY_TOKEN: token
+      NEXTAUTH_SECRET: secret
+      NEXTAUTH_URL: http://localhost:3000
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      SESSION_MANAGER_URL: http://session-manager:4000
+      SESSION_MANAGER_TOKEN: token
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      NEXT_PUBLIC_POSTHOG_HOST: ${NEXT_PUBLIC_POSTHOG_HOST}
+      NEXT_PUBLIC_POSTHOG_KEY: ${NEXT_PUBLIC_POSTHOG_KEY}
+    networks:
+      - easyshell
+    ports:
+      - 3000:3000

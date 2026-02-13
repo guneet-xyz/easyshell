@@ -1,0 +1,7 @@
+data
+**/.next
+.git
+.gitignore
+**/.rgignore
+**/node_modules
+**/*.env

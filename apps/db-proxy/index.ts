@@ -55,6 +55,10 @@ async function main() {
     }
   })
 
+  app.get("/health", async (c) => {
+    return c.text("healthy")
+  })
+
   console.log(`Listening on port ${PORT}`)
 
   serve({

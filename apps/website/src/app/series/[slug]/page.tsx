@@ -93,7 +93,7 @@ export default async function Page({
 }
 
 async function LoginButton() {
-  const pathname = getPathname()
+  const pathname = await getPathname()
   return (
     <Link href={`/login?callback=${pathname}`} prefetch={true}>
       <Button className="mt-2 w-full py-2">Login</Button>

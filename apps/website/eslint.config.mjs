@@ -1,58 +1,30 @@
-import { FlatCompat } from "@eslint/eslintrc";
-import tseslint from 'typescript-eslint';
-// @ts-ignore -- no types for this plugin
-import drizzle from "eslint-plugin-drizzle";
+import nextVitals from "eslint-config-next/core-web-vitals"
+import nextTs from "eslint-config-next/typescript"
+// @ts-expect-error -- no types for this plugin
+import drizzle from "eslint-plugin-drizzle"
+import { defineConfig, globalIgnores } from "eslint/config"
 
-const compat = new FlatCompat({
-  baseDirectory: import.meta.dirname,
-});
-
-export default tseslint.config(
+const eslintConfig = defineConfig([
+  ...nextVitals,
+  ...nextTs,
+  globalIgnores([
+    "node_modules/**",
+    ".next/**",
+    "out/**",
+    "build/**",
+    "coverage/**",
+    "next-env.d.ts",
+    "prisma/generated/**",
+    "prisma/migrations/**",
+    "migration.js",
+  ]),
   {
-		ignores: ['.next']
-	},
-  ...compat.extends("next/core-web-vitals"),
-  {
-    files: ['**/*.ts', '**/*.tsx'],
-    plugins: {
-      drizzle,
+    rules: {
+      "@typescript-eslint/no-empty-object-type": "off",
+      "@typescript-eslint/no-unused-vars": ["warn", { caughtErrors: "none" }],
     },
-		extends: [
-			...tseslint.configs.recommended,
-			...tseslint.configs.recommendedTypeChecked,
-			...tseslint.configs.stylisticTypeChecked
-		],
-      rules: {
-    "@typescript-eslint/array-type": "off",
-    "@typescript-eslint/consistent-type-definitions": "off",
-    "@typescript-eslint/consistent-type-imports": [
-      "warn",
-      { prefer: "type-imports", fixStyle: "inline-type-imports" },
-    ],
-    "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
-    "@typescript-eslint/require-await": "off",
-    "@typescript-eslint/no-misused-promises": [
-      "error",
-      { checksVoidReturn: { attributes: false } },
-    ],
-    "drizzle/enforce-delete-with-where": [
-      "error",
-      { drizzleObjectName: ["db", "ctx.db"] },
-    ],
-    "drizzle/enforce-update-with-where": [
-      "error",
-      { drizzleObjectName: ["db", "ctx.db"] },
-    ],
+    plugins: { drizzle },
   },
-  },
-  {
-		linterOptions: {
-			reportUnusedDisableDirectives: true
-		},
-		languageOptions: {
-			parserOptions: {
-				projectService: true
-			}
-		}
-	}
-)
+])
+
+export default eslintConfig

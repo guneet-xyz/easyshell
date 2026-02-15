@@ -21,6 +21,7 @@ COPY . .
 WORKDIR /src/apps/website
 
 ENV PROJECT_ROOT=/src
+RUN npm run cache
 RUN npm run build
 
 FROM node:22-alpine

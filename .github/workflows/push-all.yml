@@ -1,0 +1,94 @@
+name: Push All
+on:
+  workflow_dispatch:
+jobs:
+  push-website:
+    concurrency:
+      group: push-website
+      cancel-in-progress: false
+    environment: registry-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_CLIENT_SECRET }}
+          tags: tag:ci
+      - name: docker login
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ vars.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: actions/checkout@v4
+      - run: docker build -t ${{ vars.DOCKER_REGISTRY }}/easyshell/website:latest -f ./apps/website/Dockerfile .
+      - run: docker push ${{ vars.DOCKER_REGISTRY }}/easyshell/website:latest
+  push-db-proxy:
+    concurrency:
+      group: push-db-proxy
+      cancel-in-progress: false
+    environment: registry-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_CLIENT_SECRET }}
+          tags: tag:ci
+      - name: docker login
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ vars.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: actions/checkout@v4
+      - run: docker build -t ${{ vars.DOCKER_REGISTRY }}/easyshell/db-proxy:latest -f ./apps/db-proxy/Dockerfile .
+      - run: docker push ${{ vars.DOCKER_REGISTRY }}/easyshell/db-proxy:latest
+  push-session-manager:
+    needs:
+      - test-session-manager
+    concurrency:
+      group: push-session-manager
+      cancel-in-progress: false
+    environment: registry-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_CLIENT_SECRET }}
+          tags: tag:ci
+      - name: docker login
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ vars.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: actions/checkout@v4
+      - run: docker build -t ${{ vars.DOCKER_REGISTRY }}/easyshell/session-manager:latest -f ./apps/session-manager/Dockerfile ./apps/session-manager
+      - run: docker push ${{ vars.DOCKER_REGISTRY }}/easyshell/session-manager:latest
+  push-submission-manager:
+    concurrency:
+      group: push-submission-manager
+      cancel-in-progress: false
+    environment: registry-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_CLIENT_SECRET }}
+          tags: tag:ci
+      - name: docker login
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ vars.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: actions/checkout@v4
+      - run: docker build -t ${{ vars.DOCKER_REGISTRY }}/easyshell/submission-manager:latest -f ./apps/submission-manager/Dockerfile .
+      - run: docker push ${{ vars.DOCKER_REGISTRY }}/easyshell/submission-manager:latest

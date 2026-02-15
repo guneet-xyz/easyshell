@@ -1,4 +1,5 @@
 FROM node:22-alpine AS build
+RUN apk add --no-cache bash jq
 
 WORKDIR /src
 

@@ -1,4 +1,5 @@
 FROM node:22-alpine AS build
+RUN apk add --no-cache bash jq
 
 WORKDIR /src
 
@@ -16,8 +17,6 @@ COPY package-lock.json package-lock.json
 
 RUN npm ci
 
-RUN apk add --no-cache bash jq
-
 COPY . .
 
 WORKDIR /src/apps/submission-manager
@@ -29,6 +28,9 @@ RUN npx esbuild index.ts --bundle --platform=node --outfile=submission-manager.c
 FROM node:22-alpine
 RUN apk add --no-cache docker
 
-COPY --from=build /src/apps/submission-manager/submission-manager.cjs /app/submission-manager.cjs
+WORKDIR /app
 
-ENTRYPOINT ["node", "/app/submission-manager.cjs"]
+COPY --from=build /src/apps/submission-manager/submission-manager.cjs submission-manager.cjs
+
+ENV APP="submission-manager"
+ENTRYPOINT ["node", "submission-manager.cjs"]

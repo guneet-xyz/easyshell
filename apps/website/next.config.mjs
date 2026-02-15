@@ -13,5 +13,4 @@ const config = {
 
 const withMDX = createMDX({})
 
-// @ts-ignore
 export default withMDX(config)

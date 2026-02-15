@@ -20,7 +20,7 @@ const wikiComponents: typeof customComponents = {
   WikiLink: ({ slug }: { slug: string }) => <WikiLink slug={slug} />,
 }
 
-export function MarkdownClient({
+export default function MarkdownClient({
   source,
 }: {
   source: MDXRemoteSerializeResult

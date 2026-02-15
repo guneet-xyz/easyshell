@@ -15,15 +15,14 @@
     "scripts"
   ],
   "scripts": {
+    "cache": "cd packages/problems && npm run cache:website && npm run cache:submission-manager",
     "format:check": "npx prettier --check . && gofmt -l -s .",
     "format:write": "npx prettier --write . && gofmt -w -s .",
-    "cache": "cd packages/problems && npm run cache:website && npm run cache:submission-manager",
     "lint": "npm run lint:tsc && npm run lint:next",
-    "lint:next": "cd apps/website && next lint",
+    "lint:next": "cd apps/website && npm run lint",
     "lint:tsc": "npx tsc --noEmit"
   },
   "devDependencies": {
-    "@typescript-eslint/typescript-estree": "^8.25.0",
     "prettier": "^3.5.3",
     "prettier-plugin-packagejson": "^2.5.10",
     "prettier-plugin-tailwindcss": "^0.6.11",

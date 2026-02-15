@@ -56,6 +56,11 @@ export async function runSubmissionAndGetOutput({
   const outputFilePathForDocker = `${WORKING_DIR}/outputs/${outputFileName}`
   const pullPolicy = env.DOCKER_REGISTRY === "" ? undefined : "--pull=always"
 
+  const imageTag =
+    env.DOCKER_REGISTRY === ""
+      ? image
+      : `${env.DOCKER_REGISTRY}/easyshell/${image}`
+
   await execa("docker", [
     "run",
     "--rm",
@@ -70,7 +75,7 @@ export async function runSubmissionAndGetOutput({
     "--cpus",
     "0.1",
     ...[pullPolicy].filter((x) => x !== undefined),
-    `${env.DOCKER_REGISTRY}${image}`,
+    imageTag,
     "-mode",
     "submission",
   ])

@@ -40,14 +40,21 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	containerDir := path.Join(utils.WorkingDir, "sessions", req.ContainerName)
 	utils.Mkdirp(containerDir)
 
-	command := fmt.Sprintf("docker run -d --rm --name %s -m 10m --cpus 0.1 -v %s:/tmp/easyshell %s %s%s -mode session", req.ContainerName, containerDir, pullPolicy, utils.DockerRegistry, req.Image)
+	var imageTag string
+	if utils.DockerRegistry != "" {
+		imageTag = utils.DockerRegistry + "/easyshell/" + req.Image
+	} else {
+		imageTag = req.Image
+	}
+	command := fmt.Sprintf("docker run -d --rm --name %s -m 10m --cpus 0.1 -v %s:/tmp/easyshell %s %s -mode session", req.ContainerName, containerDir, pullPolicy, imageTag)
 
 	fmt.Println("Command: ", command)
 
 	cmd := exec.Command("sh", "-c", command)
+	output, _ := cmd.CombinedOutput()
 
-	err = cmd.Run()
 	if err != nil {
+		fmt.Printf("Command Failed : %s\n", string(output))
 		http.Error(w, "Failed"+err.Error(), http.StatusInternalServerError)
 		return
 	}

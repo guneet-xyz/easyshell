@@ -8,15 +8,14 @@ import (
 	"path"
 )
 
-var DockerRegistry string
-var WorkingDir string
-var Token string
+var (
+	DockerRegistry string
+	WorkingDir     string
+	Token          string
+)
 
 func Init() {
 	DockerRegistry = os.Getenv("DOCKER_REGISTRY")
-	if len(DockerRegistry) > 0 {
-		DockerRegistry += "/"
-	}
 
 	WorkingDir = os.Getenv("WORKING_DIR")
 	if len(WorkingDir) == 0 {

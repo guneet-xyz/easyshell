@@ -1,0 +1,49 @@
+name: deploy website
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/deploy-website.yml"
+      - "packages/**"
+      - "apps/website/**"
+  workflow_dispatch:
+jobs:
+  push-website:
+    concurrency:
+      group: push-website
+      cancel-in-progress: false
+    environment: registry-push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.14.0
+      - uses: actions/checkout@v4
+      - run: npm ci
+      - run: npm run cache:website
+        working-directory: ./packages/problems
+      - run: npm run deploy
+        working-directory: ./apps/website
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+  deploy-vps:
+    needs:
+      - push-website
+    concurrency:
+      group: deploy-vps
+      cancel-in-progress: false
+    environment: deployment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Make .ssh folder
+        run: mkdir -p ~/.ssh
+      - name: Write SSH private key
+        run: echo '${{ secrets.SSH_PRIVATE_KEY }}' > ~/.ssh/id_rsa
+      - name: Set permissions for SSH private key
+        run: chmod 400 ~/.ssh/id_rsa
+      - name: SSH into server
+        run: ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} ${{ secrets.SSH_COMMAND }}

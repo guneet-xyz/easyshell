@@ -18,6 +18,7 @@ import { ThemeToggle } from "./theme-toggle"
 
 import { HamburgerMenuIcon } from "@radix-ui/react-icons"
 import Link from "next/link"
+import { ReactNode } from "react"
 import { PiGear, PiGearDuotone } from "react-icons/pi"
 
 function Logo() {
@@ -96,17 +97,23 @@ function Options() {
   )
 }
 
+function LinkWrapper({
+  drawer,
+  children,
+}: {
+  drawer?: boolean
+  children: ReactNode
+}) {
+  if (drawer) return <DrawerClose asChild>{children}</DrawerClose>
+  return <>{children}</>
+}
+
 async function User({ drawer }: { drawer?: boolean }) {
   const user = (await auth())?.user
-  const LinkWrapper = drawer
-    ? ({ children }: { children: React.ReactNode }) => (
-        <DrawerClose asChild>{children}</DrawerClose>
-      )
-    : ({ children }: { children: React.ReactNode }) => <>{children}</>
   if (user)
     return (
       <div className="flex w-full flex-col">
-        <LinkWrapper>
+        <LinkWrapper drawer={drawer}>
           <Link href={`/profile/${user.username}`} prefetch={true}>
             <Button
               variant="outline"
@@ -121,7 +128,7 @@ async function User({ drawer }: { drawer?: boolean }) {
             </Button>
           </Link>
         </LinkWrapper>
-        <LinkWrapper>
+        <LinkWrapper drawer={drawer}>
           <Link href="/logout" className="mt-2 w-full" prefetch={true}>
             <Button
               variant="destructive"

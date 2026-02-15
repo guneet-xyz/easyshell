@@ -14,7 +14,7 @@ import { changeUsername } from "@/lib/server/actions/change-username"
 import { setUserImage } from "@/lib/server/actions/set-image"
 import { sleep } from "@/lib/utils"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { PiCheck, PiUploadBold, PiX } from "react-icons/pi"
 import { toast } from "sonner"
 
@@ -41,9 +41,17 @@ export function SettingsNameImage({
 
   const [changes, setChanges] = useState(false)
 
-  useEffect(() => {
+  function evalChanges({
+    username,
+    image,
+    name,
+  }: {
+    username: string
+    image: File | null
+    name: string
+  }) {
     setChanges(username !== _username || image !== null || name !== _name)
-  }, [username, image, _username, _image, name, _name])
+  }
 
   async function handleSubmit() {
     setSubmitting(true)
@@ -127,7 +135,9 @@ export function SettingsNameImage({
                   toast.error("Image too large. Must be less than 1MB.")
                   return
                 }
-                setImage(e.target.files[0])
+                const newImage = e.target.files[0]
+                setImage(newImage)
+                evalChanges({ username: username, name: name, image: newImage })
               }}
             />
           </div>
@@ -141,7 +151,15 @@ export function SettingsNameImage({
                   value={name}
                   name="username"
                   className="h-full w-full text-gray-500"
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    const newName = e.target.value
+                    setName(newName)
+                    evalChanges({
+                      username: username,
+                      name: newName,
+                      image: image,
+                    })
+                  }}
                 />
                 {name.length > 0 ? (
                   <PiCheck className="absolute top-1/2 right-4 -translate-y-1/2 text-green-600" />
@@ -159,7 +177,15 @@ export function SettingsNameImage({
                   value={username}
                   name="username"
                   className="h-full w-full text-gray-500"
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={(e) => {
+                    const newUsername = e.target.value
+                    setUsername(newUsername)
+                    evalChanges({
+                      username: newUsername,
+                      name: name,
+                      image: image,
+                    })
+                  }}
                 />
                 {checkLocalValidUsername(username) ? (
                   <PiCheck className="absolute top-1/2 right-4 -translate-y-1/2 text-green-600" />
@@ -208,6 +234,7 @@ export function SettingsNameImage({
             setUsername(_username)
             setName(_name)
             setImage(null)
+            evalChanges({ username: _username, name: _name, image: null })
           }}
         >
           <p className="text-xs lg:text-base">Undo Changes</p>

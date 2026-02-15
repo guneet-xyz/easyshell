@@ -14,6 +14,7 @@ import { SubmissionsChart } from "./_components/submission-chart"
 
 import { desc, eq, min, sql } from "drizzle-orm"
 import moment from "moment"
+import { Metadata } from "next"
 import { notFound, redirect } from "next/navigation"
 import { PiCheckCircle, PiXCircle } from "react-icons/pi"
 
@@ -21,7 +22,7 @@ export async function generateMetadata({
   params,
 }: {
   params: Promise<{ username: string }>
-}) {
+}): Promise<Metadata> {
   const { username } = await params
   return {
     title: `easyshell - profile/${username}`,

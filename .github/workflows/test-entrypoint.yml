@@ -1,0 +1,19 @@
+name: test entrypoint
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/test-entrypoint.yml"
+      - "apps/entrypoint/**"
+jobs:
+  test-entrypoint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 1.23.6
+      - name: check linting
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.64.2
+          working-directory: apps/entrypoint

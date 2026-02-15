@@ -1,4 +1,3 @@
-import { ClientOnly } from "@/components/client-only"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { auth } from "@/lib/server/auth"
 import { getUserProviders } from "@/lib/server/queries"
@@ -16,9 +15,10 @@ import {
 } from "./_components/provider-cards"
 import { ThemeToggle } from "./_components/theme-toggle"
 
+import { Metadata } from "next"
 import { redirect } from "next/navigation"
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "easyshell - account settings",
 }
 
@@ -57,11 +57,9 @@ export default async function Page() {
               </div>
               <ThemeToggle />
             </div>
-            <ClientOnly>
-              <PromptSettingsContextProvider>
-                <PromptSettings />
-              </PromptSettingsContextProvider>
-            </ClientOnly>
+            <PromptSettingsContextProvider>
+              <PromptSettings />
+            </PromptSettingsContextProvider>
           </CardContent>
         </Card>
 

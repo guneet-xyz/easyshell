@@ -4,8 +4,6 @@ import type { getSubmissionStats } from "@/app/profile/[username]/page"
 import { EasyTooltip } from "@/components/ui/tooltip"
 import { useTheme } from "@/lib/client"
 
-import { useEffect, useState } from "react"
-
 const COLORS = {
   dark: {
     nothover: {
@@ -69,7 +67,7 @@ const COLORS = {
   },
 }
 
-export function SubmissionsChart({
+export default function SubmissionsChart({
   stats,
 }: {
   stats: Awaited<ReturnType<typeof getSubmissionStats>>
@@ -84,12 +82,6 @@ export function SubmissionsChart({
       : 0
   const hardPercent =
     stats.totalHard !== 0 ? Math.round((stats.hard * 100) / stats.totalHard) : 0
-
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-  if (!mounted) return null // Need to do this for the correct theme to be applied
 
   return (
     <div className="relative aspect-square h-full">

@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import type { getPublicProblemInfo } from "@/lib/server/problems"
 import { cn } from "@/lib/utils"
 
-import { useEffect, useState } from "react"
+import { useMemo, useState } from "react"
 import {
   PiCaretDown,
   PiCaretUp,
@@ -55,55 +55,48 @@ export function ProblemList({
     difficulty: undefined,
   })
 
-  const [filteredProblems, setFilteredProblems] = useState(problems)
-
-  useEffect(() => {
-    setFilteredProblems(
-      problems
-        .filter(
-          (problem) =>
-            (problem.slug
+  const filteredProblems = useMemo(() => {
+    return problems
+      .filter(
+        (problem) =>
+          (problem.slug
+            .toLowerCase()
+            .replaceAll("-", "")
+            .includes(
+              filter.search
+                .toLowerCase()
+                .replaceAll("-", "")
+                .replaceAll(" ", ""),
+            ) ||
+            problem.title
               .toLowerCase()
-              .replaceAll("-", "")
+              .replaceAll(" ", "")
               .includes(
                 filter.search
                   .toLowerCase()
                   .replaceAll("-", "")
                   .replaceAll(" ", ""),
-              ) ||
-              problem.title
-                .toLowerCase()
-                .replaceAll(" ", "")
-                .includes(
-                  filter.search
-                    .toLowerCase()
-                    .replaceAll("-", "")
-                    .replaceAll(" ", ""),
-                )) &&
-            filter.difficulty[problem.difficulty] &&
-            problem.tags.some((tag) => filter.tags.has(tag)),
-        )
-        .sort((a, b) => {
-          if (
-            sortOptions.difficulty === "asc" &&
-            a.difficulty !== b.difficulty
-          ) {
-            return (
-              difficulties.indexOf(a.difficulty) -
-              difficulties.indexOf(b.difficulty)
-            )
-          } else if (
-            sortOptions.difficulty === "desc" &&
-            a.difficulty !== b.difficulty
-          ) {
-            return (
-              difficulties.indexOf(b.difficulty) -
-              difficulties.indexOf(a.difficulty)
-            )
-          }
-          return sortOptions.id === "asc" ? a.id - b.id : b.id - a.id
-        }),
-    )
+              )) &&
+          filter.difficulty[problem.difficulty] &&
+          problem.tags.some((tag) => filter.tags.has(tag)),
+      )
+      .sort((a, b) => {
+        if (sortOptions.difficulty === "asc" && a.difficulty !== b.difficulty) {
+          return (
+            difficulties.indexOf(a.difficulty) -
+            difficulties.indexOf(b.difficulty)
+          )
+        } else if (
+          sortOptions.difficulty === "desc" &&
+          a.difficulty !== b.difficulty
+        ) {
+          return (
+            difficulties.indexOf(b.difficulty) -
+            difficulties.indexOf(a.difficulty)
+          )
+        }
+        return sortOptions.id === "asc" ? a.id - b.id : b.id - a.id
+      })
   }, [filter, problems, sortOptions])
 
   const filtersComponent = (

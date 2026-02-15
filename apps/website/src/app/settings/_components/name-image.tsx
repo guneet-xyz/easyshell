@@ -14,7 +14,7 @@ import { changeUsername } from "@/lib/server/actions/change-username"
 import { setUserImage } from "@/lib/server/actions/set-image"
 import { sleep } from "@/lib/utils"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { PiCheck, PiUploadBold, PiX } from "react-icons/pi"
 import { toast } from "sonner"
 
@@ -41,9 +41,9 @@ export function SettingsNameImage({
 
   const [changes, setChanges] = useState(false)
 
-  useEffect(() => {
+  function evalChanges() {
     setChanges(username !== _username || image !== null || name !== _name)
-  }, [username, image, _username, _image, name, _name])
+  }
 
   async function handleSubmit() {
     setSubmitting(true)
@@ -128,6 +128,7 @@ export function SettingsNameImage({
                   return
                 }
                 setImage(e.target.files[0])
+                evalChanges()
               }}
             />
           </div>
@@ -141,7 +142,10 @@ export function SettingsNameImage({
                   value={name}
                   name="username"
                   className="h-full w-full text-gray-500"
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    setName(e.target.value)
+                    evalChanges()
+                  }}
                 />
                 {name.length > 0 ? (
                   <PiCheck className="absolute top-1/2 right-4 -translate-y-1/2 text-green-600" />
@@ -159,7 +163,10 @@ export function SettingsNameImage({
                   value={username}
                   name="username"
                   className="h-full w-full text-gray-500"
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={(e) => {
+                    setUsername(e.target.value)
+                    evalChanges()
+                  }}
                 />
                 {checkLocalValidUsername(username) ? (
                   <PiCheck className="absolute top-1/2 right-4 -translate-y-1/2 text-green-600" />
@@ -208,6 +215,7 @@ export function SettingsNameImage({
             setUsername(_username)
             setName(_name)
             setImage(null)
+            evalChanges()
           }}
         >
           <p className="text-xs lg:text-base">Undo Changes</p>

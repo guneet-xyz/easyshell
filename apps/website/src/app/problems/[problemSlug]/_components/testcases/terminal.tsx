@@ -20,7 +20,7 @@ import { submitTerminalSessionCommand } from "@/lib/server/actions/submit-termin
 import { cn } from "@/lib/utils"
 
 import moment from "moment"
-import { useEffect, useRef, useState } from "react"
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react"
 import { BsGearWideConnected } from "react-icons/bs"
 import { ImSpinner3 } from "react-icons/im"
 import { toast } from "sonner"
@@ -38,7 +38,113 @@ export function TestcaseTerminal({
     ReturnType<typeof getTerminalSession>
   > | null>(null)
 
+  const [restarting, setRestarting] = useState(false)
+
+  useEffect(() => {
+    void (async () => {
+      setSession(null)
+      const session = await getTerminalSession({
+        problemId: problemId,
+        testcaseId: testcase,
+      })
+      setSession(session)
+    })()
+  }, [problemId, testcase])
+
+  if (!session)
+    return (
+      <LoadingTestcaseTerminal
+        problemSlug={problemSlug}
+        testcase={testcase}
+        restarting={restarting}
+      />
+    )
+
+  return (
+    <LoadedTestcaseTerminal
+      problemId={problemId}
+      problemSlug={problemSlug}
+      testcase={testcase}
+      session={session}
+      setSession={setSession}
+      restarting={restarting}
+      setRestarting={setRestarting}
+    />
+  )
+}
+
+function LoadingTestcaseTerminal({
+  problemSlug,
+  testcase,
+  restarting,
+}: {
+  problemSlug: string
+  testcase: number
+  restarting: boolean
+}) {
+  return (
+    <div className="flex flex-col rounded-md border-4 border-gray-400 font-geist-mono">
+      <div className="relative flex h-80 flex-col overflow-scroll bg-black px-2 py-1 whitespace-pre-line">
+        <p className="absolute top-0 left-1/2 -translate-x-1/2 rounded-b-md bg-neutral-800 px-4 text-center font-semibold text-white opacity-100 transition-opacity select-none hover:opacity-0">
+          {problemSlug}-{testcase}
+        </p>
+        <div
+          className={cn(
+            "absolute top-1/2 left-1/2 z-20 flex h-full w-full -translate-x-1/2 -translate-y-1/2 items-center justify-center bg-black",
+          )}
+        >
+          {restarting ? (
+            <p className="animate-spin text-white">Restarting</p>
+          ) : (
+            <p className="text-neutral-600">Loading</p>
+          )}
+        </div>
+      </div>
+      <div className="flex">
+        <input
+          className={cn(
+            "grow bg-neutral-800 px-2 py-1 text-white outline-hidden",
+          )}
+        />
+        <button className="w-20 bg-green-800 px-2 text-neutral-200 select-none hover:bg-green-700"></button>
+      </div>
+    </div>
+  )
+}
+
+function LoadedTestcaseTerminal({
+  problemId,
+  problemSlug,
+  testcase,
+  session,
+  setSession,
+  restarting,
+  setRestarting,
+}: {
+  problemId: number
+  problemSlug: string
+  testcase: number
+  session: Exclude<Awaited<ReturnType<typeof getTerminalSession>>, null>
+  setSession: Dispatch<
+    SetStateAction<Awaited<ReturnType<typeof getTerminalSession>>>
+  >
+  restarting: boolean
+  setRestarting: Dispatch<SetStateAction<boolean>>
+}) {
   const [running, setRunning] = useState(false)
+  const [promptHistory, setPromptHistory] = useState<string[]>([
+    ...session.logs.map((log) => log.stdin),
+    "",
+  ])
+  const [promptHistoryIndex, setPromptHistoryIndex] = useState<number>(
+    session.logs.length + 1,
+  )
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [onlineStatus, setOnlineStatus] = useState<{
+    isOnline: boolean
+    lastChecked: Date
+  }>({ isOnline: true, lastChecked: new Date() })
+
   const inputRef = useRef<HTMLInputElement>(null)
   const terminalRef = useRef<HTMLDivElement>(null)
 
@@ -50,14 +156,10 @@ export function TestcaseTerminal({
     showTimes: true,
   })
 
-  const [restarted, setRestarted] = useState(0)
-  const [restarting, setRestarting] = useState(false)
-
   async function handleRestartTerminal() {
     setSession(null)
     setRestarting(true)
     await killTerminalSessions({ problemId, testcaseId: testcase })
-    setRestarted((prev) => prev + 1)
     setRestarting(false)
   }
 
@@ -78,6 +180,8 @@ export function TestcaseTerminal({
           logs: [...prev.logs, log],
         }
       })
+      setPromptHistory((prev) => [...prev, ""])
+      setPromptHistoryIndex((prev) => prev + 1)
     } else {
       setOnlineStatus({
         isOnline: false,
@@ -103,9 +207,6 @@ export function TestcaseTerminal({
     setRunning(false)
   }
 
-  const [promptHistory, setPromptHistory] = useState<string[]>([])
-  const [promptHistoryIndex, setPromptHistoryIndex] = useState<number>(0)
-
   function handlePromptUpArrow() {
     if (promptHistoryIndex > 0) {
       setPromptHistoryIndex((prev) => prev - 1)
@@ -119,43 +220,17 @@ export function TestcaseTerminal({
   }
 
   useEffect(() => {
-    terminalRef.current?.scrollTo({
-      top: terminalRef.current.scrollHeight,
-      behavior: "smooth",
-    })
-    if (session) {
-      setPromptHistory([...session.logs.map((log) => log.stdin), ""])
-      setPromptHistoryIndex(session.logs.length + 1)
-      setOnlineStatus({
-        isOnline: true,
-        lastChecked: new Date(),
-      })
-    }
-  }, [session])
-
-  useEffect(() => {
     if (!running) {
       inputRef.current?.focus()
     }
   }, [running])
 
   useEffect(() => {
-    void (async () => {
-      setSession(null)
-      const session = await getTerminalSession({
-        problemId: problemId,
-        testcaseId: testcase,
-      })
-      setSession(session)
-    })()
-  }, [problemId, testcase, restarted])
-
-  const [settingsOpen, setSettingsOpen] = useState(false)
-
-  const [onlineStatus, setOnlineStatus] = useState<{
-    isOnline: boolean
-    lastChecked: Date
-  }>({ isOnline: true, lastChecked: new Date() })
+    terminalRef.current?.scrollTo({
+      top: terminalRef.current.scrollHeight,
+      behavior: "smooth",
+    })
+  }, [session])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -172,36 +247,6 @@ export function TestcaseTerminal({
       clearInterval(interval)
     }
   }, [onlineStatus, session])
-
-  if (!session)
-    return (
-      <div className="flex flex-col rounded-md border-4 border-gray-400 font-geist-mono">
-        <div className="relative flex h-80 flex-col overflow-scroll bg-black px-2 py-1 whitespace-pre-line">
-          <p className="absolute top-0 left-1/2 -translate-x-1/2 rounded-b-md bg-neutral-800 px-4 text-center font-semibold text-white opacity-100 transition-opacity select-none hover:opacity-0">
-            {problemSlug}-{testcase}
-          </p>
-          <div
-            className={cn(
-              "absolute top-1/2 left-1/2 z-20 flex h-full w-full -translate-x-1/2 -translate-y-1/2 items-center justify-center bg-black",
-            )}
-          >
-            {restarting ? (
-              <p className="animate-spin text-white">Restarting</p>
-            ) : (
-              <p className="text-neutral-600">Loading</p>
-            )}
-          </div>
-        </div>
-        <div className="flex">
-          <input
-            className={cn(
-              "grow bg-neutral-800 px-2 py-1 text-white outline-hidden",
-            )}
-          />
-          <button className="w-20 bg-green-800 px-2 text-neutral-200 select-none hover:bg-green-700"></button>
-        </div>
-      </div>
-    )
 
   return (
     <div className="flex h-full flex-col gap-4">
@@ -222,7 +267,8 @@ export function TestcaseTerminal({
               >
                 <div>
                   took{" "}
-                  {moment(log.finishedAt).diff(log.startedAt, "milliseconds")}ms
+                  {moment(log.finishedAt).diff(log.startedAt, "milliseconds")}
+                  ms
                 </div>
                 <div>{moment(log.startedAt).format("HH:mm:ss")}</div>
               </div>

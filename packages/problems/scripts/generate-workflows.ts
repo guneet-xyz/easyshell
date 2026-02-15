@@ -89,7 +89,7 @@ jobs:
       - name: docker login
         uses: docker/login-action@v3
         with:
-          registry: \${{ secrets.DOCKER_REGISTRY }}
+          registry: \${{ vars.DOCKER_REGISTRY }}
           username: \${{ secrets.DOCKER_USERNAME }}
           password: \${{ secrets.DOCKER_PASSWORD }}
       - uses: actions/setup-node@v4
@@ -107,7 +107,7 @@ jobs:
         name: push problem
         working-directory: ./packages/problems
         env:
-          DOCKER_REGISTRY: \${{ secrets.DOCKER_REGISTRY }}
+          DOCKER_REGISTRY: \${{ vars.DOCKER_REGISTRY }}
 `
 }
 

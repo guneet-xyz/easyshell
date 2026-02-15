@@ -16,20 +16,21 @@ jobs:
     environment: registry-push
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-node@v4
+      - name: tailscale
+        uses: tailscale/github-action@v3
         with:
-          node-version: 22.14.0
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+      - name: docker login
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ vars.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
       - uses: actions/checkout@v4
-      - run: npm ci
-      - run: npm run cache:website
-        working-directory: ./packages/problems
-      - run: npm run deploy
-        working-directory: ./apps/website
-        env:
-          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      - run: docker build -t ${{ vars.DOCKER_REGISTRY }}/easyshell/website:latest -f ./apps/website/Dockerfile .
+      - run: docker push ${{ vars.DOCKER_REGISTRY }}/easyshell/website:latest
   deploy-vps:
     needs:
       - push-website
@@ -46,4 +47,4 @@ jobs:
       - name: Set permissions for SSH private key
         run: chmod 400 ~/.ssh/id_rsa
       - name: SSH into server
-        run: ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} ${{ secrets.SSH_COMMAND }}
+        run: ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} ${{ vars.SSH_COMMAND }}

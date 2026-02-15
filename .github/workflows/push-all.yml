@@ -47,8 +47,6 @@ jobs:
       - run: docker build -t ${{ vars.DOCKER_REGISTRY }}/easyshell/db-proxy:latest -f ./apps/db-proxy/Dockerfile .
       - run: docker push ${{ vars.DOCKER_REGISTRY }}/easyshell/db-proxy:latest
   push-session-manager:
-    needs:
-      - test-session-manager
     concurrency:
       group: push-session-manager
       cancel-in-progress: false

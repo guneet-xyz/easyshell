@@ -1,15 +1,12 @@
 name: Test Formatting
-
 on:
   push:
     branches:
       - main
   pull_request:
-
 jobs:
   prettier:
     runs-on: ubuntu-latest
-    environment: linting
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

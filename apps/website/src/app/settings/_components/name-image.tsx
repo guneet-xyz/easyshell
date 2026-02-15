@@ -234,7 +234,7 @@ export function SettingsNameImage({
             setUsername(_username)
             setName(_name)
             setImage(null)
-            evalChanges()
+            evalChanges({ username: _username, name: _name, image: null })
           }}
         >
           <p className="text-xs lg:text-base">Undo Changes</p>

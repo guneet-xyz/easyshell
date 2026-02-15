@@ -57,7 +57,7 @@ export async function runSubmissionAndGetOutput({
   const pullPolicy = env.DOCKER_REGISTRY === "" ? undefined : "--pull=always"
 
   const imageTag =
-    env.DOCKER_REGISTRY === ""
+    env.DOCKER_REGISTRY == undefined || env.DOCKER_REGISTRY == ""
       ? image
       : `${env.DOCKER_REGISTRY}/easyshell/${image}`
 

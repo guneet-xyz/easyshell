@@ -41,7 +41,15 @@ export function SettingsNameImage({
 
   const [changes, setChanges] = useState(false)
 
-  function evalChanges() {
+  function evalChanges({
+    username,
+    image,
+    name,
+  }: {
+    username: string
+    image: File | null
+    name: string
+  }) {
     setChanges(username !== _username || image !== null || name !== _name)
   }
 
@@ -127,8 +135,9 @@ export function SettingsNameImage({
                   toast.error("Image too large. Must be less than 1MB.")
                   return
                 }
-                setImage(e.target.files[0])
-                evalChanges()
+                const newImage = e.target.files[0]
+                setImage(newImage)
+                evalChanges({ username: username, name: name, image: newImage })
               }}
             />
           </div>
@@ -143,8 +152,13 @@ export function SettingsNameImage({
                   name="username"
                   className="h-full w-full text-gray-500"
                   onChange={(e) => {
-                    setName(e.target.value)
-                    evalChanges()
+                    const newName = e.target.value
+                    setName(newName)
+                    evalChanges({
+                      username: username,
+                      name: newName,
+                      image: image,
+                    })
                   }}
                 />
                 {name.length > 0 ? (
@@ -164,8 +178,13 @@ export function SettingsNameImage({
                   name="username"
                   className="h-full w-full text-gray-500"
                   onChange={(e) => {
-                    setUsername(e.target.value)
-                    evalChanges()
+                    const newUsername = e.target.value
+                    setUsername(newUsername)
+                    evalChanges({
+                      username: newUsername,
+                      name: name,
+                      image: image,
+                    })
                   }}
                 />
                 {checkLocalValidUsername(username) ? (

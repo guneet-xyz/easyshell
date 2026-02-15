@@ -70,6 +70,7 @@ export function ProblemList({
             ) ||
             problem.title
               .toLowerCase()
+              .replaceAll("-", "")
               .replaceAll(" ", "")
               .includes(
                 filter.search

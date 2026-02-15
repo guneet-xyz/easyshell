@@ -7,7 +7,7 @@ export const env = createEnv({
       .enum(["development", "test", "production"])
       .default("development"), // TODO: do we need this?
     APP: z.enum(["website", "submission-manager", "script"]), // assert env.APP for correct types
-    DOCKER_REGISTRY: z.string().optional(),
+    DOCKER_REGISTRY: z.string().default(""),
     WORKING_DIR: z.string().default("/tmp/easyshell"),
 
     ...(process.env.APP === "submission-manager"

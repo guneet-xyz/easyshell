@@ -51,10 +51,9 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Command: ", command)
 
 	cmd := exec.Command("sh", "-c", command)
+	output, _ := cmd.CombinedOutput()
 
-	err = cmd.Run()
 	if err != nil {
-		output, _ := cmd.CombinedOutput()
 		fmt.Printf("Command Failed : %s\n", string(output))
 		http.Error(w, "Failed"+err.Error(), http.StatusInternalServerError)
 		return

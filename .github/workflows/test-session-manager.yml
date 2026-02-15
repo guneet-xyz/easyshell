@@ -2,7 +2,7 @@ name: test session-manager
 on:
   pull_request:
     paths:
-      - ".github/workflows/test-entrypoint.yml"
+      - ".github/workflows/test-session-manager.yml"
       - "apps/session-manager/**"
 jobs:
   test-session-manager:

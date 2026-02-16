@@ -20,10 +20,34 @@ import { submitTerminalSessionCommand } from "@/lib/server/actions/submit-termin
 import { cn } from "@/lib/utils"
 
 import moment from "moment"
-import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react"
+import {
+  Dispatch,
+  SetStateAction,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react"
 import { BsGearWideConnected } from "react-icons/bs"
 import { ImSpinner3 } from "react-icons/im"
 import { toast } from "sonner"
+
+async function resetSession({
+  setSession,
+  problemId,
+  testcaseId,
+}: {
+  setSession: Dispatch<Awaited<ReturnType<typeof getTerminalSession>> | null>
+  problemId: number
+  testcaseId: number
+}) {
+  setSession(null)
+  const session = await getTerminalSession({
+    problemId: problemId,
+    testcaseId: testcaseId,
+  })
+  setSession(session)
+}
 
 export function TestcaseTerminal({
   problemId,
@@ -41,15 +65,26 @@ export function TestcaseTerminal({
   const [restarting, setRestarting] = useState(false)
 
   useEffect(() => {
-    void (async () => {
-      setSession(null)
-      const session = await getTerminalSession({
+    void resetSession({
+      setSession: setSession,
+      problemId: problemId,
+      testcaseId: testcase,
+    })
+  }, [problemId, testcase])
+
+  const handleRestartTerminal = useCallback(
+    async function () {
+      setRestarting(true)
+      await killTerminalSessions({ problemId, testcaseId: testcase })
+      await resetSession({
+        setSession: setSession,
         problemId: problemId,
         testcaseId: testcase,
       })
-      setSession(session)
-    })()
-  }, [problemId, testcase])
+      setRestarting(false)
+    },
+    [problemId, testcase],
+  )
 
   if (!session)
     return (
@@ -68,7 +103,7 @@ export function TestcaseTerminal({
       session={session}
       setSession={setSession}
       restarting={restarting}
-      setRestarting={setRestarting}
+      handleRestartTerminal={handleRestartTerminal}
     />
   )
 }
@@ -113,13 +148,12 @@ function LoadingTestcaseTerminal({
 }
 
 function LoadedTestcaseTerminal({
-  problemId,
   problemSlug,
   testcase,
   session,
   setSession,
   restarting,
-  setRestarting,
+  handleRestartTerminal,
 }: {
   problemId: number
   problemSlug: string
@@ -129,7 +163,7 @@ function LoadedTestcaseTerminal({
     SetStateAction<Awaited<ReturnType<typeof getTerminalSession>>>
   >
   restarting: boolean
-  setRestarting: Dispatch<SetStateAction<boolean>>
+  handleRestartTerminal: () => void
 }) {
   const [running, setRunning] = useState(false)
   const [promptHistory, setPromptHistory] = useState<string[]>([
@@ -155,13 +189,6 @@ function LoadedTestcaseTerminal({
     fontSize: 1,
     showTimes: true,
   })
-
-  async function handleRestartTerminal() {
-    setSession(null)
-    setRestarting(true)
-    await killTerminalSessions({ problemId, testcaseId: testcase })
-    setRestarting(false)
-  }
 
   async function handleSubmit() {
     if (!session) return

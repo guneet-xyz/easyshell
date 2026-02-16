@@ -1,4 +1,4 @@
-import { MarkdownClient } from "./client"
+import { MarkdownClient } from "./dynamic"
 
 import { serialize } from "next-mdx-remote/serialize"
 

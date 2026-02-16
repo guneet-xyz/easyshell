@@ -4,7 +4,7 @@ import { customComponents } from "@/mdx-components"
 
 import { MDXRemote, type MDXRemoteSerializeResult } from "next-mdx-remote"
 
-export function MarkdownClient({
+export default function MarkdownClient({
   source,
 }: {
   source: MDXRemoteSerializeResult

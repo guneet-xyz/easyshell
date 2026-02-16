@@ -40,16 +40,27 @@ export function TestcaseTerminal({
 
   const [restarting, setRestarting] = useState(false)
 
+  async function getSession() {
+    setSession(null)
+    const session = await getTerminalSession({
+      problemId: problemId,
+      testcaseId: testcase,
+    })
+    setSession(session)
+  }
+
   useEffect(() => {
     void (async () => {
-      setSession(null)
-      const session = await getTerminalSession({
-        problemId: problemId,
-        testcaseId: testcase,
-      })
-      setSession(session)
+      await getSession()
     })()
   }, [problemId, testcase])
+
+  async function handleRestartTerminal() {
+    setRestarting(true)
+    await killTerminalSessions({ problemId, testcaseId: testcase })
+    await getSession()
+    setRestarting(false)
+  }
 
   if (!session)
     return (
@@ -68,7 +79,7 @@ export function TestcaseTerminal({
       session={session}
       setSession={setSession}
       restarting={restarting}
-      setRestarting={setRestarting}
+      handleRestartTerminal={handleRestartTerminal}
     />
   )
 }
@@ -113,13 +124,12 @@ function LoadingTestcaseTerminal({
 }
 
 function LoadedTestcaseTerminal({
-  problemId,
   problemSlug,
   testcase,
   session,
   setSession,
   restarting,
-  setRestarting,
+  handleRestartTerminal,
 }: {
   problemId: number
   problemSlug: string
@@ -129,7 +139,7 @@ function LoadedTestcaseTerminal({
     SetStateAction<Awaited<ReturnType<typeof getTerminalSession>>>
   >
   restarting: boolean
-  setRestarting: Dispatch<SetStateAction<boolean>>
+  handleRestartTerminal: () => void
 }) {
   const [running, setRunning] = useState(false)
   const [promptHistory, setPromptHistory] = useState<string[]>([
@@ -155,13 +165,6 @@ function LoadedTestcaseTerminal({
     fontSize: 1,
     showTimes: true,
   })
-
-  async function handleRestartTerminal() {
-    setSession(null)
-    setRestarting(true)
-    await killTerminalSessions({ problemId, testcaseId: testcase })
-    setRestarting(false)
-  }
 
   async function handleSubmit() {
     if (!session) return

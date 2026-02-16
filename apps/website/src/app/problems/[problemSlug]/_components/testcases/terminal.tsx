@@ -20,7 +20,14 @@ import { submitTerminalSessionCommand } from "@/lib/server/actions/submit-termin
 import { cn } from "@/lib/utils"
 
 import moment from "moment"
-import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react"
+import {
+  Dispatch,
+  SetStateAction,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react"
 import { BsGearWideConnected } from "react-icons/bs"
 import { ImSpinner3 } from "react-icons/im"
 import { toast } from "sonner"
@@ -40,27 +47,31 @@ export function TestcaseTerminal({
 
   const [restarting, setRestarting] = useState(false)
 
-  async function getSession() {
-    setSession(null)
-    const session = await getTerminalSession({
-      problemId: problemId,
-      testcaseId: testcase,
-    })
-    setSession(session)
-  }
+  const getSession = useCallback(
+    async function () {
+      setSession(null)
+      const session = await getTerminalSession({
+        problemId: problemId,
+        testcaseId: testcase,
+      })
+      setSession(session)
+    },
+    [problemId, testcase],
+  )
 
   useEffect(() => {
-    void (async () => {
-      await getSession()
-    })()
-  }, [problemId, testcase])
+    void getSession()
+  }, [getSession])
 
-  async function handleRestartTerminal() {
-    setRestarting(true)
-    await killTerminalSessions({ problemId, testcaseId: testcase })
-    await getSession()
-    setRestarting(false)
-  }
+  const handleRestartTerminal = useCallback(
+    async function () {
+      setRestarting(true)
+      await killTerminalSessions({ problemId, testcaseId: testcase })
+      await getSession()
+      setRestarting(false)
+    },
+    [problemId, testcase],
+  )
 
   if (!session)
     return (

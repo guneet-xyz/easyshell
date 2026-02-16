@@ -32,6 +32,23 @@ import { BsGearWideConnected } from "react-icons/bs"
 import { ImSpinner3 } from "react-icons/im"
 import { toast } from "sonner"
 
+async function resetSession({
+  setSession,
+  problemId,
+  testcaseId,
+}: {
+  setSession: Dispatch<Awaited<ReturnType<typeof getTerminalSession>> | null>
+  problemId: number
+  testcaseId: number
+}) {
+  setSession(null)
+  const session = await getTerminalSession({
+    problemId: problemId,
+    testcaseId: testcaseId,
+  })
+  setSession(session)
+}
+
 export function TestcaseTerminal({
   problemId,
   problemSlug,
@@ -47,27 +64,23 @@ export function TestcaseTerminal({
 
   const [restarting, setRestarting] = useState(false)
 
-  const getSession = useCallback(
-    async function () {
-      setSession(null)
-      const session = await getTerminalSession({
-        problemId: problemId,
-        testcaseId: testcase,
-      })
-      setSession(session)
-    },
-    [problemId, testcase],
-  )
-
   useEffect(() => {
-    void getSession()
-  }, [getSession])
+    void resetSession({
+      setSession: setSession,
+      problemId: problemId,
+      testcaseId: testcase,
+    })
+  }, [problemId, testcase])
 
   const handleRestartTerminal = useCallback(
     async function () {
       setRestarting(true)
       await killTerminalSessions({ problemId, testcaseId: testcase })
-      await getSession()
+      await resetSession({
+        setSession: setSession,
+        problemId: problemId,
+        testcaseId: testcase,
+      })
       setRestarting(false)
     },
     [problemId, testcase],

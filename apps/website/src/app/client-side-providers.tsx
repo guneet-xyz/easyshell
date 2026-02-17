@@ -15,12 +15,7 @@ export function ClientSideProviders({
   children: React.ReactNode
 }) {
   useEffect(() => {
-    if (
-      !process.env.NEXT_PUBLIC_POSTHOG_KEY ||
-      !process.env.NEXT_PUBLIC_POSTHOG_HOST
-    ) {
-      return
-    }
+    if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) return
     posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
       api_host: "/ph",
       ui_host: "https://us.posthog.com",

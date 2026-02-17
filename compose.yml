@@ -58,8 +58,8 @@ services:
       - 8008:8008
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8008/health"]
-      interval: 5s
-      timeout: 1s
+      interval: 1s
+      timeout: 500ms
       retries: 3
     depends_on:
       db:
@@ -68,6 +68,9 @@ services:
     build:
       context: .
       dockerfile: ./apps/website/Dockerfile
+      args:
+        POSTHOG_KEY: ${POSTHOG_KEY}
+        POSTHOG_HOST: ${POSTHOG_HOST}
     container_name: easyshell-dev-website
     environment:
       APP: website
@@ -85,16 +88,14 @@ services:
       SESSION_MANAGER_URL: http://session-manager:4000
       SESSION_MANAGER_TOKEN: token
       RESEND_API_KEY: ${RESEND_API_KEY}
-      NEXT_PUBLIC_POSTHOG_HOST: ${NEXT_PUBLIC_POSTHOG_HOST}
-      NEXT_PUBLIC_POSTHOG_KEY: ${NEXT_PUBLIC_POSTHOG_KEY}
     networks:
       - easyshell
     ports:
       - 3000:3000
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000"]
-      interval: 5s
-      timeout: 1s
+      interval: 1s
+      timeout: 500ms
       retries: 3
     depends_on:
       db-proxy:

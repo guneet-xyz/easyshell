@@ -22,7 +22,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       - uses: actions/checkout@v4
-      - run: docker build -t ${{ vars.DOCKER_REGISTRY }}/easyshell/website:latest -f ./apps/website/Dockerfile .
+      - run: docker build -t ${{ vars.DOCKER_REGISTRY }}/easyshell/website:latest -f ./apps/website/Dockerfile . --build-arg POSTHOG_HOST=${{ vars.POSTHOG_HOST }} --build-arg POSTHOG_KEY=${{ vars.POSTHOG_KEY }}
       - run: docker push ${{ vars.DOCKER_REGISTRY }}/easyshell/website:latest
   push-db-proxy:
     concurrency:

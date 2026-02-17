@@ -56,7 +56,6 @@ export const env = createEnv({
     ...(process.env.APP === "website"
       ? {
           NEXT_PUBLIC_POSTHOG_KEY: z.string(),
-          NEXT_PUBLIC_POSTHOG_HOST: z.string().url(),
         }
       : {}),
   },

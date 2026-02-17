@@ -8,7 +8,19 @@ const config = {
     mdxRs: true,
   },
   output: "standalone",
-  // outputFileTracingRoot: import.meta.dirname,
+  async rewrites() {
+    return [
+      {
+        source: "/ph/static/:path*",
+        destination: "https://posthog.guneet.xyz/static/:path*",
+      },
+      {
+        source: "/ph/:path*",
+        destination: "https://posthog.guneet.xyz/:path*",
+      },
+    ]
+  },
+  skipTrailingSlashRedirect: true,
 }
 
 const withMDX = createMDX({})

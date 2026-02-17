@@ -22,8 +22,14 @@ export function ClientSideProviders({
       return
     }
     posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
-      api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-      capture_pageview: false,
+      api_host: "/ph",
+      ui_host: "https://us.posthog.com",
+      capture_pageview: true,
+      capture_pageleave: true,
+      capture_performance: true,
+      capture_dead_clicks: true,
+      capture_heatmaps: true,
+      capture_exceptions: true,
     })
   }, [])
 

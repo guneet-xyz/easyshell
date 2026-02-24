@@ -46,7 +46,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		imageTag = req.Image
 	}
-	command := fmt.Sprintf("docker run -d --rm --name %s -m 10m --cpus 0.1 -v %s:/tmp/easyshell %s %s -mode session", req.ContainerName, containerDir, pullPolicy, imageTag)
+	command := fmt.Sprintf("docker run -q -d --rm --name %s -m 10m --cpus 0.1 -v %s:/tmp/easyshell %s %s -mode session", req.ContainerName, containerDir, pullPolicy, imageTag)
 
 	fmt.Println("Command: ", command)
 

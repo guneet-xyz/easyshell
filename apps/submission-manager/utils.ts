@@ -63,6 +63,7 @@ export async function runSubmissionAndGetOutput({
 
   await execa("docker", [
     "run",
+    "-q",
     "--rm",
     "--name",
     containerName,

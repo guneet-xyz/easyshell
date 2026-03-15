@@ -1,5 +1,4 @@
-import { env } from "@easyshell/env"
-
+import { env } from "./env"
 import { getProblemInfo } from "./problems"
 
 import { execa } from "execa"

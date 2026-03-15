@@ -16,7 +16,6 @@ services:
       context: ../..
       dockerfile: ./scripts/benchmarking/submission-manager/proxy/Dockerfile
     environment:
-      APP: submission-manager
       DRIZZLE_PROXY_URL: http://unused
       DRIZZLE_PROXY_TOKEN: unused
     volumes:

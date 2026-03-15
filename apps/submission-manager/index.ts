@@ -1,22 +1,19 @@
-import { db } from "@easyshell/db"
+import { createDb } from "@easyshell/db"
 import {
   submissionTestcaseQueue,
   submissionTestcases,
   submissions,
 } from "@easyshell/db/schema"
-import { env } from "@easyshell/env"
 import { sleep } from "@easyshell/utils"
 
+import { env } from "./env"
 import { getProblemSlugFromId } from "./problems"
 import { WORKING_DIR, runSubmissionAndGetOutput } from "./utils"
 
 import { and, eq, sql } from "drizzle-orm"
 import { mkdir } from "fs/promises"
 
-if (env.APP !== "submission-manager")
-  throw new Error(
-    "The APP environment variable must be set to 'submission-manager'",
-  )
+const db = createDb(env.DRIZZLE_PROXY_URL, env.DRIZZLE_PROXY_TOKEN)
 
 async function getQueueItem() {
   const item = db.$with("item").as(

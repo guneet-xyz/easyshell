@@ -13,7 +13,6 @@ services:
     networks:
       - easyshell
     environment:
-      APP: submission-manager
       DRIZZLE_PROXY_URL: http://db-proxy:8008
       DRIZZLE_PROXY_TOKEN: token
     depends_on:
@@ -69,11 +68,10 @@ services:
       context: .
       dockerfile: ./apps/website/Dockerfile
       args:
-        POSTHOG_KEY: ${POSTHOG_KEY}
+        NEXT_PUBLIC_POSTHOG_KEY: ${NEXT_PUBLIC_POSTHOG_KEY}
         POSTHOG_HOST: ${POSTHOG_HOST}
     container_name: easyshell-dev-website
     environment:
-      APP: website
       AUTH_TRUST_HOST: true
       DRIZZLE_PROXY_URL: http://db-proxy:8008
       DRIZZLE_PROXY_TOKEN: token

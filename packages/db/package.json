@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@auth/drizzle-adapter": "^1.7.4",
+    "axios": "^1.9.0",
     "drizzle-orm": "^0.39.1"
   },
   "devDependencies": {

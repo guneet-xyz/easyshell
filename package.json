@@ -8,7 +8,6 @@
     "packages/db",
     "packages/problems",
     "packages/utils",
-    "packages/env",
     "apps/website",
     "apps/submission-manager",
     "apps/db-proxy",

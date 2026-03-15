@@ -1,4 +1,3 @@
-import { env } from "@easyshell/env"
 import { getProblemInfo, getProblems } from "@easyshell/problems"
 import { runSubmissionAndGetOutput } from "@easyshell/submission-manager/utils"
 import { neverThrow } from "@easyshell/utils"
@@ -6,6 +5,7 @@ import { PROBLEMS_DIR, PROJECT_ROOT, WIKI_DIR } from "@easyshell/utils/build"
 
 import { SeriesList } from "../data/series"
 import { wiki_pages } from "../data/wiki"
+import { env } from "../env"
 import {
   RunParallelStuff,
   Task,

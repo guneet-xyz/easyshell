@@ -9,9 +9,11 @@
     "start": "node submission-manager.cjs"
   },
   "dependencies": {
-    "@easyshell/env": "0.1.0",
+    "@easyshell/db": "0.1.0",
     "@easyshell/utils": "0.1.0",
-    "execa": "^9.5.2"
+    "@t3-oss/env-core": "^0.12.0",
+    "execa": "^9.5.2",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@easyshell/problems": "0.1.0",

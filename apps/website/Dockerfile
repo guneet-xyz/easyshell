@@ -14,7 +14,6 @@ COPY apps/db-proxy/package.json apps/db-proxy/package.json
 COPY apps/submission-manager/package.json apps/submission-manager/package.json
 COPY apps/website/package.json apps/website/package.json
 COPY packages/db/package.json packages/db/package.json
-COPY packages/env/package.json packages/env/package.json
 COPY packages/problems/package.json packages/problems/package.json
 COPY packages/utils/package.json packages/utils/package.json
 COPY scripts/package.json scripts/package.json
@@ -25,9 +24,9 @@ COPY . .
 
 WORKDIR /src/apps/website
 
-ARG POSTHOG_KEY
+ARG NEXT_PUBLIC_POSTHOG_KEY
 ARG POSTHOG_HOST
-ENV NEXT_PUBLIC_POSTHOG_KEY=$POSTHOG_KEY
+ENV NEXT_PUBLIC_POSTHOG_KEY=$NEXT_PUBLIC_POSTHOG_KEY
 ENV POSTHOG_HOST=$POSTHOG_HOST
 ENV PROJECT_ROOT=/src
 RUN pnpm run cache
@@ -49,6 +48,5 @@ RUN adduser --system --uid 1001 nextjs
 
 USER nextjs
 
-ENV APP="website"
 ENV HOSTNAME="0.0.0.0"
 ENTRYPOINT ["node", "server.js"]

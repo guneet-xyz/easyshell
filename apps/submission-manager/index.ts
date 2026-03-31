@@ -1,22 +1,20 @@
-import { db } from "@easyshell/db"
+import { createDb } from "@easyshell/db"
 import {
   submissionTestcaseQueue,
   submissionTestcases,
   submissions,
 } from "@easyshell/db/schema"
-import { env } from "@easyshell/env"
 import { sleep } from "@easyshell/utils"
 
+import { env } from "./env"
 import { getProblemSlugFromId } from "./problems"
-import { WORKING_DIR, runSubmissionAndGetOutput } from "./utils"
+import { runSubmissionAndGetOutput } from "./utils"
 
 import { and, eq, sql } from "drizzle-orm"
-import { mkdir } from "fs/promises"
 
-if (env.APP !== "submission-manager")
-  throw new Error(
-    "The APP environment variable must be set to 'submission-manager'",
-  )
+const db = createDb(env.DRIZZLE_PROXY_URL, env.DRIZZLE_PROXY_TOKEN)
+
+const WORKING_DIR = `${env.WORKING_DIR}/submission-manager`
 
 async function getQueueItem() {
   const item = db.$with("item").as(
@@ -92,6 +90,8 @@ async function processQueueItem(
       testcaseId: item.testcaseId,
       input: item.input,
       suffix: `submission-${item.submissionId}`,
+      workingDir: WORKING_DIR,
+      dockerRegistry: env.DOCKER_REGISTRY,
     })
 
   await db.insert(submissionTestcases).values({
@@ -117,11 +117,6 @@ async function processQueueItem(
     )
 }
 
-async function init() {
-  await mkdir(`${WORKING_DIR}/inputs`, { recursive: true })
-  await mkdir(`${WORKING_DIR}/outputs`, { recursive: true })
-}
-
 async function loop() {
   while (true) {
     const item = await getQueueItem()
@@ -134,7 +129,6 @@ async function loop() {
 }
 
 async function main() {
-  await init()
   await loop()
 }
 

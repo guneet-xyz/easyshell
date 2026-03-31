@@ -1,6 +1,10 @@
 import createMDX from "@next/mdx"
 
-if (!process.env.SKIP_ENV_VALIDATION) {
+const skipEnvValidation =
+  process.env.SKIP_ENV_VALIDATION === "1" ||
+  process.env.SKIP_ENV_VALIDATION === "true"
+
+if (!skipEnvValidation) {
   if (!process.env.NEXT_PUBLIC_POSTHOG_KEY)
     throw "NEXT_PUBLIC_POSTHOG_KEY is not defined"
 

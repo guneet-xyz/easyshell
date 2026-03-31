@@ -57,12 +57,12 @@ importers:
       '@easyshell/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@easyshell/env':
-        specifier: workspace:*
-        version: link:../../packages/env
       '@easyshell/utils':
         specifier: workspace:*
         version: link:../../packages/utils
+      '@t3-oss/env-core':
+        specifier: ^0.12.0
+        version: 0.12.0(typescript@5.7.3)(zod@3.25.76)
       drizzle-orm:
         specifier: ^0.39.3
         version: 0.39.3(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(pg@8.15.6)
@@ -70,8 +70,8 @@ importers:
         specifier: ^9.5.2
         version: 9.5.2
       zod:
-        specifier: ^3.24.1
-        version: 3.24.3
+        specifier: ^3.24.2
+        version: 3.25.76
     devDependencies:
       '@easyshell/problems':
         specifier: workspace:*
@@ -94,9 +94,6 @@ importers:
       '@easyshell/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@easyshell/env':
-        specifier: workspace:*
-        version: link:../../packages/env
       '@easyshell/problems':
         specifier: workspace:*
         version: link:../../packages/problems
@@ -154,6 +151,9 @@ importers:
       '@react-email/components':
         specifier: ^0.0.36
         version: 0.0.36(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@t3-oss/env-core':
+        specifier: ^0.12.0
+        version: 0.12.0(typescript@5.7.3)(zod@3.24.3)
       axios:
         specifier: ^1.9.0
         version: 1.13.5
@@ -316,23 +316,14 @@ importers:
         specifier: ^0.31.9
         version: 0.31.9
 
-  packages/env:
-    dependencies:
-      '@t3-oss/env-core':
-        specifier: ^0.12.0
-        version: 0.12.0(typescript@5.7.3)(zod@3.24.3)
-      zod:
-        specifier: ^3.24.2
-        version: 3.24.3
-
   packages/problems:
     dependencies:
-      '@easyshell/env':
-        specifier: workspace:*
-        version: link:../env
       '@easyshell/utils':
         specifier: workspace:*
         version: link:../utils
+      '@t3-oss/env-core':
+        specifier: ^0.12.0
+        version: 0.12.0(typescript@5.7.3)(zod@3.24.3)
       zod:
         specifier: ^3.24.1
         version: 3.24.3
@@ -6742,6 +6733,11 @@ snapshots:
       typescript: 5.7.3
       zod: 3.24.3
 
+  '@t3-oss/env-core@0.12.0(typescript@5.7.3)(zod@3.25.76)':
+    optionalDependencies:
+      typescript: 5.7.3
+      zod: 3.25.76
+
   '@tailwindcss/node@4.1.4':
     dependencies:
       enhanced-resolve: 5.18.1
@@ -7355,7 +7351,7 @@ snapshots:
     dependencies:
       devtools-protocol: 0.0.1439962
       mitt: 3.0.1
-      zod: 3.24.3
+      zod: 3.25.76
 
   class-variance-authority@0.7.1:
     dependencies:

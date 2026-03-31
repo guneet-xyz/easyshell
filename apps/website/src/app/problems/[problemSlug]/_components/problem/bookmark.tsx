@@ -62,7 +62,7 @@ export function ProblemBookmark({
         <PiBookmarkSimple className={cn("text-3xl", className)} />
         <PiBookmarkSimpleDuotone
           className={cn(
-            "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl transition-opacity",
+            "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl transition-opacity",
             {
               "opacity-0": !bookmarked,
               "opacity-25": inBetween && bookmarked,

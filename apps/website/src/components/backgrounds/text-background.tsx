@@ -16,7 +16,7 @@ export function TextBackground({
         className,
       )}
     >
-      <div className="text-md absolute top-0 left-0 flex flex-col font-clash-display font-bold text-nowrap text-neutral-300 *:flex *:flex-nowrap *:gap-4 dark:text-neutral-700">
+      <div className="text-md font-clash-display absolute left-0 top-0 flex flex-col text-nowrap font-bold text-neutral-300 *:flex *:flex-nowrap *:gap-4 dark:text-neutral-700">
         <div className="animate-text-loop-left">
           {Array.from({ length: 20 }).map((_, i) => (
             <p key={i}>{text}</p>

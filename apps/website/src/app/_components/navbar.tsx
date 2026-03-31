@@ -27,7 +27,7 @@ function Logo() {
       <div className="relative flex">
         <span className="font-bold">easy</span>
         <span className="font-bold text-green-500">shell</span>
-        <div className="absolute top-1/2 right-0 translate-y-1/2 font-clash-display text-xs font-semibold text-neutral-500/70">
+        <div className="font-clash-display absolute right-0 top-1/2 translate-y-1/2 text-xs font-semibold text-neutral-500/70">
           PREVIEW
         </div>
       </div>
@@ -83,8 +83,8 @@ function Options() {
                 aria-label="Settings"
               >
                 <div className="relative size-4">
-                  <PiGear className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl transition-opacity group-hover:opacity-0" />
-                  <PiGearDuotone className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl opacity-0 transition-opacity group-hover:opacity-100" />
+                  <PiGear className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl transition-opacity group-hover:opacity-0" />
+                  <PiGearDuotone className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl opacity-0 transition-opacity group-hover:opacity-100" />
                 </div>
               </Button>
             </Link>
@@ -192,8 +192,8 @@ function NavigationMenuItem({ name, href }: { name: string; href: string }) {
 
 function NavigationMenu() {
   return (
-    <div className="mx-auto w-[90%] pt-4 pb-8">
-      <div className="mb-4 text-center font-clash-display text-xl font-medium">
+    <div className="mx-auto w-[90%] pb-8 pt-4">
+      <div className="font-clash-display mb-4 text-center text-xl font-medium">
         About You
       </div>
       <div className="flex w-full flex-col gap-2">
@@ -206,8 +206,8 @@ function NavigationMenu() {
                 aria-label="Settings"
               >
                 <div className="relative size-4">
-                  <PiGear className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl transition-opacity group-hover:opacity-0" />
-                  <PiGearDuotone className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl opacity-0 transition-opacity group-hover:opacity-100" />
+                  <PiGear className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl transition-opacity group-hover:opacity-0" />
+                  <PiGearDuotone className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl opacity-0 transition-opacity group-hover:opacity-100" />
                 </div>
                 <div>Settings</div>
               </Button>
@@ -217,7 +217,7 @@ function NavigationMenu() {
         </div>
         <User drawer />
       </div>
-      <div className="my-4 text-center font-clash-display text-xl font-medium">
+      <div className="font-clash-display my-4 text-center text-xl font-medium">
         Navigation Menu
       </div>
       <div className="flex w-full flex-col gap-2">

@@ -43,7 +43,7 @@ export default async function Page({
           <div className="font-clash-display text-5xl font-bold">
             {metadata.title}
           </div>
-          <div className="flex justify-between font-clash-display text-neutral-500">
+          <div className="font-clash-display flex justify-between text-neutral-500">
             <div>{moment(metadata.lastEdited).format("MMMM Do YYYY")}</div>
             <div>{metadata.type === "editorial" ? "EDITORIAL" : null}</div>
           </div>

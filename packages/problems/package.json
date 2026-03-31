@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "exports": {
+    ".": "./index.ts",
+    "./schema": "./schema.ts"
+  },
   "scripts": {
     "build": "APP=script tsx ./scripts/build.ts",
     "cache:submission-manager": "APP=script tsx ./scripts/cache-submission-manager.ts",
@@ -18,6 +22,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@easyshell/submission-manager": "0.1.0",
     "@types/node": "^20.17.16",
     "execa": "^9.5.2"
   }

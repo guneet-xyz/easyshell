@@ -7,7 +7,7 @@ on:
       - "packages/problems/data/problems/nuke-all-matches/**"
       - "packages/env/**"
       - "packages/utils/**"
-      - "packages/submission-manager/**"
+      - "apps/submission-manager/**"
 
 jobs:
   test:

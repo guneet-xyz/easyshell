@@ -35,7 +35,7 @@ on:
       - "packages/problems/data/problems/${problemSlug}/**"
       - "packages/env/**"
       - "packages/utils/**"
-      - "packages/submission-manager/**"
+      - "apps/submission-manager/**"
 
 jobs:
   test:
@@ -69,7 +69,7 @@ on:
       - "packages/problems/data/problems/${problemSlug}/**"
       - "packages/env/**"
       - "packages/utils/**"
-      - "packages/submission-manager/**"
+      - "apps/submission-manager/**"
 
 concurrency:
   group: push-${problemSlug}

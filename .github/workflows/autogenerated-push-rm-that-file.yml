@@ -8,7 +8,7 @@ on:
       - "packages/problems/data/problems/rm-that-file/**"
       - "packages/env/**"
       - "packages/utils/**"
-      - "packages/submission-manager/**"
+      - "apps/submission-manager/**"
 
 concurrency:
   group: push-rm-that-file

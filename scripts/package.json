@@ -11,6 +11,7 @@
     "@types/autocannon": "^7.12.7",
     "autocannon": "7.15.0",
     "chrome-launcher": "^1.2.0",
+    "execa": "^9.5.2",
     "hono": "^4.7.10",
     "lighthouse": "^12.6.0",
     "tsx": "^4.19.4"

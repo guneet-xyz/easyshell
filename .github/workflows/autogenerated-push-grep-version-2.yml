@@ -8,7 +8,7 @@ on:
       - "packages/problems/data/problems/grep-version-2/**"
       - "packages/env/**"
       - "packages/utils/**"
-      - "packages/submission-manager/**"
+      - "apps/submission-manager/**"
 
 concurrency:
   group: push-grep-version-2

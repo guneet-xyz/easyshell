@@ -11,14 +11,8 @@ import { getProblemSlugFromId } from "./problems"
 import { runSubmissionAndGetOutput } from "./utils"
 
 import { and, eq, sql } from "drizzle-orm"
-import { mkdir } from "fs/promises"
 
-const DRIZZLE_PROXY_URL = process.env.DRIZZLE_PROXY_URL
-const DRIZZLE_PROXY_TOKEN = process.env.DRIZZLE_PROXY_TOKEN
-if (!DRIZZLE_PROXY_URL || !DRIZZLE_PROXY_TOKEN)
-  throw new Error("DRIZZLE_PROXY_URL and DRIZZLE_PROXY_TOKEN are required")
-
-const db = createDb(DRIZZLE_PROXY_URL, DRIZZLE_PROXY_TOKEN)
+const db = createDb(env.DRIZZLE_PROXY_URL, env.DRIZZLE_PROXY_TOKEN)
 
 const WORKING_DIR = `${env.WORKING_DIR}/submission-manager`
 
@@ -123,11 +117,6 @@ async function processQueueItem(
     )
 }
 
-async function init() {
-  await mkdir(`${WORKING_DIR}/inputs`, { recursive: true })
-  await mkdir(`${WORKING_DIR}/outputs`, { recursive: true })
-}
-
 async function loop() {
   while (true) {
     const item = await getQueueItem()
@@ -140,7 +129,6 @@ async function loop() {
 }
 
 async function main() {
-  await init()
   await loop()
 }
 

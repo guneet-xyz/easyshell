@@ -6,9 +6,10 @@ import { RunParallelStuff, Task } from "./_utils"
 import { $ } from "execa"
 
 async function dockerPush(tag: string) {
-  if (env.DOCKER_REGISTRY === "") return
-  await $`docker tag ${tag} ${env.DOCKER_REGISTRY}/easyshell/${tag}`
-  await $`docker push ${env.DOCKER_REGISTRY}/easyshell/${tag}`
+  if (!env.DOCKER_REGISTRY) return
+  const registry = env.DOCKER_REGISTRY
+  await $`docker tag ${tag} ${registry}/easyshell/${tag}`
+  await $`docker push ${registry}/easyshell/${tag}`
 }
 
 async function pushProblemTasks(problem: string): Promise<Array<Task>> {
@@ -19,7 +20,7 @@ async function pushProblemTasks(problem: string): Promise<Array<Task>> {
     tasks.push({
       name: `push-${tag}`,
       callable: async () => {
-        if (env.DOCKER_REGISTRY === "") return "skipped"
+        if (!env.DOCKER_REGISTRY) return "skipped"
         await dockerPush(tag)
         return "done"
       },

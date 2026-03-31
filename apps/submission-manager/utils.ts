@@ -1,8 +1,7 @@
 import { getProblemInfo } from "./problems"
 
 import { execa } from "execa"
-import { mkdir, writeFile } from "fs/promises"
-import { readFile } from "fs/promises"
+import { mkdir, readFile, writeFile } from "fs/promises"
 import { z } from "zod"
 
 const OutputJsonSchema = z.object({
@@ -25,7 +24,7 @@ export async function runSubmissionAndGetOutput({
   input: string
   suffix: string
   workingDir: string
-  dockerRegistry: string
+  dockerRegistry: string | undefined
 }) {
   const problem = await getProblemInfo(problemSlug)
 
@@ -49,10 +48,11 @@ export async function runSubmissionAndGetOutput({
 
   const inputFilePathForDocker = `${workingDir}/inputs/${inputFileName}`
   const outputFilePathForDocker = `${workingDir}/outputs/${outputFileName}`
-  const pullPolicy = dockerRegistry === "" ? undefined : "--pull=always"
+  const pullPolicy = !dockerRegistry ? undefined : "--pull=always"
 
-  const imageTag =
-    dockerRegistry === "" ? image : `${dockerRegistry}/easyshell/${image}`
+  const imageTag = !dockerRegistry
+    ? image
+    : `${dockerRegistry}/easyshell/${image}`
 
   await execa("docker", [
     "run",

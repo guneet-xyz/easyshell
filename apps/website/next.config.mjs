@@ -1,9 +1,15 @@
 import createMDX from "@next/mdx"
 
-if (!process.env.NEXT_PUBLIC_POSTHOG_KEY)
-  throw "NEXT_PUBLIC_POSTHOG_KEY is not defined"
+const skipEnvValidation =
+  process.env.SKIP_ENV_VALIDATION === "1" ||
+  process.env.SKIP_ENV_VALIDATION === "true"
 
-if (!process.env.POSTHOG_HOST) throw "POSTHOG_HOST is not defined"
+if (!skipEnvValidation) {
+  if (!process.env.NEXT_PUBLIC_POSTHOG_KEY)
+    throw "NEXT_PUBLIC_POSTHOG_KEY is not defined"
+
+  if (!process.env.POSTHOG_HOST) throw "POSTHOG_HOST is not defined"
+}
 
 /** @type {import('next').NextConfig} */
 const config = {

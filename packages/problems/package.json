@@ -4,17 +4,17 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "APP=script tsx ./scripts/build.ts",
-    "cache:submission-manager": "APP=script tsx ./scripts/cache-submission-manager.ts",
-    "cache:website": "APP=script tsx ./scripts/cache-website.ts",
-    "generate-workflows": "APP=script tsx ./scripts/generate-workflows.ts",
-    "new": "APP=script tsx ./scripts/new.ts",
-    "push": "APP=script tsx ./scripts/push.ts",
-    "test": "npm run cache:submission-manager && APP=script tsx ./scripts/test.ts"
+    "build": "tsx ./scripts/build.ts",
+    "cache:submission-manager": "tsx ./scripts/cache-submission-manager.ts",
+    "cache:website": "tsx ./scripts/cache-website.ts",
+    "generate-workflows": "tsx ./scripts/generate-workflows.ts",
+    "new": "tsx ./scripts/new.ts",
+    "push": "tsx ./scripts/push.ts",
+    "test": "npm run cache:submission-manager && tsx ./scripts/test.ts"
   },
   "dependencies": {
-    "@easyshell/env": "0.1.0",
     "@easyshell/utils": "0.1.0",
+    "@t3-oss/env-core": "^0.12.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {

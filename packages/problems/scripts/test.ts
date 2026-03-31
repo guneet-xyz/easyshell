@@ -408,6 +408,8 @@ async function _runSubmissionTest(
     testcaseId: testcase,
     input,
     suffix: `test-${randomBytes(8).toString("hex")}`,
+    workingDir: `${env.WORKING_DIR}/submission-manager`,
+    dockerRegistry: env.DOCKER_REGISTRY,
   })
   if (passed !== pass) {
     if (process.env.DEBUG_STDOUT)

@@ -8,12 +8,19 @@ import { sleep } from "@easyshell/utils"
 
 import { env } from "./env"
 import { getProblemSlugFromId } from "./problems"
-import { WORKING_DIR, runSubmissionAndGetOutput } from "./utils"
+import { runSubmissionAndGetOutput } from "./utils"
 
 import { and, eq, sql } from "drizzle-orm"
 import { mkdir } from "fs/promises"
 
-const db = createDb(env.DRIZZLE_PROXY_URL, env.DRIZZLE_PROXY_TOKEN)
+const DRIZZLE_PROXY_URL = process.env.DRIZZLE_PROXY_URL
+const DRIZZLE_PROXY_TOKEN = process.env.DRIZZLE_PROXY_TOKEN
+if (!DRIZZLE_PROXY_URL || !DRIZZLE_PROXY_TOKEN)
+  throw new Error("DRIZZLE_PROXY_URL and DRIZZLE_PROXY_TOKEN are required")
+
+const db = createDb(DRIZZLE_PROXY_URL, DRIZZLE_PROXY_TOKEN)
+
+const WORKING_DIR = `${env.WORKING_DIR}/submission-manager`
 
 async function getQueueItem() {
   const item = db.$with("item").as(
@@ -89,6 +96,8 @@ async function processQueueItem(
       testcaseId: item.testcaseId,
       input: item.input,
       suffix: `submission-${item.submissionId}`,
+      workingDir: WORKING_DIR,
+      dockerRegistry: env.DOCKER_REGISTRY,
     })
 
   await db.insert(submissionTestcases).values({

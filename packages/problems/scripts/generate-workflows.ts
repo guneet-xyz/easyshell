@@ -33,9 +33,9 @@ on:
     paths:
       - "${workflowPath}"
       - "packages/problems/data/problems/${problemSlug}/**"
-      - "packages/env/**"
+      - "packages/problems/env.ts"
       - "packages/utils/**"
-      - "packages/submission-manager/**"
+      - "apps/submission-manager/utils.ts"
 
 jobs:
   test:
@@ -67,9 +67,9 @@ on:
     paths:
       - "${workflowPath}"
       - "packages/problems/data/problems/${problemSlug}/**"
-      - "packages/env/**"
+      - "packages/problems/env.ts"
       - "packages/utils/**"
-      - "packages/submission-manager/**"
+      - "apps/submission-manager/utils.ts"
 
 concurrency:
   group: push-${problemSlug}

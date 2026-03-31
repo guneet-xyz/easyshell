@@ -9,7 +9,7 @@ export const env = createEnv({
     PARALLEL_LIMIT: z
       .string()
       .optional()
-      .transform((v) => (v ? parseInt(v) : 5)),
+      .transform((v) => (v ? parseInt(v, 10) : 5)),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,

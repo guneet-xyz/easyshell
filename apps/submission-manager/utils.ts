@@ -1,20 +1,9 @@
-import { env } from "./env"
 import { getProblemInfo } from "./problems"
 
 import { execa } from "execa"
-import { mkdir } from "fs"
 import { writeFile } from "fs/promises"
 import { readFile } from "fs/promises"
 import { z } from "zod"
-
-export const WORKING_DIR = `${env.WORKING_DIR}/submission-manager`
-
-mkdir(`${WORKING_DIR}/inputs`, { recursive: true }, (err) => {
-  if (err) throw err
-})
-mkdir(`${WORKING_DIR}/outputs`, { recursive: true }, (err) => {
-  if (err) throw err
-})
 
 const OutputJsonSchema = z.object({
   stdout: z.string(),
@@ -28,11 +17,15 @@ export async function runSubmissionAndGetOutput({
   testcaseId,
   input,
   suffix,
+  workingDir,
+  dockerRegistry,
 }: {
   problemSlug: string
   testcaseId: number
   input: string
   suffix: string
+  workingDir: string
+  dockerRegistry: string
 }) {
   const problem = await getProblemInfo(problemSlug)
 
@@ -41,8 +34,8 @@ export async function runSubmissionAndGetOutput({
   const inputFileName = `${containerName}.sh`
   const outputFileName = `${containerName}.json`
 
-  const inputFilePath = `${WORKING_DIR}/inputs/${containerName}.sh`
-  const outputFilePath = `${WORKING_DIR}/outputs/${containerName}.json`
+  const inputFilePath = `${workingDir}/inputs/${containerName}.sh`
+  const outputFilePath = `${workingDir}/outputs/${containerName}.json`
 
   const image = `easyshell-${problemSlug}-${testcaseId}`
 
@@ -51,14 +44,12 @@ export async function runSubmissionAndGetOutput({
 
   const startedAt = new Date()
 
-  const inputFilePathForDocker = `${WORKING_DIR}/inputs/${inputFileName}`
-  const outputFilePathForDocker = `${WORKING_DIR}/outputs/${outputFileName}`
-  const pullPolicy = env.DOCKER_REGISTRY === "" ? undefined : "--pull=always"
+  const inputFilePathForDocker = `${workingDir}/inputs/${inputFileName}`
+  const outputFilePathForDocker = `${workingDir}/outputs/${outputFileName}`
+  const pullPolicy = dockerRegistry === "" ? undefined : "--pull=always"
 
   const imageTag =
-    env.DOCKER_REGISTRY === ""
-      ? image
-      : `${env.DOCKER_REGISTRY}/easyshell/${image}`
+    dockerRegistry === "" ? image : `${dockerRegistry}/easyshell/${image}`
 
   await execa("docker", [
     "run",

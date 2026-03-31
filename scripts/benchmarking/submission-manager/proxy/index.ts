@@ -4,6 +4,8 @@ import { serve } from "@hono/node-server"
 import { Hono } from "hono"
 
 const PORT = 8008
+const WORKING_DIR = `${process.env.WORKING_DIR ?? "/tmp/easyshell"}/submission-manager`
+const DOCKER_REGISTRY = process.env.DOCKER_REGISTRY ?? ""
 
 const app = new Hono()
 
@@ -16,6 +18,8 @@ async function main() {
       testcaseId,
       input,
       suffix,
+      workingDir: WORKING_DIR,
+      dockerRegistry: DOCKER_REGISTRY,
     })
 
     return c.json({

@@ -44,6 +44,11 @@ services:
       - 5432:5432
     networks:
       - easyshell
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 1s
+      timeout: 500ms
+      retries: 5
   db-proxy:
     build:
       context: .
@@ -63,7 +68,7 @@ services:
       retries: 3
     depends_on:
       db:
-        condition: service_started
+        condition: service_healthy
   website:
     build:
       context: .

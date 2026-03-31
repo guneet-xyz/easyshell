@@ -1,15 +1,18 @@
 FROM node:22-alpine AS build
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
 
 WORKDIR /src
 
 COPY . .
 
-RUN npm ci
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 
 WORKDIR /src/scripts/benchmarking/submission-manager/proxy
 
 ENV PROJECT_ROOT=/src
-RUN npx esbuild benchmarking/submission-manager/proxy/index.ts --bundle --platform=node --outfile=proxy.cjs
+RUN pnpm exec esbuild benchmarking/submission-manager/proxy/index.ts --bundle --platform=node --outfile=proxy.cjs
 
 FROM node:22-alpine
 

@@ -14,15 +14,15 @@
     "generate-workflows": "APP=script tsx ./scripts/generate-workflows.ts",
     "new": "APP=script tsx ./scripts/new.ts",
     "push": "APP=script tsx ./scripts/push.ts",
-    "test": "npm run cache:submission-manager && APP=script tsx ./scripts/test.ts"
+    "test": "pnpm run cache:submission-manager && APP=script tsx ./scripts/test.ts"
   },
   "dependencies": {
-    "@easyshell/env": "0.1.0",
-    "@easyshell/utils": "0.1.0",
+    "@easyshell/env": "workspace:*",
+    "@easyshell/utils": "workspace:*",
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@easyshell/submission-manager": "0.1.0",
+    "@easyshell/submission-manager": "workspace:*",
     "@types/node": "^20.17.16",
     "execa": "^9.5.2"
   }

@@ -14,12 +14,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v5
       - uses: actions/setup-node@v4
         with:
           node-version: 22.14.0
-      - run: npm ci
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
         name: Install dependencies
-      - run: npm run build grep-version-2
+      - run: pnpm run build grep-version-2
         working-directory: ./packages/problems
-      - run: npm run test grep-version-2
+      - run: pnpm run test grep-version-2
         working-directory: ./packages/problems

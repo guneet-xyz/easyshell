@@ -29,16 +29,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v5
       - uses: actions/setup-node@v4
         with:
           node-version: 22.14.0
-      - run: npm ci
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
         name: Install dependencies
-      - run: npm run cache:website
+      - run: pnpm run cache:website
         working-directory: ./packages/problems
-      - run: npm run cache:submission-manager
+      - run: pnpm run cache:submission-manager
         working-directory: ./packages/problems
-      - run: npm run lint:tsc
+      - run: pnpm run lint:tsc
         name: Check TypeScript types
-      - run: npm run lint:next
+      - run: pnpm run lint:next
         name: Lint Next.js files

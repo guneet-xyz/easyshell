@@ -1,0 +1,12 @@
+packages:
+  - "packages/*"
+  - "apps/website"
+  - "apps/submission-manager"
+  - "apps/db-proxy"
+  - "scripts"
+
+onlyBuiltDependencies:
+  - core-js
+  - esbuild
+  - protobufjs
+  - sharp

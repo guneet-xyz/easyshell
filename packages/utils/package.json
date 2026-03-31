@@ -11,7 +11,7 @@
     "execa": "^9.5.2"
   },
   "devDependencies": {
-    "@easyshell/problems": "0.1.0",
+    "@easyshell/problems": "workspace:*",
     "@types/node": "^20.17.16"
   }
 }

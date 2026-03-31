@@ -6,7 +6,7 @@ This package contains problems featured on the website, as well scripts for buil
 
 ## Scripts
 
-Run the scripts using `npm run <script-name>`.
+Run the scripts using `pnpm run <script-name>`.
 
 - `build` - Build the test case images for the problems
 - `test` - Test the problems. Pass the `SKIP_SUBMISSION_TESTS` environment variable to skip the submission tests (useful for checking only the config).

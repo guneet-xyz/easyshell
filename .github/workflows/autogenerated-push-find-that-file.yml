@@ -31,18 +31,20 @@ jobs:
           registry: ${{ vars.DOCKER_REGISTRY }}
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v5
       - uses: actions/setup-node@v4
         with:
           node-version: 22.14.0
-      - uses: actions/checkout@v4
-      - run: npm ci
-      - run: npm run build find-that-file
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build find-that-file
         name: build problem
         working-directory: ./packages/problems
-      - run: npm run test find-that-file
+      - run: pnpm run test find-that-file
         name: test problem
         working-directory: ./packages/problems
-      - run: npm run push find-that-file
+      - run: pnpm run push find-that-file
         name: push problem
         working-directory: ./packages/problems
         env:

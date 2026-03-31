@@ -42,14 +42,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v5
       - uses: actions/setup-node@v4
         with:
           node-version: 22.14.0
-      - run: npm ci
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
         name: Install dependencies
-      - run: npm run build ${problemSlug}
+      - run: pnpm run build ${problemSlug}
         working-directory: ./packages/problems
-      - run: npm run test ${problemSlug}
+      - run: pnpm run test ${problemSlug}
         working-directory: ./packages/problems
 `
 }
@@ -92,18 +94,20 @@ jobs:
           registry: \${{ vars.DOCKER_REGISTRY }}
           username: \${{ secrets.DOCKER_USERNAME }}
           password: \${{ secrets.DOCKER_PASSWORD }}
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v5
       - uses: actions/setup-node@v4
         with:
           node-version: 22.14.0
-      - uses: actions/checkout@v4
-      - run: npm ci
-      - run: npm run build ${problemSlug}
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build ${problemSlug}
         name: build problem
         working-directory: ./packages/problems
-      - run: npm run test ${problemSlug}
+      - run: pnpm run test ${problemSlug}
         name: test problem
         working-directory: ./packages/problems
-      - run: npm run push ${problemSlug}
+      - run: pnpm run push ${problemSlug}
         name: push problem
         working-directory: ./packages/problems
         env:

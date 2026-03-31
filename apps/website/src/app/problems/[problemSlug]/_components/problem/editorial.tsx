@@ -10,7 +10,7 @@ export async function ProblemEditorial({ slug }: { slug: string }) {
   )
 
   return (
-    <div className="mt-2 text-center font-clash-display text-neutral-500">
+    <div className="font-clash-display mt-2 text-center text-neutral-500">
       <span className={cn({ "opacity-0": !editorial })}>{`Need Help? `}</span>
       {editorial ? (
         <Link href={`/wiki/${editorial.slug}`} prefetch={true}>

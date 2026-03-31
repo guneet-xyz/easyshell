@@ -119,7 +119,7 @@ export function ProblemList({
                 setFilter((prev) => ({ ...prev, search: e.target.value }))
               }}
             />
-            <PiMagnifyingGlass className="absolute top-1/2 right-2 -translate-y-1/2 text-neutral-400" />
+            <PiMagnifyingGlass className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400" />
           </div>
           <BadgeCheckbox
             value={options.showTags}
@@ -269,10 +269,10 @@ export function ProblemList({
     <>
       <div className="flex items-center justify-between">
         <div className="flex flex-col">
-          <div className="mt-4 font-clash-display text-2xl font-semibold">
+          <div className="font-clash-display mt-4 text-2xl font-semibold">
             Problems
           </div>
-          <div className="mb-4 font-clash-display text-sm text-neutral-500 md:text-base">
+          <div className="font-clash-display mb-4 text-sm text-neutral-500 md:text-base">
             Browse all problems and filter by tags.
           </div>
         </div>
@@ -328,7 +328,7 @@ export function ProblemListSkeleton() {
                 className="h-8 text-neutral-500 placeholder:text-neutral-400"
                 placeholder="Search"
               />
-              <PiMagnifyingGlass className="absolute top-1/2 right-2 -translate-y-1/2 text-neutral-400" />
+              <PiMagnifyingGlass className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400" />
             </div>
           </div>
         </Card>
@@ -351,7 +351,7 @@ export function ProblemListSkeleton() {
 function ProblemSkeleton() {
   return (
     <div className="flex cursor-pointer divide-x transition-colors *:p-2 hover:bg-gray-100 dark:bg-neutral-950">
-      <div className="flex w-20 animate-pulse items-center justify-center font-geist-mono">
+      <div className="font-geist-mono flex w-20 animate-pulse items-center justify-center">
         <div className="h-6 w-8 animate-pulse bg-neutral-100 dark:bg-neutral-800"></div>
       </div>
       <div className="flex grow flex-col">

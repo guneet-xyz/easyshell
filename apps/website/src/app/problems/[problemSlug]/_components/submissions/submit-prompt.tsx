@@ -105,7 +105,7 @@ export function SubmitPrompt({
         {["windows", "linux", "mac"].includes(os) ? (
           <div
             className={cn(
-              "absolute top-1/2 right-4 flex -translate-y-1/2 items-center gap-1 text-sm text-neutral-400",
+              "absolute right-4 top-1/2 flex -translate-y-1/2 items-center gap-1 text-sm text-neutral-400",
               {
                 hidden: multiline,
               },

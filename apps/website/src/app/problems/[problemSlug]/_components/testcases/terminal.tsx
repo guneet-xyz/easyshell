@@ -118,14 +118,14 @@ function LoadingTestcaseTerminal({
   restarting: boolean
 }) {
   return (
-    <div className="flex flex-col rounded-md border-4 border-gray-400 font-geist-mono">
-      <div className="relative flex h-80 flex-col overflow-scroll bg-black px-2 py-1 whitespace-pre-line">
-        <p className="absolute top-0 left-1/2 -translate-x-1/2 rounded-b-md bg-neutral-800 px-4 text-center font-semibold text-white opacity-100 transition-opacity select-none hover:opacity-0">
+    <div className="font-geist-mono flex flex-col rounded-md border-4 border-gray-400">
+      <div className="relative flex h-80 flex-col overflow-scroll whitespace-pre-line bg-black px-2 py-1">
+        <p className="absolute left-1/2 top-0 -translate-x-1/2 select-none rounded-b-md bg-neutral-800 px-4 text-center font-semibold text-white opacity-100 transition-opacity hover:opacity-0">
           {problemSlug}-{testcase}
         </p>
         <div
           className={cn(
-            "absolute top-1/2 left-1/2 z-20 flex h-full w-full -translate-x-1/2 -translate-y-1/2 items-center justify-center bg-black",
+            "absolute left-1/2 top-1/2 z-20 flex h-full w-full -translate-x-1/2 -translate-y-1/2 items-center justify-center bg-black",
           )}
         >
           {restarting ? (
@@ -138,10 +138,10 @@ function LoadingTestcaseTerminal({
       <div className="flex">
         <input
           className={cn(
-            "grow bg-neutral-800 px-2 py-1 text-white outline-hidden",
+            "outline-hidden grow bg-neutral-800 px-2 py-1 text-white",
           )}
         />
-        <button className="w-20 bg-green-800 px-2 text-neutral-200 select-none hover:bg-green-700"></button>
+        <button className="w-20 select-none bg-green-800 px-2 text-neutral-200 hover:bg-green-700"></button>
       </div>
     </div>
   )
@@ -277,9 +277,9 @@ function LoadedTestcaseTerminal({
 
   return (
     <div className="flex h-full flex-col gap-4">
-      <div className="relative flex grow flex-col rounded-md border-4 border-neutral-400 bg-black font-geist-mono dark:border-neutral-800">
+      <div className="font-geist-mono relative flex grow flex-col rounded-md border-4 border-neutral-400 bg-black dark:border-neutral-800">
         <div
-          className="flex grow flex-col overflow-scroll bg-black px-2 py-1 whitespace-pre-line"
+          className="flex grow flex-col overflow-scroll whitespace-pre-line bg-black px-2 py-1"
           ref={terminalRef}
           style={{
             fontSize: `${options.fontSize}rem`,
@@ -324,7 +324,7 @@ function LoadedTestcaseTerminal({
               }}
               disabled={running}
               className={cn(
-                "grow bg-neutral-800 px-2 py-1 text-white outline-hidden dark:bg-neutral-900",
+                "outline-hidden grow bg-neutral-800 px-2 py-1 text-white dark:bg-neutral-900",
                 {
                   "text-neutral-400": running,
                 },
@@ -346,7 +346,7 @@ function LoadedTestcaseTerminal({
           <button
             onClick={handleSubmit}
             disabled={running}
-            className="w-20 cursor-pointer bg-white px-2 font-clash-display text-black transition-colors select-none hover:bg-neutral-200"
+            className="font-clash-display w-20 cursor-pointer select-none bg-white px-2 text-black transition-colors hover:bg-neutral-200"
           >
             {running ? (
               <ImSpinner3 className="m-auto animate-spin" />
@@ -369,7 +369,7 @@ function LoadedTestcaseTerminal({
           <div className="flex flex-col items-end">
             <div
               className={cn(
-                "flex items-center gap-2 rounded-full border px-2 shadow-xs",
+                "shadow-xs flex items-center gap-2 rounded-full border px-2",
                 {
                   "border-green-200 bg-green-100 shadow-green-200 dark:border-green-800 dark:bg-green-900/60 dark:shadow-green-800/60":
                     onlineStatus.isOnline,

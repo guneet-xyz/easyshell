@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "exports": {
+    ".": "./index.ts",
+    "./schema": "./schema.ts"
+  },
   "scripts": {
     "build": "tsx ./scripts/build.ts",
     "cache:submission-manager": "tsx ./scripts/cache-submission-manager.ts",
@@ -10,14 +14,15 @@
     "generate-workflows": "tsx ./scripts/generate-workflows.ts",
     "new": "tsx ./scripts/new.ts",
     "push": "tsx ./scripts/push.ts",
-    "test": "npm run cache:submission-manager && tsx ./scripts/test.ts"
+    "test": "pnpm run cache:submission-manager && tsx ./scripts/test.ts"
   },
   "dependencies": {
-    "@easyshell/utils": "0.1.0",
+    "@easyshell/utils": "workspace:*",
     "@t3-oss/env-core": "^0.12.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@easyshell/submission-manager": "workspace:*",
     "@types/node": "^20.17.16",
     "execa": "^9.5.2"
   }

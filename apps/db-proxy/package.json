@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "npx esbuild index.ts --bundle --platform=node --outfile=db-proxy.cjs",
+    "build": "pnpm exec esbuild index.ts --bundle --platform=node --outfile=db-proxy.cjs",
     "start": "node db-proxy.cjs"
   },
   "dependencies": {
@@ -13,6 +13,8 @@
     "pg": "^8.15.6"
   },
   "devDependencies": {
-    "@types/express": "^5.0.1"
+    "@types/express": "^5.0.1",
+    "@types/pg": "^8.15.6",
+    "esbuild": "^0.27.3"
   }
 }

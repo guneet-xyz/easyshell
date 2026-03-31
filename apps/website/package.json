@@ -5,15 +5,15 @@
   "type": "module",
   "scripts": {
     "build": "SKIP_ENV_VALIDATION=1 next build",
-    "cache": "cd ../../packages/problems && npm run cache:website",
+    "cache": "pnpm --filter @easyshell/problems run cache:website",
     "dev": "next dev",
     "lint": "eslint",
     "start": "next start"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.7.4",
-    "@easyshell/db": "0.1.0",
-    "@easyshell/problems": "0.1.0",
+    "@easyshell/db": "workspace:*",
+    "@easyshell/problems": "workspace:*",
     "@mdx-js/loader": "^3.1.0",
     "@mdx-js/react": "^3.1.0",
     "@next/mdx": "16.1.6",

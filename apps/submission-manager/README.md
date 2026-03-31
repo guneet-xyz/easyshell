@@ -17,7 +17,7 @@ Running the submission-manager requires the following environment variables. See
 
 ## Scripts
 
-Run scripts using `npm run <script>`.
+Run scripts using `pnpm run <script>`.
 
 - [`problems:cache`](#problemscache)
 - [`build`](#build)

@@ -31,18 +31,20 @@ jobs:
           registry: ${{ vars.DOCKER_REGISTRY }}
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v5
       - uses: actions/setup-node@v4
         with:
           node-version: 22.14.0
-      - uses: actions/checkout@v4
-      - run: npm ci
-      - run: npm run build csv-to-json
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build csv-to-json
         name: build problem
         working-directory: ./packages/problems
-      - run: npm run test csv-to-json
+      - run: pnpm run test csv-to-json
         name: test problem
         working-directory: ./packages/problems
-      - run: npm run push csv-to-json
+      - run: pnpm run push csv-to-json
         name: push problem
         working-directory: ./packages/problems
         env:

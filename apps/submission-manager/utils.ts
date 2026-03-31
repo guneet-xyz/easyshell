@@ -1,7 +1,7 @@
 import { getProblemInfo } from "./problems"
 
 import { execa } from "execa"
-import { writeFile } from "fs/promises"
+import { mkdir, writeFile } from "fs/promises"
 import { readFile } from "fs/promises"
 import { z } from "zod"
 
@@ -28,6 +28,9 @@ export async function runSubmissionAndGetOutput({
   dockerRegistry: string
 }) {
   const problem = await getProblemInfo(problemSlug)
+
+  await mkdir(`${workingDir}/inputs`, { recursive: true })
+  await mkdir(`${workingDir}/outputs`, { recursive: true })
 
   const containerName = `easyshell-${problemSlug}-${testcaseId}-${suffix}`
 

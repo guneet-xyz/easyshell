@@ -24,7 +24,7 @@ export function createDb(proxyUrl: string, proxyToken: string) {
         return { rows: rows.data }
       } catch (e) {
         console.error("Error during db query", e)
-        return { rows: [] }
+        throw e
       }
     },
     {

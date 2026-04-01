@@ -6,6 +6,7 @@
   "main": "scripts/index.ts",
   "scripts": {
     "cache": "pnpm --filter @easyshell/problems run cache:website && pnpm --filter @easyshell/problems run cache:submission-manager",
+    "dev:up": "infisical run --env=dev -- docker compose up -d",
     "format:check": "pnpm exec prettier --check . && gofmt -l -s .",
     "format:write": "pnpm exec prettier --write . && gofmt -w -s .",
     "lint": "pnpm run lint:tsc && pnpm run lint:next",

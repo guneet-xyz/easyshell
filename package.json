@@ -10,7 +10,8 @@
     "format:write": "pnpm exec prettier --write . && gofmt -w -s .",
     "lint": "pnpm run lint:tsc && pnpm run lint:next",
     "lint:next": "pnpm --filter @easyshell/website run lint",
-    "lint:tsc": "pnpm exec tsc --noEmit"
+    "lint:tsc": "pnpm exec tsc --noEmit",
+    "dev:up": "infisical run --env=dev -- docker compose up -d"
   },
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",

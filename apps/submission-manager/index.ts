@@ -61,7 +61,8 @@ async function getQueueItem() {
       .limit(1)
   )[0]?.input
 
-  if (!input) throw new Error("Submission not found")
+  if (input === undefined || input === null)
+    throw new Error("Submission not found")
 
   return {
     ...updated_item,

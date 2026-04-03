@@ -3,7 +3,6 @@ packages:
   - "apps/website"
   - "apps/submission-manager"
   - "apps/db-proxy"
-  - "scripts"
 
 onlyBuiltDependencies:
   - core-js

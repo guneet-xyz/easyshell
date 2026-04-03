@@ -6,20 +6,11 @@ RUN apk add --no-cache bash jq
 
 WORKDIR /src
 
-COPY pnpm-workspace.yaml .
-COPY pnpm-lock.yaml .
-COPY package.json .
-
-COPY apps/submission-manager/package.json apps/submission-manager/package.json
-COPY apps/website/package.json apps/website/package.json
-COPY packages/db/package.json packages/db/package.json
-COPY packages/problems/package.json packages/problems/package.json
-COPY packages/utils/package.json packages/utils/package.json
-COPY scripts/package.json scripts/package.json
-
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+COPY pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm fetch
 
 COPY . .
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --offline --frozen-lockfile
 
 WORKDIR /src/apps/website
 

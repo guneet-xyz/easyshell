@@ -1,11 +1,11 @@
 "use client"
 
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { Suspense, useEffect } from "react"
+
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 import { TestcaseTerminal } from "./terminal"
-
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { Suspense, useEffect } from "react"
 
 export function TestcaseTabs({
   problemId,

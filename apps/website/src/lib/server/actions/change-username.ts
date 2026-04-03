@@ -1,11 +1,11 @@
 "use server"
 
+import { eq } from "drizzle-orm"
+
 import { lower, users } from "@easyshell/db/schema"
 
 import { db } from "@/db"
 import { auth, isUsernameValid } from "@/lib/server/auth"
-
-import { eq } from "drizzle-orm"
 
 export async function changeUsername(username: string): Promise<{
   success: boolean

@@ -1,10 +1,10 @@
 "use client"
 
+import { MDXRemote, type MDXRemoteSerializeResult } from "next-mdx-remote"
+
 import { ProblemLink } from "@/components/problem-link/client"
 import { WikiLink } from "@/components/wiki-link/client"
 import { customComponents } from "@/mdx-components"
-
-import { MDXRemote, type MDXRemoteSerializeResult } from "next-mdx-remote"
 
 const wikiComponents: typeof customComponents = {
   ...customComponents,

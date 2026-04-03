@@ -1,5 +1,12 @@
 "use client"
 
+import { usePathname, useRouter } from "next/navigation"
+import { usePostHog } from "posthog-js/react"
+import { useState } from "react"
+import { BsGearWideConnected } from "react-icons/bs"
+import { PiCaretLeftFill } from "react-icons/pi"
+import { toast } from "sonner"
+
 import {
   PromptSettings,
   usePromptSettingsContext,
@@ -19,13 +26,6 @@ import { EasyTooltip } from "@/components/ui/tooltip"
 import { clientOS } from "@/lib/client"
 import { newSubmission } from "@/lib/server/actions/new-submission"
 import { cn } from "@/lib/utils"
-
-import { usePathname, useRouter } from "next/navigation"
-import { usePostHog } from "posthog-js/react"
-import { useState } from "react"
-import { BsGearWideConnected } from "react-icons/bs"
-import { PiCaretLeftFill } from "react-icons/pi"
-import { toast } from "sonner"
 
 export function SubmitPrompt({
   problemId,
@@ -105,7 +105,7 @@ export function SubmitPrompt({
         {["windows", "linux", "mac"].includes(os) ? (
           <div
             className={cn(
-              "absolute right-4 top-1/2 flex -translate-y-1/2 items-center gap-1 text-sm text-neutral-400",
+              "absolute top-1/2 right-4 flex -translate-y-1/2 items-center gap-1 text-sm text-neutral-400",
               {
                 hidden: multiline,
               },

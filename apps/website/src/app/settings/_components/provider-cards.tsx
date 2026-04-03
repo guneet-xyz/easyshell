@@ -1,7 +1,5 @@
 "use client"
 
-import { cn } from "@/lib/utils"
-
 import { signIn } from "next-auth/react"
 import {
   PiDiscordLogo,
@@ -12,6 +10,8 @@ import {
   PiGoogleLogoDuotone,
 } from "react-icons/pi"
 import { toast } from "sonner"
+
+import { cn } from "@/lib/utils"
 
 type ProviderType = "discord" | "github" | "google"
 
@@ -44,7 +44,7 @@ export function ProviderCard({ provider, connected }: ProviderCardProps) {
 
   return (
     <div
-      className="flex cursor-pointer items-center gap-2 rounded-full border bg-neutral-50 py-2 pl-4 pr-6 shadow transition-colors hover:bg-neutral-100 dark:bg-neutral-900 dark:hover:bg-neutral-800"
+      className="flex cursor-pointer items-center gap-2 rounded-full border bg-neutral-50 py-2 pr-6 pl-4 shadow transition-colors hover:bg-neutral-100 dark:bg-neutral-900 dark:hover:bg-neutral-800"
       onClick={async () => {
         if (connected) {
           toast.success("Already Connected", {

@@ -1,8 +1,8 @@
+import { redirect } from "next/navigation"
+
 import { auth } from "@/lib/server/auth"
 
 import { LogoutForm } from "./_components/form"
-
-import { redirect } from "next/navigation"
 
 export default async function Page() {
   const loggedOut = (await auth())?.user === undefined

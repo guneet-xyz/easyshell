@@ -1,12 +1,12 @@
 "use server"
 
+import { encode } from "base64-arraybuffer"
+import { count, eq } from "drizzle-orm"
+
 import { images, users } from "@easyshell/db/schema"
 
 import { db } from "@/db"
 import { auth } from "@/lib/server/auth"
-
-import { encode } from "base64-arraybuffer"
-import { count, eq } from "drizzle-orm"
 
 export async function setUserImage(file: File): Promise<{
   success: boolean

@@ -1,7 +1,7 @@
 // ================================================================
 // Utility functions that can be used on the client and server side
 // ================================================================
-import { type ClassValue, clsx } from "clsx"
+import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {

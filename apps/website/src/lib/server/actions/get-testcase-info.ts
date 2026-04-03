@@ -1,13 +1,13 @@
 "use server"
 
-import { submissionTestcases, submissions } from "@easyshell/db/schema"
+import { and, eq } from "drizzle-orm"
+
+import { submissions, submissionTestcases } from "@easyshell/db/schema"
 
 import { db } from "@/db"
 import { getProblemInfo, getProblemSlugFromId } from "@/lib/server/problems"
 
 import { getSubmissionInfo } from "./get-submission-info"
-
-import { and, eq } from "drizzle-orm"
 
 export async function getTestcaseInfo({
   submissionId,

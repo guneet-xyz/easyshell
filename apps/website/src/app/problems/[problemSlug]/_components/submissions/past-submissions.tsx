@@ -1,8 +1,5 @@
 "use client"
 
-import type { getUserSubmissions } from "@/lib/server/queries"
-import { cn, sleep } from "@/lib/utils"
-
 import moment from "moment"
 import Image from "next/image"
 import Link from "next/link"
@@ -10,6 +7,9 @@ import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 import { FaCheck, FaXmark } from "react-icons/fa6"
 import { ImSpinner3 } from "react-icons/im"
+
+import type { getUserSubmissions } from "@/lib/server/queries"
+import { cn, sleep } from "@/lib/utils"
 
 export function PastSubmissions({
   problemSlug,
@@ -47,7 +47,7 @@ export function PastSubmissions({
             height={50}
             alt="arrow-pointing-to-prompt"
             unoptimized
-            className="absolute left-0 top-8 z-[-1] -translate-x-[30%] -translate-y-full scale-75 lg:-translate-x-1/2 lg:scale-100"
+            className="absolute top-8 left-0 z-[-1] -translate-x-[30%] -translate-y-full scale-75 lg:-translate-x-1/2 lg:scale-100"
           />
         </div>
       </div>

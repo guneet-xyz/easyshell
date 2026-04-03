@@ -1,5 +1,7 @@
 "use server"
 
+import { and, eq, isNull } from "drizzle-orm"
+
 import { terminalSessions } from "@easyshell/db/schema"
 
 import { db } from "@/db"
@@ -11,8 +13,6 @@ import {
 } from "@/lib/server/session-manager"
 
 import type { getTerminalSession } from "./get-terminal-session"
-
-import { and, eq, isNull } from "drizzle-orm"
 
 export async function submitTerminalSessionCommand({
   sessionId,

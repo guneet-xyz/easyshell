@@ -1,17 +1,17 @@
 "use client"
 
+import moment from "moment"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useEffect, useState } from "react"
+import { PiCopySimple, PiCopySimpleDuotone } from "react-icons/pi"
+import { toast } from "sonner"
+
 import { Back } from "@/components/back"
 import { getSubmissionInfo } from "@/lib/server/actions/get-submission-info"
 import { getTestcaseInfo } from "@/lib/server/actions/get-testcase-info"
 import { cn, sleep } from "@/lib/utils"
 
 import { FsDiff } from "./fs-diff"
-
-import moment from "moment"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useEffect, useState } from "react"
-import { PiCopySimple, PiCopySimpleDuotone } from "react-icons/pi"
-import { toast } from "sonner"
 
 export function Submission({ submissionId }: { submissionId: number }) {
   const pathname = usePathname()
@@ -84,11 +84,11 @@ export function Submission({ submissionId }: { submissionId: number }) {
                 toast.success("Copied to clipboard")
               }}
             >
-              <PiCopySimple className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-100 transition-opacity group-hover:opacity-0" />
-              <PiCopySimpleDuotone className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 transition-opacity group-hover:opacity-100" />
+              <PiCopySimple className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-100 transition-opacity group-hover:opacity-0" />
+              <PiCopySimpleDuotone className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 transition-opacity group-hover:opacity-100" />
             </div>
           </div>
-          <div className="whitespace-pre-wrap rounded-md border bg-neutral-200 px-2 py-1 text-center font-mono text-sm dark:bg-neutral-800">
+          <div className="rounded-md border bg-neutral-200 px-2 py-1 text-center font-mono text-sm whitespace-pre-wrap dark:bg-neutral-800">
             {info.submission.input}
           </div>
         </div>
@@ -193,13 +193,13 @@ function Diff({ expected, actual }: { expected: string; actual: string }) {
     <div className="flex gap-4">
       <div className="w-full">
         <div className="font-medium">Expected</div>
-        <div className="font-geist-mono mt-2 overflow-x-auto whitespace-pre rounded-md p-2 text-sm dark:bg-neutral-800">
+        <div className="mt-2 overflow-x-auto rounded-md p-2 font-geist-mono text-sm whitespace-pre dark:bg-neutral-800">
           {expected}
         </div>
       </div>
       <div className="w-full">
         <div className="font-medium">Actual</div>
-        <div className="font-geist-mono mt-2 overflow-x-auto whitespace-pre rounded-md p-2 text-sm dark:bg-neutral-800">
+        <div className="mt-2 overflow-x-auto rounded-md p-2 font-geist-mono text-sm whitespace-pre dark:bg-neutral-800">
           {actual}
         </div>
       </div>
@@ -221,8 +221,8 @@ function SubmissionSkeleton() {
           <div className="flex items-end justify-between">
             <div className="text-xl font-semibold">Input</div>
             <div className="group relative h-4 w-4 cursor-pointer">
-              <PiCopySimple className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-100 transition-opacity group-hover:opacity-0" />
-              <PiCopySimpleDuotone className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 transition-opacity group-hover:opacity-100" />
+              <PiCopySimple className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-100 transition-opacity group-hover:opacity-0" />
+              <PiCopySimpleDuotone className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 transition-opacity group-hover:opacity-100" />
             </div>
           </div>
           <div className="h-8 animate-pulse rounded-md border bg-neutral-200 dark:bg-neutral-800" />

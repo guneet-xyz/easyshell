@@ -1,3 +1,6 @@
+import Link from "next/link"
+import { PiBookmarkSimpleDuotone } from "react-icons/pi"
+
 import { ProblemBookmark } from "@/app/problems/[problemSlug]/_components/problem/bookmark"
 import { DesktopContainer } from "@/components/media"
 import { AlternativeProblemStatus } from "@/components/problem-status"
@@ -15,9 +18,6 @@ import {
 } from "@/lib/server/problems"
 import { min } from "@/lib/utils"
 
-import Link from "next/link"
-import { PiBookmarkSimpleDuotone } from "react-icons/pi"
-
 export async function RecentActivity({
   bookmarks,
   attempted,
@@ -34,7 +34,7 @@ export async function RecentActivity({
           <div className="font-clash-display text-2xl font-semibold">
             Recent Activity
           </div>
-          <div className="font-clash-display mb-4 text-sm text-neutral-500 md:text-base">
+          <div className="mb-4 font-clash-display text-sm text-neutral-500 md:text-base">
             Pick up where you left off
           </div>
           <div className="flex h-40 w-60 items-center justify-center rounded-2xl border border-dashed border-neutral-400 p-4 text-sm text-neutral-500 dark:border-neutral-600">
@@ -58,7 +58,7 @@ export async function RecentActivity({
       <div className="font-clash-display text-2xl font-semibold">
         Recent Activity
       </div>
-      <div className="font-clash-display mb-4 text-sm text-neutral-500 md:text-base">
+      <div className="mb-4 font-clash-display text-sm text-neutral-500 md:text-base">
         Pick up where you left off
       </div>
       <div className="flex flex-col gap-2">
@@ -146,10 +146,10 @@ async function BookmarkedProblem({ id }: { id: number }) {
       <div className="px-1">
         <PiBookmarkSimpleDuotone className="size-6 dark:text-neutral-500" />
       </div>
-      <div className="overflow-hidden overflow-ellipsis whitespace-nowrap text-sm dark:text-neutral-200">
+      <div className="overflow-hidden text-sm overflow-ellipsis whitespace-nowrap dark:text-neutral-200">
         {title}
       </div>
-      <div className="font-clash-display ml-auto pr-2 text-sm font-medium text-neutral-300 dark:text-neutral-700">
+      <div className="ml-auto pr-2 font-clash-display text-sm font-medium text-neutral-300 dark:text-neutral-700">
         #{id}
       </div>
     </Link>
@@ -172,10 +172,10 @@ async function BookmarkedProblemExpanded({ id }: { id: number }) {
         href={`/problems/${slug}`}
         className="flex h-full grow items-center px-2 py-1 hover:bg-neutral-100 dark:hover:bg-neutral-800/50"
       >
-        <div className="h-full overflow-hidden overflow-ellipsis whitespace-nowrap text-sm dark:text-neutral-200">
+        <div className="h-full overflow-hidden text-sm overflow-ellipsis whitespace-nowrap dark:text-neutral-200">
           {title}
         </div>
-        <div className="font-clash-display ml-auto h-full text-sm font-medium text-neutral-300 dark:text-neutral-700">
+        <div className="ml-auto h-full font-clash-display text-sm font-medium text-neutral-300 dark:text-neutral-700">
           #{id}
         </div>
       </Link>
@@ -196,10 +196,10 @@ async function AttemptedProblem({ slug }: { slug: string }) {
           className="size-6 dark:text-neutral-500"
         />
       </div>
-      <div className="overflow-hidden overflow-ellipsis whitespace-nowrap text-sm dark:text-neutral-200">
+      <div className="overflow-hidden text-sm overflow-ellipsis whitespace-nowrap dark:text-neutral-200">
         {title}
       </div>
-      <div className="font-clash-display ml-auto pr-2 text-sm font-medium text-neutral-300 dark:text-neutral-700">
+      <div className="ml-auto pr-2 font-clash-display text-sm font-medium text-neutral-300 dark:text-neutral-700">
         #{id}
       </div>
     </Link>
@@ -222,10 +222,10 @@ async function AttemptedProblemExpanded({ slug }: { slug: string }) {
         href={`/problems/${slug}`}
         className="flex h-full grow items-center px-2 py-1 hover:bg-neutral-100 dark:hover:bg-neutral-800/50"
       >
-        <div className="h-full overflow-hidden overflow-ellipsis whitespace-nowrap text-sm dark:text-neutral-200">
+        <div className="h-full overflow-hidden text-sm overflow-ellipsis whitespace-nowrap dark:text-neutral-200">
           {title}
         </div>
-        <div className="font-clash-display ml-auto h-full text-sm font-medium text-neutral-300 dark:text-neutral-700">
+        <div className="ml-auto h-full font-clash-display text-sm font-medium text-neutral-300 dark:text-neutral-700">
           #{id}
         </div>
       </Link>

@@ -1,6 +1,6 @@
-import { sleep } from "@easyshell/utils"
-
 import { stat } from "fs/promises"
+
+import { sleep } from "@easyshell/utils"
 
 export async function assertDirExists(path: string) {
   try {

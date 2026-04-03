@@ -1,10 +1,10 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-
 import { signOut } from "next-auth/react"
 import Link from "next/link"
+
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 
 export function LogoutForm() {
   return (

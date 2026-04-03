@@ -1,11 +1,11 @@
-import { Footer } from "@/components/footer"
-
 import Link from "next/link"
 import { BiCustomize } from "react-icons/bi"
 import { IoSpeedometerOutline } from "react-icons/io5"
 import { PiTarget } from "react-icons/pi"
 import { SiGnometerminal } from "react-icons/si"
 import { TbChevronsDown } from "react-icons/tb"
+
+import { Footer } from "@/components/footer"
 
 export default function HomePage() {
   return (
@@ -21,7 +21,7 @@ export default function HomePage() {
           .
         </span>
       </div>
-      <div className="font-clash-display mt-2 px-4 text-center text-base sm:mt-4 sm:text-xl lg:mt-8 lg:text-2xl">
+      <div className="mt-2 px-4 text-center font-clash-display text-base sm:mt-4 sm:text-xl lg:mt-8 lg:text-2xl">
         Level up your terminal skills with our interactive shell challenges.
       </div>
       <div className="mt-16 flex items-center justify-center gap-8">
@@ -64,7 +64,7 @@ export default function HomePage() {
           description="Customize your experience with themes, fonts, and more."
         />
       </div>
-      <div className="font-clash-display mb-16 text-3xl">
+      <div className="mb-16 font-clash-display text-3xl">
         more features to come ...
       </div>
       <div
@@ -112,7 +112,7 @@ function Card({
 }) {
   return (
     <div className="max-w-80 rounded-xl border bg-neutral-50 p-4 shadow md:max-w-60 xl:max-w-80 dark:bg-neutral-950/50">
-      <div className="font-clash-display flex aspect-square items-center justify-center rounded-md bg-neutral-200 dark:bg-neutral-800/30">
+      <div className="flex aspect-square items-center justify-center rounded-md bg-neutral-200 font-clash-display dark:bg-neutral-800/30">
         {image ?? "<insert_image>"}
       </div>
       <div className="mt-4 text-sm font-medium md:text-base">{title}</div>

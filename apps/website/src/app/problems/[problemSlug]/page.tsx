@@ -1,11 +1,11 @@
+import type { Metadata } from "next"
+
 import { DesktopContainer, MobileContainer } from "@/components/media"
 import { getProblemInfo, getProblems } from "@/lib/server/problems"
 
 import { LaptopView } from "./_components/laptop-view"
 import { MobileView } from "./_components/mobile-view"
 import { ProblemNotFound } from "./_components/not-found-page"
-
-import type { Metadata } from "next"
 
 export async function generateMetadata({
   params,

@@ -2,14 +2,12 @@
 // Problem utilities to be used in scripts at build time
 // TODO: remove unused functions
 // =====================================================
+import { readdir, readFile, stat } from "fs/promises"
+import { z } from "zod"
+
 import { PROBLEMS_DIR } from "@easyshell/utils/build"
 
 import { ProblemConfigSchema } from "./schema"
-
-import { stat } from "fs/promises"
-import { readFile } from "fs/promises"
-import { readdir } from "fs/promises"
-import { z } from "zod"
 
 const PROBLEMS_IMPORT_DIR = "./data/problems"
 

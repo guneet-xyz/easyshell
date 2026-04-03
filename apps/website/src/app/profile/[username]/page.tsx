@@ -1,22 +1,22 @@
-import { submissionTestcases, submissions } from "@easyshell/db/schema"
+import { desc, eq, min, sql } from "drizzle-orm"
+import moment from "moment"
+import { Metadata } from "next"
+import { notFound, redirect } from "next/navigation"
+import { PiCheckCircle, PiXCircle } from "react-icons/pi"
+
+import { submissions, submissionTestcases } from "@easyshell/db/schema"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card } from "@/components/ui/card"
 import { db } from "@/db"
 import { getUserByUsername } from "@/lib/server/auth"
 import {
-  getProblemSlugFromId,
   getProblems,
+  getProblemSlugFromId,
   getPublicProblemInfo,
 } from "@/lib/server/problems"
 
 import { SubmissionsChart } from "./_components/submission-chart"
-
-import { desc, eq, min, sql } from "drizzle-orm"
-import moment from "moment"
-import { Metadata } from "next"
-import { notFound, redirect } from "next/navigation"
-import { PiCheckCircle, PiXCircle } from "react-icons/pi"
 
 export async function generateMetadata({
   params,
@@ -201,12 +201,12 @@ export default async function Page({
         <Card className="flex aspect-square max-h-80 w-full items-center justify-center">
           <SubmissionsChart stats={submissionStats} />
         </Card>
-        <Card className="font-clash-display flex aspect-square max-h-80 w-full flex-col items-center justify-center">
+        <Card className="flex aspect-square max-h-80 w-full flex-col items-center justify-center font-clash-display">
           <div className="text-2xl">Badges</div>
           <div className="text-xl text-neutral-500">(coming soon)</div>
         </Card>
       </div>
-      <div className="font-clash-display mt-8 text-3xl font-semibold">
+      <div className="mt-8 font-clash-display text-3xl font-semibold">
         Recent Submissions
       </div>
       <div className="flex flex-col gap-2">

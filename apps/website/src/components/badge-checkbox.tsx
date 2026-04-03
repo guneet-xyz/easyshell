@@ -1,8 +1,8 @@
-import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
-
 import { IoMdCheckmark } from "react-icons/io"
 import { RxCross2 } from "react-icons/rx"
+
+import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
 
 export function BadgeCheckbox({
   children,

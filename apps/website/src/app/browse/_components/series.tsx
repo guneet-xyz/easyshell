@@ -1,22 +1,22 @@
 "use client"
 
+import Autoplay from "embla-carousel-autoplay"
+import Link from "next/link"
+import { useEffect, useState } from "react"
+
 import { TextBackground } from "@/components/backgrounds/text-background"
 import {
   Carousel,
-  type CarouselApi,
   CarouselContent,
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
+  type CarouselApi,
 } from "@/components/ui/carousel"
 import { Progress } from "@/components/ui/progress"
 import type { getUserSubmissionStats } from "@/lib/server/queries"
 import type { getAllSeries } from "@/lib/server/series"
 import { cn } from "@/lib/utils"
-
-import Autoplay from "embla-carousel-autoplay"
-import Link from "next/link"
-import { useEffect, useState } from "react"
 
 export function SeriesCarousel({
   submission_stats,

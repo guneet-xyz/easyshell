@@ -1,17 +1,17 @@
 // DEPRECATED
 // TODO: Remove this file
+import { and, desc, eq, sql } from "drizzle-orm"
+
 import {
   accounts,
   bookmarks,
+  submissions,
   submissionTestcaseQueue,
   submissionTestcases,
-  submissions,
 } from "@easyshell/db/schema"
 
 import { db } from "@/db"
 import { getProblemSlugFromId } from "@/lib/server/problems"
-
-import { and, desc, eq, sql } from "drizzle-orm"
 
 export async function getUserSubmissions({
   problemId,

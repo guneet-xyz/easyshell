@@ -1,11 +1,11 @@
 "use server"
 
+import { and, eq, isNull } from "drizzle-orm"
+
 import { terminalSessions } from "@easyshell/db/schema"
 
 import { db } from "@/db"
 import { auth } from "@/lib/server/auth"
-
-import { and, eq, isNull } from "drizzle-orm"
 
 export async function killTerminalSessions({
   problemId,

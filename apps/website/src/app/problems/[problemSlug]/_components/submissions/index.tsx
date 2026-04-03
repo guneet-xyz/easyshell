@@ -1,14 +1,14 @@
 "use client"
 
+import dynamic from "next/dynamic"
+import { useSearchParams } from "next/navigation"
+import { Suspense } from "react"
+
 import type { getUserSubmissions } from "@/lib/server/queries"
 
 import { PastSubmissions } from "./past-submissions"
 import { Submission } from "./submission"
 import { SubmitPrompt } from "./submit-prompt"
-
-import dynamic from "next/dynamic"
-import { useSearchParams } from "next/navigation"
-import { Suspense } from "react"
 
 const PromptSettingsContextProvider = dynamic(
   () =>

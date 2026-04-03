@@ -1,11 +1,11 @@
 "use client"
 
+import { useEffect, useState } from "react"
+
 import { getProblemDifficulty } from "@/lib/server/actions/get-problem-difficulty"
 import { getProblemStatus } from "@/lib/server/actions/get-problem-status"
 
 import { ProblemLinkBase } from "."
-
-import { useEffect, useState } from "react"
 
 export function ProblemLink({
   slug,

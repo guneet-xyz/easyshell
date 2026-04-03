@@ -1,12 +1,11 @@
-import { cn } from "@/lib/utils"
-
-import { EasyTooltip } from "./ui/tooltip"
-
 import { FaCircleCheck } from "react-icons/fa6"
 import { GrInProgress } from "react-icons/gr"
 import { IoIosCheckmarkCircleOutline } from "react-icons/io"
-import { TbProgress } from "react-icons/tb"
-import { TbCircleDotted } from "react-icons/tb"
+import { TbCircleDotted, TbProgress } from "react-icons/tb"
+
+import { cn } from "@/lib/utils"
+
+import { EasyTooltip } from "./ui/tooltip"
 
 function ProblemSolvedWithTooltip() {
   return (

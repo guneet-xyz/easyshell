@@ -1,8 +1,8 @@
-import { env } from "@/env"
-
 import { render } from "@react-email/render"
-import { type Transporter, createTransport } from "nodemailer"
+import { createTransport, type Transporter } from "nodemailer"
 import type { ReactElement } from "react"
+
+import { env } from "@/env"
 
 let transporter: Transporter | null = null
 

@@ -1,15 +1,11 @@
+import { cp, mkdir, rm, stat, writeFile } from "fs/promises"
+import { $ } from "execa"
+
 import { getProblemInfo, getProblems } from "@easyshell/problems"
 import { PROBLEMS_DIR, PROJECT_ROOT } from "@easyshell/utils/build"
 
 import { env } from "../env"
 import { RunParallelStuff, Task } from "./_utils"
-
-import { $ } from "execa"
-import { writeFile } from "fs/promises"
-import { cp } from "fs/promises"
-import { mkdir } from "fs/promises"
-import { rm } from "fs/promises"
-import { stat } from "fs/promises"
 
 const WORKING_DIR = `${env.WORKING_DIR}/build`
 await rm(WORKING_DIR, { recursive: true, force: true })

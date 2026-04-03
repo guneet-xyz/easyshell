@@ -1,3 +1,5 @@
+import { Suspense } from "react"
+
 import { ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { auth } from "@/lib/server/auth"
 import { getPublicTestcaseInfo } from "@/lib/server/problems"
@@ -9,8 +11,6 @@ import { Problem } from "./problem"
 import { Submissions } from "./submissions"
 import { ProblemPageTabs } from "./tabs"
 import { TestcaseTabs } from "./testcases/tabs"
-
-import { Suspense } from "react"
 
 export async function LaptopView({
   problemId,

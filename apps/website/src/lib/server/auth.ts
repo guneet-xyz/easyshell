@@ -1,3 +1,12 @@
+import { DrizzleAdapter } from "@auth/drizzle-adapter"
+import { count, eq } from "drizzle-orm"
+import NextAuth, { type DefaultSession } from "next-auth"
+import { type Adapter } from "next-auth/adapters"
+import DiscordProvider from "next-auth/providers/discord"
+import GithubProvider from "next-auth/providers/github"
+import GoogleProvider from "next-auth/providers/google"
+import Nodemailer from "next-auth/providers/nodemailer"
+
 import {
   accounts,
   lower,
@@ -10,16 +19,6 @@ import { MagicLink } from "@/components/emails/magic-link"
 import { db } from "@/db"
 import { env } from "@/env"
 import { sendMail } from "@/lib/server/smtp"
-
-import { DrizzleAdapter } from "@auth/drizzle-adapter"
-import { count, eq } from "drizzle-orm"
-import { type DefaultSession } from "next-auth"
-import NextAuth from "next-auth"
-import { type Adapter } from "next-auth/adapters"
-import DiscordProvider from "next-auth/providers/discord"
-import GithubProvider from "next-auth/providers/github"
-import GoogleProvider from "next-auth/providers/google"
-import Nodemailer from "next-auth/providers/nodemailer"
 
 // =============================== Helper Utilities ===============================
 

@@ -1,12 +1,12 @@
 "use client"
 
-import { EasyTooltip } from "@/components/ui/tooltip"
-import { toggleBookmark } from "@/lib/server/actions/toggle-bookmark"
-import { cn } from "@/lib/utils"
-
 import { useState } from "react"
 import { PiBookmarkSimple, PiBookmarkSimpleDuotone } from "react-icons/pi"
 import { toast } from "sonner"
+
+import { EasyTooltip } from "@/components/ui/tooltip"
+import { toggleBookmark } from "@/lib/server/actions/toggle-bookmark"
+import { cn } from "@/lib/utils"
 
 export function ProblemBookmark({
   problemId,
@@ -62,7 +62,7 @@ export function ProblemBookmark({
         <PiBookmarkSimple className={cn("text-3xl", className)} />
         <PiBookmarkSimpleDuotone
           className={cn(
-            "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl transition-opacity",
+            "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl transition-opacity",
             {
               "opacity-0": !bookmarked,
               "opacity-25": inBetween && bookmarked,

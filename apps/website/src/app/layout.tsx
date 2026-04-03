@@ -1,15 +1,16 @@
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
-import "@/styles/globals.css"
 
-import { Navbar } from "./_components/navbar"
-import { SessionProvider } from "./_components/session-provider"
-import { ClientSideProviders } from "./client-side-providers"
+import "@/styles/globals.css"
 
 import { GeistMono } from "geist/font/mono"
 import { GeistSans } from "geist/font/sans"
 import { type Metadata } from "next"
 import { ThemeProvider } from "next-themes"
+
+import { Navbar } from "./_components/navbar"
+import { SessionProvider } from "./_components/session-provider"
+import { ClientSideProviders } from "./client-side-providers"
 
 export const metadata: Metadata = {
   title: "easyshell - practice your shell",
@@ -32,7 +33,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="font-geist flex h-screen flex-col dark:bg-neutral-900">
+      <body className="flex h-screen flex-col font-geist dark:bg-neutral-900">
         <ClientSideProviders>
           <ThemeProvider attribute="class" defaultTheme="dark">
             <SessionProvider>

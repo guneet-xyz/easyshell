@@ -1,6 +1,9 @@
 // ================================================================
 // Internal Functions to interact with the terminal session manager
 // ================================================================
+import { and, asc, eq, isNull } from "drizzle-orm"
+import { z } from "zod"
+
 import { terminalSessionLogs, terminalSessions } from "@easyshell/db/schema"
 
 import { db } from "@/db"
@@ -10,9 +13,6 @@ import {
   HTTP_STATUS_INTERNAL_SERVER_ERROR,
   HTTP_STATUS_LOCKED,
 } from "@/lib/utils"
-
-import { and, asc, eq, isNull } from "drizzle-orm"
-import { z } from "zod"
 
 export async function runTerminalSession({
   problemId,

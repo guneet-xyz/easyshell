@@ -1,8 +1,8 @@
 "use client"
 
-import { customComponents } from "@/mdx-components"
-
 import { MDXRemote, type MDXRemoteSerializeResult } from "next-mdx-remote"
+
+import { customComponents } from "@/mdx-components"
 
 export default function MarkdownClient({
   source,

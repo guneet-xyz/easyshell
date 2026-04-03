@@ -2,7 +2,11 @@ import { mkdir, readFile, writeFile } from "fs/promises"
 import { execa } from "execa"
 import { z } from "zod"
 
-import { isStandardProblem } from "@easyshell/problems/schema"
+import {
+  isLiveEnvironmentProblem,
+  isStandardProblem,
+} from "@easyshell/problems/schema"
+import { sleep } from "@easyshell/utils"
 
 import { getProblemInfo } from "./problems"
 
@@ -30,10 +34,17 @@ export async function runSubmissionAndGetOutput({
 }) {
   const problem = await getProblemInfo(problemSlug)
 
+  if (isLiveEnvironmentProblem(problem)) {
+    return await runLiveEnvironmentSubmission({
+      problemSlug,
+      input,
+      suffix,
+      dockerRegistry,
+    })
+  }
+
   if (!isStandardProblem(problem)) {
-    throw new Error(
-      `Cannot run submission for live-environment problem: ${problemSlug}`,
-    )
+    throw new Error(`Unknown problem type for: ${problemSlug}`)
   }
 
   await mkdir(`${workingDir}/inputs`, { recursive: true })
@@ -128,5 +139,211 @@ export async function runSubmissionAndGetOutput({
     finishedAt,
     output,
     passed,
+  }
+}
+
+// ======================== Live-environment submissions ========================
+
+const ANSI_REGEX = /\x1b\[[0-9;]*[a-zA-Z]/g
+const SCORE_REGEX = /Score:\s*(\d+)\/(\d+)/
+
+/**
+ * Run a live-environment submission in a fresh, isolated k3s container.
+ * 1. Start a privileged k3s container from the problem image
+ * 2. Wait for k3s readiness + setup.sh completion
+ * 3. Run the user's input commands
+ * 4. Run check.sh and parse the score
+ * 5. Clean up the container
+ */
+async function runLiveEnvironmentSubmission({
+  problemSlug,
+  input,
+  suffix,
+  dockerRegistry,
+}: {
+  problemSlug: string
+  input: string
+  suffix: string
+  dockerRegistry: string | undefined
+}) {
+  const tag = `easyshell-${problemSlug}-1` // sentinel testcaseId=1
+  const containerName = `${tag}-${suffix}`
+  const image = dockerRegistry ? `${dockerRegistry}/easyshell/${tag}` : tag
+
+  const startedAt = new Date()
+
+  try {
+    // Start the k3s container
+    await execa("docker", [
+      "run",
+      "-d",
+      "--name",
+      containerName,
+      "--privileged",
+      "--cgroupns=private",
+      "--tmpfs",
+      "/run",
+      "--tmpfs",
+      "/var/run",
+      image,
+      "-mode",
+      "k3s-session",
+    ])
+
+    // Wait for readiness (k3s startup + setup.sh)
+    const maxWaitMs = 180_000 // 3 minutes
+    const waitStart = Date.now()
+    let ready = false
+
+    while (Date.now() - waitStart < maxWaitMs) {
+      try {
+        const { stdout } = await execa("docker", [
+          "exec",
+          containerName,
+          "cat",
+          "/tmp/easyshell/ready",
+        ])
+        if (stdout.trim() === "ready") {
+          ready = true
+          break
+        }
+      } catch {
+        // Check for error file
+        try {
+          const { stdout: errOut } = await execa("docker", [
+            "exec",
+            containerName,
+            "cat",
+            "/tmp/easyshell/ready.error",
+          ])
+          const finishedAt = new Date()
+          return {
+            startedAt,
+            finishedAt,
+            output: {
+              stdout: `Environment setup failed: ${errOut.trim()}`,
+              stderr: "",
+              exit_code: 1,
+              fs: {} as Record<string, string>,
+            },
+            passed: false,
+          }
+        } catch {
+          // Neither file exists yet, keep waiting
+        }
+      }
+      await sleep(2000)
+    }
+
+    if (!ready) {
+      const finishedAt = new Date()
+      return {
+        startedAt,
+        finishedAt,
+        output: {
+          stdout: "Environment did not become ready within 3 minutes",
+          stderr: "",
+          exit_code: 1,
+          fs: {} as Record<string, string>,
+        },
+        passed: false,
+      }
+    }
+
+    // Run the user's input commands
+    if (input.trim().length > 0) {
+      try {
+        await execa(
+          "docker",
+          [
+            "exec",
+            "-e",
+            "KUBECONFIG=/etc/rancher/k3s/k3s.yaml",
+            containerName,
+            "sh",
+            "-c",
+            input,
+          ],
+          { timeout: 60_000 },
+        )
+      } catch {
+        // Non-zero exit from user commands is not necessarily a submission
+        // failure -- check.sh determines pass/fail
+      }
+    }
+
+    // Run check.sh
+    let checkOutput: string
+    try {
+      const { stdout } = await execa(
+        "docker",
+        [
+          "exec",
+          "-e",
+          "KUBECONFIG=/etc/rancher/k3s/k3s.yaml",
+          containerName,
+          "bash",
+          "/check.sh",
+        ],
+        { timeout: 30_000 },
+      )
+      checkOutput = stdout
+    } catch (err: unknown) {
+      // check.sh may exit non-zero for partial scores, capture output
+      if (
+        err &&
+        typeof err === "object" &&
+        "stdout" in err &&
+        typeof err.stdout === "string"
+      ) {
+        checkOutput = err.stdout
+      } else {
+        const finishedAt = new Date()
+        const message = err instanceof Error ? err.message : String(err)
+        return {
+          startedAt,
+          finishedAt,
+          output: {
+            stdout: `check.sh failed: ${message}`,
+            stderr: "",
+            exit_code: 1,
+            fs: {} as Record<string, string>,
+          },
+          passed: false,
+        }
+      }
+    }
+
+    const finishedAt = new Date()
+
+    // Strip ANSI codes and parse score
+    const cleanOutput = checkOutput.replace(ANSI_REGEX, "")
+    const scoreMatch = SCORE_REGEX.exec(cleanOutput)
+
+    let passed = false
+    if (scoreMatch) {
+      const score = parseInt(scoreMatch[1]!, 10)
+      const total = parseInt(scoreMatch[2]!, 10)
+      passed = score === total && total > 0
+    }
+
+    return {
+      startedAt,
+      finishedAt,
+      output: {
+        stdout: cleanOutput,
+        stderr: "",
+        exit_code: passed ? 0 : 1,
+        fs: {} as Record<string, string>,
+      },
+      passed,
+    }
+  } finally {
+    // Clean up: kill and remove the container
+    try {
+      await execa("docker", ["rm", "-f", containerName])
+    } catch {
+      // Ignore cleanup errors
+    }
   }
 }

@@ -265,31 +265,3 @@ export const images = createTable("images", {
     .notNull()
     .defaultNow(),
 })
-
-// ========================== Check Results (live-environment) ==================
-
-export const checkResults = createTable(
-  "check_result",
-  {
-    id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
-    userId: varchar("user_id", { length: 255 })
-      .notNull()
-      .references(() => users.id),
-    problemId: integer("problem_id").notNull(),
-    sessionId: integer("session_id")
-      .notNull()
-      .references(() => terminalSessions.id),
-    score: integer("score").notNull(),
-    total: integer("total").notNull(),
-    passed: boolean("passed").notNull(),
-    output: text("output").notNull(),
-    createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-  (cr) => [
-    index("check_result_user_id_idx").on(cr.userId),
-    index("check_result_problem_id_idx").on(cr.problemId),
-    index("check_result_user_problem_idx").on(cr.userId, cr.problemId),
-  ],
-)

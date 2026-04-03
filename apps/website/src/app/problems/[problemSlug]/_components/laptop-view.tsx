@@ -8,7 +8,7 @@ import { getProblemInfo, getPublicTestcaseInfo } from "@/lib/server/problems"
 import { getUserSubmissions } from "@/lib/server/queries"
 
 import { CollapsibleProblemPanel } from "./collapsible-resizeable-panel"
-import { LiveEnvironmentView } from "./live-environment"
+import { LiveEnvironmentTerminal } from "./live-environment/terminal"
 import { LoginToProceed } from "./login-to-proceed"
 import { Problem } from "./problem"
 import { Submissions } from "./submissions"
@@ -28,22 +28,50 @@ export async function LaptopView({
   const isLiveEnv = isLiveEnvironmentProblem(problemInfo)
 
   if (isLiveEnv) {
+    const submissions = user
+      ? await getUserSubmissions({ problemId, userId: user.id })
+      : null
+
     return (
       <ResizablePanelGroup direction="horizontal" className="h-full">
         <CollapsibleProblemPanel>
           <Problem slug={problemSlug} />
         </CollapsibleProblemPanel>
         <ResizablePanel className="flex h-full w-full flex-col p-2">
-          {user ? (
-            <Suspense fallback={<div>Loading</div>}>
-              <LiveEnvironmentView
-                problemId={problemId}
-                problemSlug={problemSlug}
-              />
-            </Suspense>
-          ) : (
-            <LoginToProceed />
-          )}
+          <ProblemPageTabs
+            tabs={[
+              {
+                title: "Terminal",
+                value: "terminal",
+                content: user ? (
+                  <Suspense fallback={<div>Loading</div>}>
+                    <LiveEnvironmentTerminal
+                      problemId={problemId}
+                      problemSlug={problemSlug}
+                    />
+                  </Suspense>
+                ) : (
+                  <LoginToProceed />
+                ),
+              },
+              {
+                title: "Submissions",
+                value: "submissions",
+                content: submissions ? (
+                  <Suspense fallback={<div>Loading</div>}>
+                    <Submissions
+                      problemId={problemId}
+                      problemSlug={problemSlug}
+                      pastSubmissions={submissions}
+                    />
+                  </Suspense>
+                ) : (
+                  <LoginToProceed />
+                ),
+              },
+            ]}
+            defaultValue="terminal"
+          />
         </ResizablePanel>
       </ResizablePanelGroup>
     )

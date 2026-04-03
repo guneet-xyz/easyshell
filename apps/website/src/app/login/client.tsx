@@ -20,18 +20,20 @@ export function Client({ loggedIn }: { loggedIn: boolean }) {
     callback = "/"
   }
 
-  if (callback === "/") {
-    router.replace("/login")
-  } else if (callback != null) {
-    router.replace(`/login?callback=${callback}`)
-  }
-
   useEffect(() => {
     if (loggedIn) {
       toast("You are already logged in")
       if (validCallbackUrl(callback)) {
         router.push(callback ?? "/")
       }
+      return
+    }
+
+    // Clean up the URL by stripping invalid/unnecessary params
+    if (callback === "/") {
+      router.replace("/login")
+    } else if (callback != null) {
+      router.replace(`/login?callback=${callback}`)
     }
   }, [router, loggedIn, callback])
 

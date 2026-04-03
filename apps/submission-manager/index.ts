@@ -74,48 +74,85 @@ async function processQueueItem(
   item: NonNullable<Awaited<ReturnType<typeof getQueueItem>>>,
 ) {
   console.log("Processing queue item", item)
-  const problemId = (
-    await db
-      .select({ problemId: submissions.problemId })
-      .from(submissions)
-      .where(eq(submissions.id, item.submissionId))
-      .limit(1)
-  )[0]?.problemId
-  if (!problemId) throw new Error("Submission not found")
+  try {
+    const problemId = (
+      await db
+        .select({ problemId: submissions.problemId })
+        .from(submissions)
+        .where(eq(submissions.id, item.submissionId))
+        .limit(1)
+    )[0]?.problemId
+    if (!problemId) throw new Error("Submission not found")
 
-  const problemSlug = await getProblemSlugFromId(problemId)
+    const problemSlug = await getProblemSlugFromId(problemId)
 
-  const { startedAt, finishedAt, output, passed } =
-    await runSubmissionAndGetOutput({
-      problemSlug,
+    const { startedAt, finishedAt, output, passed } =
+      await runSubmissionAndGetOutput({
+        problemSlug,
+        testcaseId: item.testcaseId,
+        input: item.input,
+        suffix: `submission-${item.submissionId}`,
+        workingDir: WORKING_DIR,
+        dockerRegistry: env.DOCKER_REGISTRY,
+      })
+
+    await db.insert(submissionTestcases).values({
+      submissionId: item.submissionId,
       testcaseId: item.testcaseId,
-      input: item.input,
-      suffix: `submission-${item.submissionId}`,
-      workingDir: WORKING_DIR,
-      dockerRegistry: env.DOCKER_REGISTRY,
+      stdout: output.stdout,
+      stderr: output.stderr,
+      exitCode: output.exit_code,
+      fs: output.fs,
+      startedAt,
+      finishedAt,
+      passed,
     })
 
-  await db.insert(submissionTestcases).values({
-    submissionId: item.submissionId,
-    testcaseId: item.testcaseId,
-    stdout: output.stdout,
-    stderr: output.stderr,
-    exitCode: output.exit_code,
-    fs: output.fs,
-    startedAt,
-    finishedAt,
-    passed,
-  })
-
-  await db
-    .update(submissionTestcaseQueue)
-    .set({ status: "finished" })
-    .where(
-      and(
-        eq(submissionTestcaseQueue.submissionId, item.submissionId),
-        eq(submissionTestcaseQueue.testcaseId, item.testcaseId),
-      ),
+    await db
+      .update(submissionTestcaseQueue)
+      .set({ status: "finished" })
+      .where(
+        and(
+          eq(submissionTestcaseQueue.submissionId, item.submissionId),
+          eq(submissionTestcaseQueue.testcaseId, item.testcaseId),
+        ),
+      )
+  } catch (error) {
+    console.error(
+      `Failed to process queue item (submission=${item.submissionId}, testcase=${item.testcaseId}):`,
+      error,
     )
+
+    // Store the error as a failed result so the submission doesn't hang
+    const message = error instanceof Error ? error.message : String(error)
+    const now = new Date()
+
+    try {
+      await db.insert(submissionTestcases).values({
+        submissionId: item.submissionId,
+        testcaseId: item.testcaseId,
+        stdout: `Error: ${message}`,
+        stderr: "",
+        exitCode: 1,
+        fs: {},
+        startedAt: now,
+        finishedAt: now,
+        passed: false,
+      })
+    } catch {
+      // Testcase result may already exist if the error was after insert
+    }
+
+    await db
+      .update(submissionTestcaseQueue)
+      .set({ status: "finished" })
+      .where(
+        and(
+          eq(submissionTestcaseQueue.submissionId, item.submissionId),
+          eq(submissionTestcaseQueue.testcaseId, item.testcaseId),
+        ),
+      )
+  }
 }
 
 async function loop() {
@@ -125,7 +162,7 @@ async function loop() {
       await sleep(1000)
       continue
     }
-    processQueueItem(item)
+    await processQueueItem(item)
   }
 }
 

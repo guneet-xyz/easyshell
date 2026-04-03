@@ -29,28 +29,6 @@ importers:
         specifier: 5.7.3
         version: 5.7.3
 
-  apps/db-proxy:
-    dependencies:
-      "@hono/node-server":
-        specifier: ^1.14.1
-        version: 1.14.2(hono@4.11.9)
-      hono:
-        specifier: ^4.7.8
-        version: 4.11.9
-      pg:
-        specifier: ^8.15.6
-        version: 8.15.6
-    devDependencies:
-      "@types/express":
-        specifier: ^5.0.1
-        version: 5.0.1
-      "@types/pg":
-        specifier: ^8.15.6
-        version: 8.20.0
-      esbuild:
-        specifier: ^0.27.3
-        version: 0.27.3
-
   apps/submission-manager:
     dependencies:
       "@easyshell/db":
@@ -64,7 +42,7 @@ importers:
         version: 0.12.0(typescript@5.7.3)(zod@3.25.76)
       drizzle-orm:
         specifier: ^0.39.3
-        version: 0.39.3(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(pg@8.15.6)
+        version: 0.39.3(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(pg@8.15.6)(postgres@3.4.8)
       execa:
         specifier: ^9.5.2
         version: 9.5.2
@@ -170,7 +148,7 @@ importers:
         version: 8.0.3
       drizzle-orm:
         specifier: ^0.39.3
-        version: 0.39.3(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(pg@8.15.6)
+        version: 0.39.3(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(pg@8.15.6)(postgres@3.4.8)
       embla-carousel-autoplay:
         specifier: ^8.6.0
         version: 8.6.0(embla-carousel@8.6.0)
@@ -301,15 +279,15 @@ importers:
       "@auth/drizzle-adapter":
         specifier: ^1.7.4
         version: 1.8.0
-      axios:
-        specifier: ^1.9.0
-        version: 1.13.5
       drizzle-orm:
         specifier: ^0.39.1
-        version: 0.39.3(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(pg@8.15.6)
+        version: 0.39.3(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(pg@8.15.6)(postgres@3.4.8)
       next-auth:
         specifier: ^5.0.0-beta.25
         version: 5.0.0-beta.30(next@16.1.6(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
+      postgres:
+        specifier: ^3.4.5
+        version: 3.4.8
     devDependencies:
       drizzle-kit:
         specifier: ^0.31.9
@@ -1308,15 +1286,6 @@ packages:
       {
         integrity: sha512-MDWhGtE+eHw5JW7lq4qhc5yRLS11ERl1c7Z6Xd0a58DozHES6EnNNwUWbMiG4J9Cgj053Bhk8zvlhFYKVhULwg==,
       }
-
-  "@hono/node-server@1.14.2":
-    resolution:
-      {
-        integrity: sha512-GHjpOeHYbr9d1vkID2sNUYkl5IxumyhDrUJB7wBp7jvqYwPFt+oNKsAPBRcdSbV7kIrXhouLE199ks1QcK4r7A==,
-      }
-    engines: { node: ">=18.14.1" }
-    peerDependencies:
-      hono: ^4
 
   "@humanfs/core@0.19.1":
     resolution:
@@ -3043,18 +3012,6 @@ packages:
         integrity: sha512-6+7nlbMVX/PVDCwaIQ8nTOPveOcFLSt8GcXdx8hD0bt39uWxYT88uXzqTd4fTvqta7oeUJqudepapKNt2DYJFw==,
       }
 
-  "@types/body-parser@1.19.5":
-    resolution:
-      {
-        integrity: sha512-fB3Zu92ucau0iQ0JMCFQE7b/dv8Ot07NI3KaZIkIUNXq82k4eBAqUaneXfleGY9JWskeS9y+u0nXMyspcuQrCg==,
-      }
-
-  "@types/connect@3.4.38":
-    resolution:
-      {
-        integrity: sha512-K6uROf1LD88uDQqJCktA4yzL1YYAK6NgfsI0v/mTgyPKWsX1CnJ0XPSDhViejru1GcRkLWb8RlzFYJRqGUbaug==,
-      }
-
   "@types/debug@4.1.12":
     resolution:
       {
@@ -3079,28 +3036,10 @@ packages:
         integrity: sha512-w28IoSUCJpidD/TGviZwwMJckNESJZXFu7NBZ5YJ4mEUnNraUn9Pm8HSZm/jDF1pDWYKspWE7oVphigUPRakIQ==,
       }
 
-  "@types/express-serve-static-core@5.0.6":
-    resolution:
-      {
-        integrity: sha512-3xhRnjJPkULekpSzgtoNYYcTWgEZkp4myc+Saevii5JPnHNvHMRlBSHDbs7Bh1iPPoVTERHEZXyhyLbMEsExsA==,
-      }
-
-  "@types/express@5.0.1":
-    resolution:
-      {
-        integrity: sha512-UZUw8vjpWFXuDnjFTh7/5c2TWDlQqeXHi6hcN7F2XSVT5P+WmUnnbFS3KA6Jnc6IsEqI2qCVu2bK0R0J4A8ZQQ==,
-      }
-
   "@types/hast@3.0.4":
     resolution:
       {
         integrity: sha512-WPs+bbQw5aCj+x6laNGWLH3wviHtoCv/P3+otBhbOhJgG8qtpdAMlTCxLtsTWA7LH1Oh/bFCHsBn0TPS5m30EQ==,
-      }
-
-  "@types/http-errors@2.0.4":
-    resolution:
-      {
-        integrity: sha512-D0CFMMtydbJAegzOyHjtiKPLlvnm3iTZyZRSZoLq2mRhDdmLfIWOCYPfQJ4cu2erKghU++QvjcUjp/5h7hESpA==,
       }
 
   "@types/json-schema@7.0.15":
@@ -3127,12 +3066,6 @@ packages:
         integrity: sha512-+OWZQfAYyio6YkJb3HLxDrvnx6SWWDbC0zVPfBRzUk0/nqoDyf6dNxQi3eArPe8rJ473nobTMQ/8Zk+LxJ+Yuw==,
       }
 
-  "@types/mime@1.3.5":
-    resolution:
-      {
-        integrity: sha512-/pyBZWSLD2n0dcHE3hq8s8ZvcETHtEuF+3E7XVt0Ig2nvsVQXdghHVcEkIWjy9A0wKfTn97a/PSDYohKIlnP/w==,
-      }
-
   "@types/ms@2.1.0":
     resolution:
       {
@@ -3157,18 +3090,6 @@ packages:
         integrity: sha512-gNMvNH49DJ7OJYv+KAKn0Xp45p8PLl6zo2YnvDIbTd4J6MER2BmWN49TG7n9LvkyihINxeKW8+3bfS2yDC9dzQ==,
       }
 
-  "@types/qs@6.9.18":
-    resolution:
-      {
-        integrity: sha512-kK7dgTYDyGqS+e2Q4aK9X3D7q234CIZ1Bv0q/7Z5IwRDoADNU81xXJK/YVyLbLTZCoIwUoDoffFeF+p/eIklAA==,
-      }
-
-  "@types/range-parser@1.2.7":
-    resolution:
-      {
-        integrity: sha512-hKormJbkJqzQGhziax5PItDUTMAM9uE2XXQmM37dyd4hVM+5aVl7oVxMVUiVQn2oCQFN/LKCZdvSM0pFRqbSmQ==,
-      }
-
   "@types/react-dom@18.3.6":
     resolution:
       {
@@ -3181,18 +3102,6 @@ packages:
     resolution:
       {
         integrity: sha512-IPaCZN7PShZK/3t6Q87pfTkRm6oLTd4vztyoj+cbHUF1g3FfVb2tFIL79uCRKEfv16AhqDMBywP2VW3KIZUvcg==,
-      }
-
-  "@types/send@0.17.4":
-    resolution:
-      {
-        integrity: sha512-x2EM6TJOybec7c52BX0ZspPodMsQUd5L6PRwOunVyVUhXiBSKf3AezDL8Dgvgt5o0UfKNfuA0eMLr2wLT4AiBA==,
-      }
-
-  "@types/serve-static@1.15.7":
-    resolution:
-      {
-        integrity: sha512-W8Ym+h8nhuRwaKPaDw34QUkwsGi6Rc4yYqvKFo5rm2FUEhCFbzVWrxXUxuKK8TASjWsysJY0nsmNCGhCOIsrOw==,
       }
 
   "@types/trusted-types@2.0.7":
@@ -4847,13 +4756,6 @@ packages:
         integrity: sha512-6pEjquH3rqaI6cYAXYPcz9MS4rY6R4ngRgrgfDshRptUZIc3lw0MCIJIGDj9++mfySOuPTHB4nrSW99BCvOPIA==,
       }
 
-  hono@4.11.9:
-    resolution:
-      {
-        integrity: sha512-Eaw2YTGM6WOxA6CXbckaEvslr2Ne4NFsKrvc0v97JD5awbmeBLO5w9Ho9L9kmKonrwF9RJlW6BxT1PVv/agBHQ==,
-      }
-    engines: { node: ">=16.9.0" }
-
   html-to-text@9.0.5:
     resolution:
       {
@@ -6099,6 +6001,13 @@ packages:
         integrity: sha512-9ZhXKM/rw350N1ovuWHbGxnGh/SNJ4cnxHiM0rxE4VN41wsg8P8zWn9hv/buK00RP4WvlOyr/RBDiptyxVbkZQ==,
       }
     engines: { node: ">=0.10.0" }
+
+  postgres@3.4.8:
+    resolution:
+      {
+        integrity: sha512-d+JFcLM17njZaOLkv6SCev7uoLaBtfK86vMUXhW1Z4glPWh4jozno9APvW/XKFJ3CCxVoC7OL38BqRydtu5nGg==,
+      }
+    engines: { node: ">=12" }
 
   posthog-js@1.347.2:
     resolution:
@@ -7619,10 +7528,6 @@ snapshots:
 
   "@floating-ui/utils@0.2.9": {}
 
-  "@hono/node-server@1.14.2(hono@4.11.9)":
-    dependencies:
-      hono: 4.11.9
-
   "@humanfs/core@0.19.1": {}
 
   "@humanfs/node@0.16.7":
@@ -8684,15 +8589,6 @@ snapshots:
       tslib: 2.8.1
     optional: true
 
-  "@types/body-parser@1.19.5":
-    dependencies:
-      "@types/connect": 3.4.38
-      "@types/node": 20.17.30
-
-  "@types/connect@3.4.38":
-    dependencies:
-      "@types/node": 20.17.30
-
   "@types/debug@4.1.12":
     dependencies:
       "@types/ms": 2.1.0
@@ -8708,24 +8604,9 @@ snapshots:
 
   "@types/estree@1.0.7": {}
 
-  "@types/express-serve-static-core@5.0.6":
-    dependencies:
-      "@types/node": 20.17.30
-      "@types/qs": 6.9.18
-      "@types/range-parser": 1.2.7
-      "@types/send": 0.17.4
-
-  "@types/express@5.0.1":
-    dependencies:
-      "@types/body-parser": 1.19.5
-      "@types/express-serve-static-core": 5.0.6
-      "@types/serve-static": 1.15.7
-
   "@types/hast@3.0.4":
     dependencies:
       "@types/unist": 3.0.3
-
-  "@types/http-errors@2.0.4": {}
 
   "@types/json-schema@7.0.15": {}
 
@@ -8736,8 +8617,6 @@ snapshots:
       "@types/unist": 3.0.3
 
   "@types/mdx@2.0.13": {}
-
-  "@types/mime@1.3.5": {}
 
   "@types/ms@2.1.0": {}
 
@@ -8750,12 +8629,9 @@ snapshots:
       "@types/node": 20.17.30
       pg-protocol: 1.9.5
       pg-types: 2.2.0
+    optional: true
 
   "@types/prop-types@15.7.14": {}
-
-  "@types/qs@6.9.18": {}
-
-  "@types/range-parser@1.2.7": {}
 
   "@types/react-dom@18.3.6(@types/react@18.3.20)":
     dependencies:
@@ -8765,17 +8641,6 @@ snapshots:
     dependencies:
       "@types/prop-types": 15.7.14
       csstype: 3.1.3
-
-  "@types/send@0.17.4":
-    dependencies:
-      "@types/mime": 1.3.5
-      "@types/node": 20.17.30
-
-  "@types/serve-static@1.15.7":
-    dependencies:
-      "@types/http-errors": 2.0.4
-      "@types/node": 20.17.30
-      "@types/send": 0.17.4
 
   "@types/trusted-types@2.0.7":
     optional: true
@@ -9251,11 +9116,12 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.39.3(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(pg@8.15.6):
+  drizzle-orm@0.39.3(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(pg@8.15.6)(postgres@3.4.8):
     optionalDependencies:
       "@opentelemetry/api": 1.9.0
       "@types/pg": 8.20.0
       pg: 8.15.6
+      postgres: 3.4.8
 
   dunder-proto@1.0.1:
     dependencies:
@@ -9974,8 +9840,6 @@ snapshots:
   hermes-parser@0.25.1:
     dependencies:
       hermes-estree: 0.25.1
-
-  hono@4.11.9: {}
 
   html-to-text@9.0.5:
     dependencies:
@@ -10778,15 +10642,19 @@ snapshots:
   pg-cloudflare@1.2.5:
     optional: true
 
-  pg-connection-string@2.8.5: {}
+  pg-connection-string@2.8.5:
+    optional: true
 
-  pg-int8@1.0.1: {}
+  pg-int8@1.0.1:
+    optional: true
 
   pg-pool@3.9.6(pg@8.15.6):
     dependencies:
       pg: 8.15.6
+    optional: true
 
-  pg-protocol@1.9.5: {}
+  pg-protocol@1.9.5:
+    optional: true
 
   pg-types@2.2.0:
     dependencies:
@@ -10795,6 +10663,7 @@ snapshots:
       postgres-bytea: 1.0.0
       postgres-date: 1.0.7
       postgres-interval: 1.2.0
+    optional: true
 
   pg@8.15.6:
     dependencies:
@@ -10805,10 +10674,12 @@ snapshots:
       pgpass: 1.0.5
     optionalDependencies:
       pg-cloudflare: 1.2.5
+    optional: true
 
   pgpass@1.0.5:
     dependencies:
       split2: 4.2.0
+    optional: true
 
   picocolors@1.1.1: {}
 
@@ -10830,15 +10701,21 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
-  postgres-array@2.0.0: {}
+  postgres-array@2.0.0:
+    optional: true
 
-  postgres-bytea@1.0.0: {}
+  postgres-bytea@1.0.0:
+    optional: true
 
-  postgres-date@1.0.7: {}
+  postgres-date@1.0.7:
+    optional: true
 
   postgres-interval@1.2.0:
     dependencies:
       xtend: 4.0.2
+    optional: true
+
+  postgres@3.4.8: {}
 
   posthog-js@1.347.2:
     dependencies:
@@ -11233,7 +11110,8 @@ snapshots:
 
   space-separated-tokens@2.0.2: {}
 
-  split2@4.2.0: {}
+  split2@4.2.0:
+    optional: true
 
   stable-hash@0.0.5: {}
 
@@ -11604,7 +11482,8 @@ snapshots:
 
   word-wrap@1.2.5: {}
 
-  xtend@4.0.2: {}
+  xtend@4.0.2:
+    optional: true
 
   yallist@3.1.1: {}
 

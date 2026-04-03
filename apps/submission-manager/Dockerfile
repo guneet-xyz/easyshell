@@ -10,7 +10,6 @@ COPY pnpm-workspace.yaml .
 COPY pnpm-lock.yaml .
 COPY package.json .
 
-COPY apps/db-proxy/package.json apps/db-proxy/package.json
 COPY apps/submission-manager/package.json apps/submission-manager/package.json
 COPY apps/website/package.json apps/website/package.json
 COPY packages/db/package.json packages/db/package.json

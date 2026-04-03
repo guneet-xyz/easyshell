@@ -4,8 +4,7 @@ import { z } from "zod"
 /** Environment variables for the **submission-manager** app (`@easyshell/submission-manager`). */
 export const env = createEnv({
   server: {
-    DRIZZLE_PROXY_URL: z.string().url(),
-    DRIZZLE_PROXY_TOKEN: z.string(),
+    DATABASE_URL: z.string(),
     DOCKER_REGISTRY: z.string().optional(),
     WORKING_DIR: z.string().default("/tmp/easyshell"),
   },

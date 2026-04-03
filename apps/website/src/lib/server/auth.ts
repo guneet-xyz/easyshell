@@ -9,7 +9,7 @@ import {
 import { MagicLink } from "@/components/emails/magic-link"
 import { db } from "@/db"
 import { env } from "@/env"
-import { getResend } from "@/lib/server/resend"
+import { sendMail } from "@/lib/server/smtp"
 
 import { DrizzleAdapter } from "@auth/drizzle-adapter"
 import { count, eq } from "drizzle-orm"
@@ -19,7 +19,7 @@ import { type Adapter } from "next-auth/adapters"
 import DiscordProvider from "next-auth/providers/discord"
 import GithubProvider from "next-auth/providers/github"
 import GoogleProvider from "next-auth/providers/google"
-import Resend from "next-auth/providers/resend"
+import Nodemailer from "next-auth/providers/nodemailer"
 
 // =============================== Helper Utilities ===============================
 
@@ -290,12 +290,19 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       clientSecret: env.GOOGLE_CLIENT_SECRET,
       allowDangerousEmailAccountLinking: true,
     }),
-    Resend({
+    Nodemailer({
+      server: {
+        host: env.SMTP_HOST,
+        port: 587,
+        auth: {
+          user: env.SMTP_USERNAME,
+          pass: env.SMTP_PASSWORD,
+        },
+      },
+      from: env.SMTP_MAIL_FROM,
       async sendVerificationRequest(params) {
         const { identifier, url } = params
-        const resend = getResend()
-        await resend.emails.send({
-          from: "no-reply@easyshell.sh",
+        await sendMail({
           to: identifier,
           subject: `Sign-In to EasyShell`,
           react: MagicLink({ url }),

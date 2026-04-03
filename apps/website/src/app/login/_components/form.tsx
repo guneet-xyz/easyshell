@@ -99,7 +99,7 @@ export function LoginForm({ callback }: { callback: string }) {
                 toast.error("Please enter a valid email address.")
                 return
               }
-              await signIn("resend", {
+              await signIn("nodemailer", {
                 email: parsedEmail.data,
                 callbackUrl: callback,
               })

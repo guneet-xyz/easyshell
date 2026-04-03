@@ -18,8 +18,16 @@ async function pushProblemTasks(problem: string): Promise<Array<Task>> {
   const info = await getProblemInfo(problem)
 
   if (!isStandardProblem(info)) {
-    // TODO: Push logic for live-environment problems (Phase 5)
-    console.log(`Skipping push for live-environment problem: ${problem}`)
+    // Live-environment: single image with sentinel testcaseId=1
+    const tag = `easyshell-${problem}-1`
+    tasks.push({
+      name: `push-${tag}`,
+      callable: async () => {
+        if (!env.DOCKER_REGISTRY) return "skipped"
+        await dockerPush(tag)
+        return "done"
+      },
+    })
     return tasks
   }
 

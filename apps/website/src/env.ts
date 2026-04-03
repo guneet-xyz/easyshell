@@ -21,7 +21,10 @@ export const env = createEnv({
     SESSION_MANAGER_URL: z.string().url(),
     SESSION_MANAGER_TOKEN: z.string(),
 
-    RESEND_API_KEY: z.string(),
+    SMTP_HOST: z.string(),
+    SMTP_USERNAME: z.string(),
+    SMTP_PASSWORD: z.string(),
+    SMTP_MAIL_FROM: z.string(),
   },
 
   clientPrefix: "NEXT_PUBLIC_",

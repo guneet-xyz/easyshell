@@ -78,7 +78,7 @@ importers:
     dependencies:
       "@auth/drizzle-adapter":
         specifier: ^1.7.4
-        version: 1.8.0
+        version: 1.8.0(nodemailer@7.0.13)
       "@easyshell/db":
         specifier: workspace:*
         version: link:../../packages/db
@@ -139,6 +139,9 @@ importers:
       "@react-email/components":
         specifier: ^0.0.36
         version: 0.0.36(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      "@react-email/render":
+        specifier: ^2.0.5
+        version: 2.0.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       "@t3-oss/env-core":
         specifier: ^0.12.0
         version: 0.12.0(typescript@5.7.3)(zod@3.25.76)
@@ -180,13 +183,16 @@ importers:
         version: 16.2.2(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       next-auth:
         specifier: ^5.0.0-beta.25
-        version: 5.0.0-beta.30(next@16.2.2(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
+        version: 5.0.0-beta.30(next@16.2.2(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(nodemailer@7.0.13)(react@18.3.1)
       next-mdx-remote:
         specifier: ^6.0.0
         version: 6.0.0(@types/react@18.3.20)(acorn@8.15.0)(react@18.3.1)
       next-themes:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      nodemailer:
+        specifier: ^7.0.13
+        version: 7.0.13
       posthog-js:
         specifier: ^1.364.6
         version: 1.364.6
@@ -202,9 +208,6 @@ importers:
       react-resizable-panels:
         specifier: ^2.1.7
         version: 2.1.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      resend:
-        specifier: ^4.3.0
-        version: 4.3.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       sonner:
         specifier: ^1.7.2
         version: 1.7.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -239,6 +242,9 @@ importers:
       "@types/node":
         specifier: ^20.17.16
         version: 20.17.30
+      "@types/nodemailer":
+        specifier: ^7.0.11
+        version: 7.0.11
       "@types/react":
         specifier: ^18.3.18
         version: 18.3.20
@@ -289,13 +295,13 @@ importers:
     dependencies:
       "@auth/drizzle-adapter":
         specifier: ^1.7.4
-        version: 1.8.0
+        version: 1.8.0(nodemailer@7.0.13)
       drizzle-orm:
         specifier: ^0.39.1
         version: 0.39.3(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(pg@8.15.6)(postgres@3.4.8)
       next-auth:
         specifier: ^5.0.0-beta.25
-        version: 5.0.0-beta.30(next@16.2.2(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
+        version: 5.0.0-beta.30(next@16.2.2(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(nodemailer@7.0.13)(react@18.3.1)
       postgres:
         specifier: ^3.4.5
         version: 3.4.8
@@ -2601,6 +2607,16 @@ packages:
       react: ^18.0 || ^19.0 || ^19.0.0-rc
       react-dom: ^18.0 || ^19.0 || ^19.0.0-rc
 
+  "@react-email/render@2.0.5":
+    resolution:
+      {
+        integrity: sha512-oAsSpY/vYt9ReDcRQDBLxENwCNAklkE6bvP5Kl9ZlmVr/RZpfhloJp8xc/OZki/YF2nisRRX50aEy8P9v3R5GA==,
+      }
+    engines: { node: ">=20.0.0" }
+    peerDependencies:
+      react: ^18.0 || ^19.0 || ^19.0.0-rc
+      react-dom: ^18.0 || ^19.0 || ^19.0.0-rc
+
   "@react-email/row@0.0.12":
     resolution:
       {
@@ -2911,6 +2927,12 @@ packages:
     resolution:
       {
         integrity: sha512-7zf4YyHA+jvBNfVrk2Gtvs6x7E8V+YDW05bNfG2XkWDJfYRXrTiP/DsB2zSYTaHX0bGIujTBQdMVAhb+j7mwpg==,
+      }
+
+  "@types/nodemailer@7.0.11":
+    resolution:
+      {
+        integrity: sha512-E+U4RzR2dKrx+u3N4DlsmLaDC6mMZOM/TPROxA0UAPiTgI0y4CEFBmZE+coGWTjakDriRsXG368lNk1u9Q0a2g==,
       }
 
   "@types/pg@8.20.0":
@@ -5619,6 +5641,13 @@ packages:
         integrity: sha512-nmh3lCkYZ3grZvqcCH+fjmQ7X+H0OeZgP40OierEaAptX4XofMh5kwNbWh7lBduUzCcV/8kZ+NDLCwm2iorIlA==,
       }
 
+  nodemailer@7.0.13:
+    resolution:
+      {
+        integrity: sha512-PNDFSJdP+KFgdsG3ZzMXCgquO7I6McjY2vlqILjtJd0hy8wEvtugS9xKRF2NWlPNGxvLCXlTNIae4serI7dinw==,
+      }
+    engines: { node: ">=6.0.0" }
+
   npm-run-path@6.0.0:
     resolution:
       {
@@ -6221,13 +6250,6 @@ packages:
       {
         integrity: sha512-Dh7l57ianaEoIpzbp0PC9UKAdCSVklD8E5Rpw7ETfbTl3FqcOOgq5q2LVDhgGCkaBv7p24JXikPdvhhmHvKMsw==,
       }
-
-  resend@4.3.0:
-    resolution:
-      {
-        integrity: sha512-4OBHeusMVSl0vcba2J3AaGzdZ1SXAAhX/Wkcwobe16AHmlW9h3li8wG62Fhvlsc61e+wlQoxcwJZP6WrBTbghQ==,
-      }
-    engines: { node: ">=18" }
 
   resolve-from@4.0.0:
     resolution:
@@ -6988,25 +7010,29 @@ packages:
 snapshots:
   "@alloc/quick-lru@5.2.0": {}
 
-  "@auth/core@0.38.0":
+  "@auth/core@0.38.0(nodemailer@7.0.13)":
     dependencies:
       "@panva/hkdf": 1.2.1
       jose: 6.0.10
       oauth4webapi: 3.5.0
       preact: 10.24.3
       preact-render-to-string: 6.5.11(preact@10.24.3)
+    optionalDependencies:
+      nodemailer: 7.0.13
 
-  "@auth/core@0.41.0":
+  "@auth/core@0.41.0(nodemailer@7.0.13)":
     dependencies:
       "@panva/hkdf": 1.2.1
       jose: 6.0.10
       oauth4webapi: 3.5.0
       preact: 10.24.3
       preact-render-to-string: 6.5.11(preact@10.24.3)
+    optionalDependencies:
+      nodemailer: 7.0.13
 
-  "@auth/drizzle-adapter@1.8.0":
+  "@auth/drizzle-adapter@1.8.0(nodemailer@7.0.13)":
     dependencies:
-      "@auth/core": 0.38.0
+      "@auth/core": 0.38.0(nodemailer@7.0.13)
     transitivePeerDependencies:
       - "@simplewebauthn/browser"
       - "@simplewebauthn/server"
@@ -8313,6 +8339,13 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
       react-promise-suspense: 0.3.4
 
+  "@react-email/render@2.0.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)":
+    dependencies:
+      html-to-text: 9.0.5
+      prettier: 3.5.3
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
   "@react-email/row@0.0.12(react@18.3.1)":
     dependencies:
       react: 18.3.1
@@ -8467,6 +8500,10 @@ snapshots:
   "@types/node@20.17.30":
     dependencies:
       undici-types: 6.19.8
+
+  "@types/nodemailer@7.0.11":
+    dependencies:
+      "@types/node": 20.17.30
 
   "@types/pg@8.20.0":
     dependencies:
@@ -10385,11 +10422,13 @@ snapshots:
 
   natural-compare@1.4.0: {}
 
-  next-auth@5.0.0-beta.30(next@16.2.2(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1):
+  next-auth@5.0.0-beta.30(next@16.2.2(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(nodemailer@7.0.13)(react@18.3.1):
     dependencies:
-      "@auth/core": 0.41.0
+      "@auth/core": 0.41.0(nodemailer@7.0.13)
       next: 16.2.2(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react: 18.3.1
+    optionalDependencies:
+      nodemailer: 7.0.13
 
   next-mdx-remote@6.0.0(@types/react@18.3.20)(acorn@8.15.0)(react@18.3.1):
     dependencies:
@@ -10437,6 +10476,8 @@ snapshots:
       - babel-plugin-macros
 
   node-releases@2.0.27: {}
+
+  nodemailer@7.0.13: {}
 
   npm-run-path@6.0.0:
     dependencies:
@@ -10830,13 +10871,6 @@ snapshots:
       mdast-util-to-hast: 13.2.1
       unified: 11.0.5
       vfile: 6.0.3
-
-  resend@4.3.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
-    dependencies:
-      "@react-email/render": 1.0.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-    transitivePeerDependencies:
-      - react
-      - react-dom
 
   resolve-from@4.0.0: {}
 

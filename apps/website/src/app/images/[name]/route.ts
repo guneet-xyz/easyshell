@@ -5,8 +5,6 @@ import { db } from "@/db"
 import { decode } from "base64-arraybuffer"
 import { eq } from "drizzle-orm"
 
-export const runtime = "edge"
-
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ name: string }> },

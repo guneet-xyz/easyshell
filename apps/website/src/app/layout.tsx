@@ -11,8 +11,6 @@ import { GeistSans } from "geist/font/sans"
 import { type Metadata } from "next"
 import { ThemeProvider } from "next-themes"
 
-export const runtime = "edge"
-
 export const metadata: Metadata = {
   title: "easyshell - practice your shell",
   description: "Level up your terminal skills!",

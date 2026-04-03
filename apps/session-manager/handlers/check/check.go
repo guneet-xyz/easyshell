@@ -63,7 +63,10 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	// Use docker exec to run check.sh directly in the container.
 	// This bypasses the Unix socket / delimiter mechanism entirely,
 	// avoiding any I/O interleaving issues with k3s background processes.
-	cmd := exec.Command("docker", "exec", req.ContainerName, "bash", "/check.sh")
+	// KUBECONFIG must be set for kubectl commands inside check.sh to work.
+	cmd := exec.Command("docker", "exec",
+		"-e", "KUBECONFIG=/etc/rancher/k3s/k3s.yaml",
+		req.ContainerName, "bash", "/check.sh")
 	output, err := cmd.CombinedOutput()
 	outputStr := string(output)
 

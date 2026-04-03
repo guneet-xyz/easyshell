@@ -1,11 +1,14 @@
 import { Suspense } from "react"
 
+import { isLiveEnvironmentProblem } from "@easyshell/problems/schema"
+
 import { ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { auth } from "@/lib/server/auth"
-import { getPublicTestcaseInfo } from "@/lib/server/problems"
+import { getProblemInfo, getPublicTestcaseInfo } from "@/lib/server/problems"
 import { getUserSubmissions } from "@/lib/server/queries"
 
 import { CollapsibleProblemPanel } from "./collapsible-resizeable-panel"
+import { LiveEnvironmentView } from "./live-environment"
 import { LoginToProceed } from "./login-to-proceed"
 import { Problem } from "./problem"
 import { Submissions } from "./submissions"
@@ -21,7 +24,32 @@ export async function LaptopView({
 }) {
   const session = await auth()
   const user = session?.user
+  const problemInfo = await getProblemInfo(problemSlug)
+  const isLiveEnv = isLiveEnvironmentProblem(problemInfo)
 
+  if (isLiveEnv) {
+    return (
+      <ResizablePanelGroup direction="horizontal" className="h-full">
+        <CollapsibleProblemPanel>
+          <Problem slug={problemSlug} />
+        </CollapsibleProblemPanel>
+        <ResizablePanel className="flex h-full w-full flex-col p-2">
+          {user ? (
+            <Suspense fallback={<div>Loading</div>}>
+              <LiveEnvironmentView
+                problemId={problemId}
+                problemSlug={problemSlug}
+              />
+            </Suspense>
+          ) : (
+            <LoginToProceed />
+          )}
+        </ResizablePanel>
+      </ResizablePanelGroup>
+    )
+  }
+
+  // Standard problem view
   const testcases = await getPublicTestcaseInfo(problemSlug)
   const testcaseIds = testcases.map((testcase: { id: number }) => testcase.id)
   const submissions = user

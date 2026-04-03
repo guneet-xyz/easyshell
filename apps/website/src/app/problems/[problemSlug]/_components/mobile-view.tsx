@@ -1,7 +1,12 @@
+import { Suspense } from "react"
+
+import { isLiveEnvironmentProblem } from "@easyshell/problems/schema"
+
 import { auth } from "@/lib/server/auth"
-import { getPublicTestcaseInfo } from "@/lib/server/problems"
+import { getProblemInfo, getPublicTestcaseInfo } from "@/lib/server/problems"
 import { getUserSubmissions } from "@/lib/server/queries"
 
+import { LiveEnvironmentView } from "./live-environment"
 import { LoginToProceed } from "./login-to-proceed"
 import { Problem } from "./problem"
 import { Submissions } from "./submissions"
@@ -17,7 +22,41 @@ export async function MobileView({
 }) {
   const session = await auth()
   const user = session?.user
+  const problemInfo = await getProblemInfo(problemSlug)
+  const isLiveEnv = isLiveEnvironmentProblem(problemInfo)
 
+  if (isLiveEnv) {
+    return (
+      <div className="h-full p-2">
+        <ProblemPageTabs
+          tabs={[
+            {
+              title: "Problem",
+              value: "problem",
+              content: <Problem slug={problemSlug} />,
+            },
+            {
+              title: "Terminal",
+              value: "terminal",
+              content: user ? (
+                <Suspense fallback={<div>Loading</div>}>
+                  <LiveEnvironmentView
+                    problemId={problemId}
+                    problemSlug={problemSlug}
+                  />
+                </Suspense>
+              ) : (
+                <LoginToProceed />
+              ),
+            },
+          ]}
+          defaultValue="problem"
+        />
+      </div>
+    )
+  }
+
+  // Standard problem view
   const testcases = await getPublicTestcaseInfo(problemSlug)
   const testcaseIds = testcases.map((testcase: { id: number }) => testcase.id)
   const submissions = user

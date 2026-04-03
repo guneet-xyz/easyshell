@@ -46,6 +46,7 @@ export async function getProblemSlugFromId(problemId: number) {
 export async function getPublicProblemInfo(slug: string) {
   const info = await getProblemInfo(slug)
   return {
+    type: info.type,
     id: info.id,
     slug: info.slug,
     title: info.title,

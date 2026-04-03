@@ -6,7 +6,7 @@ settings:
 
 overrides:
   "@esbuild-kit/core-utils>esbuild": ">=0.25.0"
-  ajv@<6.14.0: ">=6.14.0"
+  ajv@<6.14.0: ~6.14.0
   brace-expansion@>=2 <2.0.3: ">=2.0.3"
   brace-expansion@<2: ">=1.1.13"
   flatted: ">=3.4.2"
@@ -3304,10 +3304,10 @@ packages:
     engines: { node: ">=0.4.0" }
     hasBin: true
 
-  ajv@8.18.0:
+  ajv@6.14.0:
     resolution:
       {
-        integrity: sha512-PlXPeEWMXMZ7sPYOHqmDyCJzcfNrUr3fGNKtezX14ykXOEIvyK81d+qydx89KY5O71FKMPaQ2vBfBFI5NHR63A==,
+        integrity: sha512-IWrosm/yrn43eiKqkfkHis7QioDleaXQHdDVPKg0FSwwd/DuvyX79TZnFOnYpB7dcsFAMmtFztZuXPDvSePkFw==,
       }
 
   ansi-styles@4.3.0:
@@ -4344,16 +4344,16 @@ packages:
       }
     engines: { node: ">=8.6.0" }
 
+  fast-json-stable-stringify@2.1.0:
+    resolution:
+      {
+        integrity: sha512-lhd/wF+Lk98HZoTCtlVraHtfh5XYijIjalXck7saUtuanSDyLMxnHhSXEDJqHxD7msR8D0uCmqlkwjCV8xvwHw==,
+      }
+
   fast-levenshtein@2.0.6:
     resolution:
       {
         integrity: sha512-DCXu6Ifhqcks7TZKY3Hxp3y6qphY5SJZmrWMDrKcERSOXWQdMhU9Ig/PYrzyw/ul9jOIyh0N4M0tbC5hodg8dw==,
-      }
-
-  fast-uri@3.1.0:
-    resolution:
-      {
-        integrity: sha512-iPeeDKJSWf4IEOasVVrknXpaBV0IApz/gp7S2bb7Z4Lljbl2MGJRqInZiUrQwV16cpzw/D3S5j5Julj/gT52AA==,
       }
 
   fastq@1.20.1:
@@ -5014,10 +5014,10 @@ packages:
         integrity: sha512-4bV5BfR2mqfQTJm+V5tPPdf+ZpuhiIvTuAB5g8kcrXOZpTT/QwwVRWBywX1ozr6lEuPdbHxwaJlm9G6mI2sfSQ==,
       }
 
-  json-schema-traverse@1.0.0:
+  json-schema-traverse@0.4.1:
     resolution:
       {
-        integrity: sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug==,
+        integrity: sha512-xbbCH5dCYU5T8LcEhhuh7HJ88HXuW3qsI3Y0zOZFKfZEHcpWiHU/Jxzk629Brsab/mMiHQti9wMP+845RPe3Vg==,
       }
 
   json-stable-stringify-without-jsonify@1.0.1:
@@ -6058,6 +6058,13 @@ packages:
         integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==,
       }
 
+  punycode@2.3.1:
+    resolution:
+      {
+        integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==,
+      }
+    engines: { node: ">=6" }
+
   query-selector-shadow-dom@1.0.1:
     resolution:
       {
@@ -6214,13 +6221,6 @@ packages:
       {
         integrity: sha512-Dh7l57ianaEoIpzbp0PC9UKAdCSVklD8E5Rpw7ETfbTl3FqcOOgq5q2LVDhgGCkaBv7p24JXikPdvhhmHvKMsw==,
       }
-
-  require-from-string@2.0.2:
-    resolution:
-      {
-        integrity: sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw==,
-      }
-    engines: { node: ">=0.10.0" }
 
   resend@4.3.0:
     resolution:
@@ -6814,6 +6814,12 @@ packages:
     peerDependencies:
       browserslist: ">= 4.21.0"
 
+  uri-js@4.4.1:
+    resolution:
+      {
+        integrity: sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==,
+      }
+
   use-callback-ref@1.3.3:
     resolution:
       {
@@ -7320,7 +7326,7 @@ snapshots:
 
   "@eslint/eslintrc@3.3.3":
     dependencies:
-      ajv: 8.18.0
+      ajv: 6.14.0
       debug: 4.4.3
       espree: 10.4.0
       globals: 14.0.0
@@ -8731,12 +8737,12 @@ snapshots:
 
   acorn@8.15.0: {}
 
-  ajv@8.18.0:
+  ajv@6.14.0:
     dependencies:
       fast-deep-equal: 3.1.3
-      fast-uri: 3.1.0
-      json-schema-traverse: 1.0.0
-      require-from-string: 2.0.2
+      fast-json-stable-stringify: 2.1.0
+      json-schema-traverse: 0.4.1
+      uri-js: 4.4.1
 
   ansi-styles@4.3.0:
     dependencies:
@@ -9426,7 +9432,7 @@ snapshots:
       "@humanwhocodes/module-importer": 1.0.1
       "@humanwhocodes/retry": 0.4.3
       "@types/estree": 1.0.7
-      ajv: 8.18.0
+      ajv: 6.14.0
       chalk: 4.1.2
       cross-spawn: 7.0.6
       debug: 4.4.3
@@ -9533,9 +9539,9 @@ snapshots:
       merge2: 1.4.1
       micromatch: 4.0.8
 
-  fast-levenshtein@2.0.6: {}
+  fast-json-stable-stringify@2.1.0: {}
 
-  fast-uri@3.1.0: {}
+  fast-levenshtein@2.0.6: {}
 
   fastq@1.20.1:
     dependencies:
@@ -9932,7 +9938,7 @@ snapshots:
 
   json-buffer@3.0.1: {}
 
-  json-schema-traverse@1.0.0: {}
+  json-schema-traverse@0.4.1: {}
 
   json-stable-stringify-without-jsonify@1.0.1: {}
 
@@ -10685,6 +10691,8 @@ snapshots:
 
   proxy-from-env@1.1.0: {}
 
+  punycode@2.3.1: {}
+
   query-selector-shadow-dom@1.0.1: {}
 
   queue-microtask@1.2.3: {}
@@ -10822,8 +10830,6 @@ snapshots:
       mdast-util-to-hast: 13.2.1
       unified: 11.0.5
       vfile: 6.0.3
-
-  require-from-string@2.0.2: {}
 
   resend@4.3.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
@@ -11278,6 +11284,10 @@ snapshots:
       browserslist: 4.28.1
       escalade: 3.2.0
       picocolors: 1.1.1
+
+  uri-js@4.4.1:
+    dependencies:
+      punycode: 2.3.1
 
   use-callback-ref@1.3.3(@types/react@18.3.20)(react@18.3.1):
     dependencies:

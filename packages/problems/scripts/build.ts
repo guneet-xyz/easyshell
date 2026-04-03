@@ -100,7 +100,15 @@ WORKDIR /src
 COPY entrypoint/ /src/
 RUN go build -o /bin/entrypoint
 
+FROM alpine:3.21 AS tools
+RUN apk add --no-cache bash
+
 FROM rancher/k3s:v1.32.3-k3s1
+
+COPY --from=tools /bin/bash /bin/bash
+COPY --from=tools /lib/ld-musl-x86_64.so.1 /lib/ld-musl-x86_64.so.1
+COPY --from=tools /usr/lib/libreadline.so* /usr/lib/
+COPY --from=tools /usr/lib/libncursesw.so* /usr/lib/
 
 COPY --from=build-entrypoint /bin/entrypoint /entrypoint
 COPY k3s-base/cgroupv2-fix.sh /usr/local/bin/cgroupv2-fix.sh

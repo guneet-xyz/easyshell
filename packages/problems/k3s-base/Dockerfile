@@ -20,13 +20,21 @@ WORKDIR /src
 COPY entrypoint/ /src/
 RUN go build -o /bin/entrypoint
 
-# Stage 2: Final image based on rancher/k3s
+# Stage 2: Get bash + common tools from Alpine
+# The rancher/k3s image is scratch-based with no package manager,
+# so we copy bash and its dependencies from Alpine.
+FROM alpine:3.21 AS tools
+RUN apk add --no-cache bash
+
+# Stage 3: Final image based on rancher/k3s
 FROM rancher/k3s:v1.32.3-k3s1
 
-# Install additional tools needed by EasyShell and CKAD problems
-# Note: rancher/k3s is based on scratch with a busybox-like environment,
-# so we use the k3s built-in package mechanisms
-# The k3s image includes: kubectl, crictl, ctr, k3s, and basic shell utilities
+# Copy bash and its dependencies from Alpine
+# (the k3s image is scratch-based with no dynamic linker or package manager)
+COPY --from=tools /bin/bash /bin/bash
+COPY --from=tools /lib/ld-musl-x86_64.so.1 /lib/ld-musl-x86_64.so.1
+COPY --from=tools /usr/lib/libreadline.so* /usr/lib/
+COPY --from=tools /usr/lib/libncursesw.so* /usr/lib/
 
 # Copy our entrypoint binary
 COPY --from=build-entrypoint /bin/entrypoint /entrypoint

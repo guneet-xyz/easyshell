@@ -3,6 +3,7 @@
 import { and, eq } from "drizzle-orm"
 
 import { submissions, submissionTestcases } from "@easyshell/db/schema"
+import { isStandardProblem } from "@easyshell/problems/schema"
 
 import { db } from "@/db"
 import { getProblemInfo, getProblemSlugFromId } from "@/lib/server/problems"
@@ -53,6 +54,9 @@ export async function getTestcaseInfo({
   )
 
   const problem = await getProblemInfo(problemSlug)
+  if (!isStandardProblem(problem)) {
+    throw new Error("Testcase info not available for live-environment problems")
+  }
   const testcase = problem.testcases.find((t) => t.id === testcaseId)
   if (!testcase)
     throw new Error("CRITITCAL: Testcase not found (This should not happen)")

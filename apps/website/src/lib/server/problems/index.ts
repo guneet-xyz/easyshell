@@ -1,6 +1,10 @@
 import { z } from "zod"
 
-import { ProblemInfoSchema } from "@easyshell/problems/schema"
+import {
+  isStandardProblem,
+  ProblemInfoSchema,
+  type ProblemInfo,
+} from "@easyshell/problems/schema"
 
 import { getUserSubmissionStats } from "@/lib/server/queries"
 import { getSeriesForProblem } from "@/lib/server/series"
@@ -18,9 +22,7 @@ const DataSchema = z.record(
 
 const parsedData = DataSchema.parse(data)
 
-export async function getProblemInfo(
-  problem: string,
-): Promise<z.infer<typeof ProblemInfoSchema>> {
+export async function getProblemInfo(problem: string): Promise<ProblemInfo> {
   const config = parsedData[problem]?.info
   if (!config) throw new Error("Problem not found")
   return config
@@ -55,6 +57,9 @@ export async function getPublicProblemInfo(slug: string) {
 
 export async function getPublicTestcaseInfo(slug: string) {
   const info = await getProblemInfo(slug)
+  if (!isStandardProblem(info)) {
+    return []
+  }
   return info.testcases
     .filter((tc) => tc.public)
     .map((tc) => ({

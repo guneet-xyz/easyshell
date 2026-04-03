@@ -1,7 +1,15 @@
 import { randomBytes } from "crypto"
 import { readFile } from "fs/promises"
 
-import { getProblemInfo, getProblems } from "@easyshell/problems"
+import {
+  getProblemConfig,
+  getProblemInfo,
+  getProblems,
+} from "@easyshell/problems"
+import {
+  isStandardProblem,
+  type StandardProblemConfig,
+} from "@easyshell/problems/schema"
 import { runSubmissionAndGetOutput } from "@easyshell/submission-manager/utils"
 import { neverThrow } from "@easyshell/utils"
 import { PROBLEMS_DIR, PROJECT_ROOT, WIKI_DIR } from "@easyshell/utils/build"
@@ -348,43 +356,71 @@ async function construct_tests(slug: string): Promise<Array<Test>> {
           })
 
           if (!process.env.SKIP_SUBMISSION_TESTS) {
-            const problemInfo = await getProblemInfo(slug)
+            const problemConfig = await getProblemConfig(slug)
 
-            if (!problemInfo.tests) problemInfo.tests = []
-            problemInfo.tests.push({ testcase: "all", pass: false, input: "" })
+            // Live-environment problems don't have submission tests
+            if (problemConfig.type === "standard") {
+              const stdConfig =
+                problemConfig as unknown as StandardProblemConfig
+              const testsArray: StandardProblemConfig["tests"] = stdConfig.tests
+                ? [...stdConfig.tests]
+                : []
+              testsArray.push({
+                testcase: "all",
+                pass: false,
+                input: "",
+              })
 
-            for (const {
-              testcase,
-              input,
-              pass,
-              index,
-            } of problemInfo.tests.map((t, i) => ({
-              ...t,
-              index: i,
-            }))) {
-              if (testcase === "all") {
-                for (const { id: testcaseId } of problemInfo.testcases) {
+              for (const { testcase, input, pass, index } of testsArray.map(
+                (t, i) => ({
+                  ...t,
+                  index: i,
+                }),
+              )) {
+                if (testcase === "all") {
+                  for (const { id: testcaseId } of stdConfig.testcases) {
+                    tests.push({
+                      name: `(${slug}) test-${index}-testcase-${testcaseId}`,
+                      callable: () =>
+                        _runSubmissionTest(slug, testcaseId, input, pass),
+                    })
+                  }
+                } else if (testcase instanceof Array) {
+                  for (const testcaseId of testcase) {
+                    tests.push({
+                      name: `(${slug}) test-${index}-testcase-${testcaseId}`,
+                      callable: () =>
+                        _runSubmissionTest(slug, testcaseId, input, pass),
+                    })
+                  }
+                } else {
                   tests.push({
-                    name: `(${slug}) test-${index}-testcase-${testcaseId}`,
+                    name: `(${slug}) test-${index}-testcase-${testcase}`,
                     callable: () =>
-                      _runSubmissionTest(slug, testcaseId, input, pass),
+                      _runSubmissionTest(slug, testcase, input, pass),
                   })
                 }
-              } else if (testcase instanceof Array) {
-                for (const testcaseId of testcase) {
-                  tests.push({
-                    name: `(${slug}) test-${index}-testcase-${testcaseId}`,
-                    callable: () =>
-                      _runSubmissionTest(slug, testcaseId, input, pass),
-                  })
-                }
-              } else {
-                tests.push({
-                  name: `(${slug}) test-${index}-testcase-${testcase}`,
-                  callable: () =>
-                    _runSubmissionTest(slug, testcase, input, pass),
-                })
               }
+            } else {
+              // Live-environment: validate setup.sh and check.sh exist
+              tests.push({
+                name: `(${slug}) assert setup.sh exists`,
+                callable: async () => {
+                  const { error } = await neverThrow(
+                    assertFileExists(`${PROBLEM_DIR}/setup.sh`),
+                  )
+                  if (error) return error.message
+                },
+              })
+              tests.push({
+                name: `(${slug}) assert check.sh exists`,
+                callable: async () => {
+                  const { error } = await neverThrow(
+                    assertFileExists(`${PROBLEM_DIR}/check.sh`),
+                  )
+                  if (error) return error.message
+                },
+              })
             }
           }
 

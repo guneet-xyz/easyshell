@@ -1,7 +1,12 @@
 import { cp, mkdir, rm, stat, writeFile } from "fs/promises"
 import { $ } from "execa"
 
-import { getProblemInfo, getProblems } from "@easyshell/problems"
+import {
+  getProblemConfig,
+  getProblemInfo,
+  getProblems,
+} from "@easyshell/problems"
+import { isStandardProblem } from "@easyshell/problems/schema"
 import { PROBLEMS_DIR, PROJECT_ROOT } from "@easyshell/utils/build"
 
 import { env } from "../env"
@@ -60,7 +65,14 @@ async function _existsAndIsDir(path: string) {
 
 async function buildProblemTasks(problem: string): Promise<Array<Task>> {
   const tasks: Array<Task> = []
-  const info = await getProblemInfo(problem)
+  const info = await getProblemConfig(problem)
+
+  if (!isStandardProblem(info)) {
+    // TODO: Build logic for live-environment problems (Phase 5)
+    console.log(`Skipping build for live-environment problem: ${problem}`)
+    return tasks
+  }
+
   for (const testcase of info.testcases) {
     const tag = `easyshell-${problem}-${testcase.id}`
 

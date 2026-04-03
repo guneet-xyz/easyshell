@@ -1,4 +1,4 @@
-import type { FsType, ProblemConfig } from "@easyshell/problems/schema"
+import type { FsType, ProblemConfigInput, StandardProblemConfig } from "@easyshell/problems/schema"
 import { getFs, testcaseDir } from "@easyshell/utils/build"
 
 const SLUG = "mdx-no-more"
@@ -9,7 +9,7 @@ async function testcaseConfig({
 }: {
   id: number
   isPublic: boolean
-}): Promise<ProblemConfig["testcases"][number]> {
+}): Promise<StandardProblemConfig["testcases"][number]> {
   const newFs: FsType = {}
   const fs = await getFs(testcaseDir(SLUG, id))
   for (const file in fs) {
@@ -29,7 +29,7 @@ async function testcaseConfig({
   }
 }
 
-const config: ProblemConfig = {
+const config: ProblemConfigInput = {
   id: 14,
   slug: SLUG,
   title: "Bye Bye MDX, Hello MD!",

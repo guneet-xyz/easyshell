@@ -1,6 +1,7 @@
 "use server"
 
 import { submissions, submissionTestcaseQueue } from "@easyshell/db/schema"
+import { isStandardProblem } from "@easyshell/problems/schema"
 
 import { db } from "@/db"
 import { auth } from "@/lib/server/auth"
@@ -17,6 +18,13 @@ export async function newSubmission({
   if (!user) return null
 
   const problemSlug = await getProblemSlugFromId(problemId)
+  const problem = await getProblemInfo(problemSlug)
+
+  if (!isStandardProblem(problem)) {
+    throw new Error(
+      "Submissions are not supported for live-environment problems. Use the Check button instead.",
+    )
+  }
 
   const submissionId = (
     await db
@@ -33,7 +41,6 @@ export async function newSubmission({
     throw new Error("Failed to create submission")
   }
 
-  const problem = await getProblemInfo(problemSlug)
   // TODO: parallelize this
   for (const testcase of problem.testcases) {
     await db.insert(submissionTestcaseQueue).values({

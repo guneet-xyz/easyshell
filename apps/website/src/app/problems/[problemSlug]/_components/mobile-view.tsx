@@ -19,7 +19,7 @@ export async function MobileView({
   const user = session?.user
 
   const testcases = await getPublicTestcaseInfo(problemSlug)
-  const testcaseIds = testcases.map((testcase) => testcase.id)
+  const testcaseIds = testcases.map((testcase: { id: number }) => testcase.id)
   const submissions = user
     ? await getUserSubmissions({ problemId, userId: user.id })
     : null

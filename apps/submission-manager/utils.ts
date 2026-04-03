@@ -2,6 +2,8 @@ import { mkdir, readFile, writeFile } from "fs/promises"
 import { execa } from "execa"
 import { z } from "zod"
 
+import { isStandardProblem } from "@easyshell/problems/schema"
+
 import { getProblemInfo } from "./problems"
 
 const OutputJsonSchema = z.object({
@@ -27,6 +29,12 @@ export async function runSubmissionAndGetOutput({
   dockerRegistry: string | undefined
 }) {
   const problem = await getProblemInfo(problemSlug)
+
+  if (!isStandardProblem(problem)) {
+    throw new Error(
+      `Cannot run submission for live-environment problem: ${problemSlug}`,
+    )
+  }
 
   await mkdir(`${workingDir}/inputs`, { recursive: true })
   await mkdir(`${workingDir}/outputs`, { recursive: true })

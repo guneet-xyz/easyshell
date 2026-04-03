@@ -1,4 +1,4 @@
-import type { ProblemConfig } from "@easyshell/problems/schema"
+import type { ProblemConfigInput, StandardProblemConfig } from "@easyshell/problems/schema"
 import { PROBLEMS_DIR } from "@easyshell/utils/build"
 
 import { readFile } from "fs/promises"
@@ -11,7 +11,7 @@ async function testcaseConfig({
 }: {
   id: number
   isPublic: boolean
-}): Promise<ProblemConfig["testcases"][number]> {
+}): Promise<StandardProblemConfig["testcases"][number]> {
   const text = await readFile(
     `${PROBLEMS_DIR}/${SLUG}/testcases/${id}/email.txt`,
   )
@@ -35,7 +35,7 @@ async function testcaseConfig({
   }
 }
 
-const config: ProblemConfig = {
+const config: ProblemConfigInput = {
   id: 13,
   slug: SLUG,
   title: "Extract All the E-mails",

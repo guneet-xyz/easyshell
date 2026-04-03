@@ -1,6 +1,7 @@
 import { $ } from "execa"
 
 import { getProblemInfo, getProblems } from "@easyshell/problems"
+import { isStandardProblem } from "@easyshell/problems/schema"
 
 import { env } from "../env"
 import { RunParallelStuff, Task } from "./_utils"
@@ -15,6 +16,13 @@ async function dockerPush(tag: string) {
 async function pushProblemTasks(problem: string): Promise<Array<Task>> {
   const tasks: Array<Task> = []
   const info = await getProblemInfo(problem)
+
+  if (!isStandardProblem(info)) {
+    // TODO: Push logic for live-environment problems (Phase 5)
+    console.log(`Skipping push for live-environment problem: ${problem}`)
+    return tasks
+  }
+
   for (const testcase of info.testcases) {
     const tag = `easyshell-${problem}-${testcase.id}`
     tasks.push({

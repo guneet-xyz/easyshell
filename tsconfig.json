@@ -31,7 +31,6 @@
   "include": ["**/*.ts", "**/*.tsx", "**/*.cjs", "**/*.js"],
   "exclude": [
     "node_modules",
-    "apps/db-proxy/db-proxy.cjs",
     "apps/submission-manager/submission-manager.cjs"
   ]
 }

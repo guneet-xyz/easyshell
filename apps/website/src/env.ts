@@ -4,8 +4,7 @@ import { z } from "zod"
 /** Environment variables for the **website** app (`@easyshell/website`). */
 export const env = createEnv({
   server: {
-    DRIZZLE_PROXY_URL: z.string().url(),
-    DRIZZLE_PROXY_TOKEN: z.string(),
+    DATABASE_URL: z.string(),
 
     NEXTAUTH_SECRET: z.string(),
     NEXTAUTH_URL: z.string().url(),

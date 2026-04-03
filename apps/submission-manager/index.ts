@@ -12,7 +12,7 @@ import { runSubmissionAndGetOutput } from "./utils"
 
 import { and, eq, sql } from "drizzle-orm"
 
-const db = createDb(env.DRIZZLE_PROXY_URL, env.DRIZZLE_PROXY_TOKEN)
+const db = createDb(env.DATABASE_URL)
 
 const WORKING_DIR = `${env.WORKING_DIR}/submission-manager`
 

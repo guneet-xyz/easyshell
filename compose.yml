@@ -13,11 +13,7 @@ services:
     networks:
       - easyshell
     environment:
-      DRIZZLE_PROXY_URL: http://db-proxy:8008
-      DRIZZLE_PROXY_TOKEN: token
-    depends_on:
-      db-proxy:
-        condition: service_healthy
+      DATABASE_URL: ${DATABASE_URL}
   session-manager:
     build:
       context: ./apps/session-manager
@@ -31,43 +27,6 @@ services:
     volumes:
       - /tmp/easyshell:/tmp/easyshell
       - /var/run/docker.sock:/var/run/docker.sock
-  db:
-    container_name: easyshell-dev-db
-    image: postgres:17
-    environment:
-      POSTGRES_PASSWORD: password
-    volumes:
-      - ./data/postgres:/var/lib/postgresql/data
-    restart: always
-    ports:
-      - 5432:5432
-    networks:
-      - easyshell
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 1s
-      timeout: 500ms
-      retries: 5
-  db-proxy:
-    build:
-      context: .
-      dockerfile: ./apps/db-proxy/Dockerfile
-    container_name: easyshell-dev-db-proxy
-    environment:
-      DATABASE_URL: postgres://postgres:password@db/easyshell
-      TOKEN: token
-    networks:
-      - easyshell
-    ports:
-      - 8008:8008
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8008/health"]
-      interval: 1s
-      timeout: 500ms
-      retries: 3
-    depends_on:
-      db:
-        condition: service_healthy
   website:
     build:
       context: .
@@ -78,8 +37,7 @@ services:
     container_name: easyshell-dev-website
     environment:
       AUTH_TRUST_HOST: true
-      DRIZZLE_PROXY_URL: http://db-proxy:8008
-      DRIZZLE_PROXY_TOKEN: token
+      DATABASE_URL: ${DATABASE_URL}
       NEXTAUTH_SECRET: secret
       NEXTAUTH_URL: http://localhost:3000
       DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
@@ -90,7 +48,6 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       SESSION_MANAGER_URL: http://session-manager:4000
       SESSION_MANAGER_TOKEN: token
-      RESEND_API_KEY: ${RESEND_API_KEY}
     networks:
       - easyshell
     ports:
@@ -100,6 +57,3 @@ services:
       interval: 1s
       timeout: 500ms
       retries: 3
-    depends_on:
-      db-proxy:
-        condition: service_healthy

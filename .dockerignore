@@ -5,3 +5,9 @@ data
 **/.rgignore
 **/node_modules
 **/*.env
+*.md
+.prettierignore
+prettier.config.js
+.github
+drizzle
+drizzle.config.ts

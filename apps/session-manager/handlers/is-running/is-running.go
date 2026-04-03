@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os/exec"
+	"regexp"
 	"session-manager/utils"
 )
 
@@ -15,6 +16,8 @@ type requestBody struct {
 type responseBody struct {
 	IsRunning bool `json:"is_running"`
 }
+
+var validContainerName = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.-]+$`)
 
 func Handler(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Authorization") != "Bearer "+utils.Token {
@@ -34,10 +37,14 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("Container Name: ", reqBody.ContainerName)
+	if !validContainerName.MatchString(reqBody.ContainerName) {
+		http.Error(w, "Invalid container name", http.StatusBadRequest)
+		return
+	}
 
-	command := fmt.Sprintf("docker inspect %s", reqBody.ContainerName)
-	cmd := exec.Command("sh", "-c", command)
+	fmt.Println("Checking container:", reqBody.ContainerName)
+
+	cmd := exec.Command("docker", "inspect", reqBody.ContainerName)
 	err = cmd.Run()
 
 	var respBody = responseBody{

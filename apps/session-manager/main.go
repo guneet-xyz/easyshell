@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"session-manager/handlers/check"
 	"session-manager/handlers/create"
 	"session-manager/handlers/exec"
 	is_running "session-manager/handlers/is-running"
@@ -17,6 +18,7 @@ func main() {
 	http.HandleFunc("/create", create.Handler)
 	http.HandleFunc("/is-running", is_running.Handler)
 	http.HandleFunc("/kill", kill.Handler)
+	http.HandleFunc("/check", check.Handler)
 
 	fmt.Println("Listening on port 4000")
 	err := http.ListenAndServe(":4000", nil)

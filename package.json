@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "main": "scripts/index.ts",
   "scripts": {
     "cache": "pnpm --filter @easyshell/problems run cache:website && pnpm --filter @easyshell/problems run cache:submission-manager",
     "format:check": "pnpm exec prettier --check . && gofmt -l -s .",

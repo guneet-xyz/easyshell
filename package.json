@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "cache": "pnpm --filter @easyshell/problems run cache:website && pnpm --filter @easyshell/problems run cache:submission-manager",
+    "db:migrate": "infisical run --env=dev -- pnpm exec drizzle-kit migrate",
     "dev:session-manager": "infisical run --env=dev -- go run -C apps/session-manager .",
     "dev:submission-manager": "infisical run --env=dev -- pnpm --filter @easyshell/submission-manager run dev",
     "dev:website": "infisical run --env=dev -- pnpm --filter @easyshell/website run dev",

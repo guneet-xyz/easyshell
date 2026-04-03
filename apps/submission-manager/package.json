@@ -10,6 +10,7 @@
   "scripts": {
     "build": "pnpm exec esbuild index.ts --bundle --platform=node --outfile=submission-manager.cjs",
     "cache": "pnpm --filter @easyshell/problems run cache:submission-manager",
+    "dev": "pnpm run build && pnpm run start",
     "start": "node submission-manager.cjs"
   },
   "dependencies": {

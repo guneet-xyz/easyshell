@@ -70,12 +70,46 @@ const config: LiveEnvironmentProblemConfigInput = {
   check: {
     totalPoints: <number from check.sh>,
   },
+  tests: [
+    {
+      input: "<solution commands from ANSWER.md>",
+      pass: true,
+    },
+    {
+      input: "",
+      pass: false,
+    },
+  ],
 }
 
 export default config
 ```
 
 **Determining `totalPoints`**: Open the source `check.sh` and find the `total=N` line near the top of the checks section. That's your `totalPoints`.
+
+**Writing `tests`**: The `tests` array defines functional tests that validate the problem end-to-end. Each test entry has:
+
+- `input`: A shell command string (can be multiline) executed via `sh -c` inside the k3s container. Extract this from the source `ANSWER.md`.
+- `pass`: Whether `check.sh` should report a perfect score after running this input.
+
+Always include at least two tests:
+
+1. A **passing test** with the correct solution commands from `ANSWER.md`
+2. A **failing test** with empty input (`""`) to verify `check.sh` doesn't give false positives
+
+For multiline solutions, join commands with `&&` or `\n`:
+
+```typescript
+tests: [
+  {
+    input: `kubectl create secret generic db-credentials \
+--from-literal=DB_USER=admin --from-literal=DB_PASS='Secret123!' -n q01 && \
+kubectl set env deployment/api-server --from=secret/db-credentials -n q01`,
+    pass: true,
+  },
+  { input: "", pass: false },
+],
+```
 
 **Determining `difficulty`**:
 
@@ -185,11 +219,24 @@ This creates CI workflow files for the new problem. Live-environment problems au
 # Build the problem image
 pnpm run build <slug>
 
-# Run tests (validates setup.sh/check.sh exist, config parses correctly)
+# Run tests (validates files exist, config parses, and runs functional tests)
 pnpm run test <slug>
 ```
 
-Full end-to-end testing (running k3s, executing setup.sh, running check.sh) requires Docker and is not automated yet. To test manually:
+The test script performs:
+
+1. **Static checks**: config.ts imports, page.md exists, setup.sh exists, check.sh exists, workflow files exist
+2. **Functional tests** (requires Docker): For each entry in the `tests` array, the script:
+   - Starts a privileged k3s container from the built image
+   - Waits for k3s readiness and setup.sh completion (~1-2 min)
+   - Runs the `input` commands via `docker exec`
+   - Runs `check.sh` and parses the `Score: X/Y` line
+   - Asserts the score matches the `pass` expectation
+   - Cleans up the container
+
+Set `SKIP_SUBMISSION_TESTS=1` to skip the functional tests (useful for quick iteration on static content).
+
+To test manually without the harness:
 
 ```bash
 # Run the built image

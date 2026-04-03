@@ -59,6 +59,13 @@ const CheckConfigSchema = z.object({
   totalPoints: z.number().positive(),
 })
 
+const LiveEnvironmentTestSchema = z.object({
+  /** Shell commands to run as the answer (multiline string, executed via sh -c). */
+  input: z.string(),
+  /** Whether check.sh should report 100% after this input. */
+  pass: z.boolean(),
+})
+
 // ========================== Problem Config schemas ============================
 // Uses a discriminated union on `type` field.
 // Standard problems have testcases + tests.
@@ -88,6 +95,7 @@ const LiveEnvironmentProblemConfigSchema = z
     difficulty: DifficultySchema,
     tags: TagsSchema,
     check: CheckConfigSchema,
+    tests: z.array(LiveEnvironmentTestSchema).optional(),
   })
   .strict()
 
@@ -129,9 +137,10 @@ export type StandardProblemConfigInput = Omit<
  */
 export type LiveEnvironmentProblemConfigInput = Omit<
   LiveEnvironmentProblemConfig,
-  "tags"
+  "tags" | "tests"
 > & {
   tags?: string[]
+  tests?: LiveEnvironmentProblemConfig["tests"]
 }
 
 /**

@@ -66,6 +66,16 @@ const config: LiveEnvironmentProblemConfigInput = {
   check: {
     totalPoints: 2,
   },
+  tests: [
+    {
+      input: \`echo "TODO: add solution commands here"\`,
+      pass: true,
+    },
+    {
+      input: "",
+      pass: false,
+    },
+  ],
 }
 
 export default config

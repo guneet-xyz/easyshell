@@ -1,5 +1,6 @@
 import { randomBytes } from "crypto"
 import { readFile } from "fs/promises"
+import { $ } from "execa"
 
 import {
   getProblemConfig,
@@ -8,10 +9,11 @@ import {
 } from "@easyshell/problems"
 import {
   isStandardProblem,
+  type LiveEnvironmentProblemConfig,
   type StandardProblemConfig,
 } from "@easyshell/problems/schema"
 import { runSubmissionAndGetOutput } from "@easyshell/submission-manager/utils"
-import { neverThrow } from "@easyshell/utils"
+import { neverThrow, sleep } from "@easyshell/utils"
 import { PROBLEMS_DIR, PROJECT_ROOT, WIKI_DIR } from "@easyshell/utils/build"
 
 import { SeriesList } from "../data/series"
@@ -421,6 +423,25 @@ async function construct_tests(slug: string): Promise<Array<Test>> {
                   if (error) return error.message
                 },
               })
+
+              // Functional tests: spin up k3s container, run answer, check score
+              const liveConfig =
+                problemConfig as unknown as LiveEnvironmentProblemConfig
+              if (liveConfig.tests && liveConfig.tests.length > 0) {
+                for (const [index, test] of liveConfig.tests.entries()) {
+                  tests.push({
+                    name: `(${slug}) live-env-test-${index}`,
+                    callable: () =>
+                      _runLiveEnvironmentTest(
+                        slug,
+                        index,
+                        test.input,
+                        test.pass,
+                        liveConfig.check.totalPoints,
+                      ),
+                  })
+                }
+              }
             }
           }
 
@@ -455,6 +476,120 @@ async function _runSubmissionTest(
         `output (${slug}-${testcase} fs): ${JSON.stringify(output.fs)}`,
       )
     return `expected to ${pass ? "pass" : "fail"} with input: ${input}`
+  }
+}
+
+async function _runLiveEnvironmentTest(
+  slug: string,
+  index: number,
+  input: string,
+  pass: boolean,
+  totalPoints: number,
+): Promise<string | undefined> {
+  const tag = `easyshell-${slug}-1`
+  const containerName = `test-${slug}-${index}-${randomBytes(4).toString("hex")}`
+  const dockerRegistry = env.DOCKER_REGISTRY
+  const image = dockerRegistry ? `${dockerRegistry}/easyshell/${tag}` : tag
+
+  try {
+    // Start the k3s container
+    await $`docker run -d \
+      --name ${containerName} \
+      --privileged \
+      --cgroupns=private \
+      --tmpfs /run \
+      --tmpfs /var/run \
+      ${image} \
+      -mode k3s-session`
+
+    // Wait for readiness (setup.sh completion)
+    const maxWaitMs = 180_000 // 3 minutes
+    const startTime = Date.now()
+    let ready = false
+
+    while (Date.now() - startTime < maxWaitMs) {
+      try {
+        const { stdout } =
+          await $`docker exec ${containerName} cat /tmp/easyshell/ready`
+        if (stdout.trim() === "ready") {
+          ready = true
+          break
+        }
+      } catch {
+        // File doesn't exist yet -- check for error
+        try {
+          const { stdout: errOut } =
+            await $`docker exec ${containerName} cat /tmp/easyshell/ready.error`
+          return `k3s setup failed: ${errOut.trim()}`
+        } catch {
+          // Neither file exists yet, keep waiting
+        }
+      }
+      await sleep(2000)
+    }
+
+    if (!ready) {
+      return `k3s container did not become ready within ${maxWaitMs / 1000}s`
+    }
+
+    // Run the answer commands (if any input provided)
+    if (input.trim().length > 0) {
+      try {
+        await $({
+          timeout: 60_000,
+        })`docker exec -e KUBECONFIG=/etc/rancher/k3s/k3s.yaml ${containerName} sh -c ${input}`
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err)
+        // Non-zero exit from answer commands is not necessarily a test failure
+        // (some commands may intentionally fail). Log for debugging.
+        if (process.env.DEBUG_STDOUT) {
+          console.debug(`(${slug}) answer command output: ${msg}`)
+        }
+      }
+    }
+
+    // Run check.sh and parse the score
+    const { stdout: checkOutput } = await $({
+      timeout: 30_000,
+    })`docker exec -e KUBECONFIG=/etc/rancher/k3s/k3s.yaml ${containerName} /check.sh`
+
+    // Parse "Score: X/Y" from the last non-empty line
+    const lines = checkOutput
+      .split("\n")
+      .map((l) => l.replace(/\x1b\[[0-9;]*m/g, "").trim())
+      .filter((l) => l.length > 0)
+    const scoreLine = lines.findLast((l) => l.startsWith("Score:"))
+
+    if (!scoreLine) {
+      return `check.sh did not output a Score line. Output:\n${checkOutput}`
+    }
+
+    const scoreMatch = scoreLine.match(/Score:\s*(\d+)\/(\d+)/)
+    if (!scoreMatch) {
+      return `could not parse score from: ${scoreLine}`
+    }
+
+    const score = parseInt(scoreMatch[1]!, 10)
+    const total = parseInt(scoreMatch[2]!, 10)
+
+    if (total !== totalPoints) {
+      return `check.sh reports total=${total} but config.check.totalPoints=${totalPoints}`
+    }
+
+    const isPerfect = score === total
+    if (pass && !isPerfect) {
+      return `expected pass (${total}/${total}) but got ${score}/${total}. Output:\n${checkOutput}`
+    }
+    if (!pass && isPerfect) {
+      return `expected fail but got perfect score ${score}/${total}. Output:\n${checkOutput}`
+    }
+  } finally {
+    // Clean up: kill and remove the container
+    try {
+      await $`docker rm -f ${containerName}`
+    } catch {
+      // Ignore cleanup errors
+    }
   }
 }
 

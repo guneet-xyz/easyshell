@@ -1,11 +1,10 @@
 "use client"
 
-import { LoginForm } from "./_components/form"
-
-import { useSearchParams } from "next/navigation"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect } from "react"
 import { toast } from "sonner"
+
+import { LoginForm } from "./_components/form"
 
 function validCallbackUrl(url: string | null): boolean {
   return url == undefined || /^\/(?:[\w-]+\/?)*$/.test(url)

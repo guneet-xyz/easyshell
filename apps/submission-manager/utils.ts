@@ -1,8 +1,8 @@
-import { getProblemInfo } from "./problems"
-
-import { execa } from "execa"
 import { mkdir, readFile, writeFile } from "fs/promises"
+import { execa } from "execa"
 import { z } from "zod"
+
+import { getProblemInfo } from "./problems"
 
 const OutputJsonSchema = z.object({
   stdout: z.string(),

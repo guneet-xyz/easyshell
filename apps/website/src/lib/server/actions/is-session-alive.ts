@@ -1,10 +1,10 @@
 "use server"
 
+import { eq } from "drizzle-orm"
+
 import { terminalSessions } from "@easyshell/db/schema"
 
 import { db } from "@/db"
-
-import { eq } from "drizzle-orm"
 
 export async function isSessionAlive(sessionId: number) {
   const session = await db

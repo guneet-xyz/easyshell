@@ -1,11 +1,11 @@
+import moment from "moment"
+import { notFound } from "next/navigation"
+
 import { Footer } from "@/components/footer"
 import { ProblemLink } from "@/components/problem-link/server"
 import { getWikiFull, getWikiMetadata } from "@/lib/server/wiki"
 
 import { Markdown } from "./_components/markdown"
-
-import moment from "moment"
-import { notFound } from "next/navigation"
 
 export async function generateMetadata({
   params,
@@ -43,7 +43,7 @@ export default async function Page({
           <div className="font-clash-display text-5xl font-bold">
             {metadata.title}
           </div>
-          <div className="font-clash-display flex justify-between text-neutral-500">
+          <div className="flex justify-between font-clash-display text-neutral-500">
             <div>{moment(metadata.lastEdited).format("MMMM Do YYYY")}</div>
             <div>{metadata.type === "editorial" ? "EDITORIAL" : null}</div>
           </div>

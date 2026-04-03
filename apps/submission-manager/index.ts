@@ -1,16 +1,16 @@
+import { and, eq, sql } from "drizzle-orm"
+
 import { createDb } from "@easyshell/db"
 import {
+  submissions,
   submissionTestcaseQueue,
   submissionTestcases,
-  submissions,
 } from "@easyshell/db/schema"
 import { sleep } from "@easyshell/utils"
 
 import { env } from "./env"
 import { getProblemSlugFromId } from "./problems"
 import { runSubmissionAndGetOutput } from "./utils"
-
-import { and, eq, sql } from "drizzle-orm"
 
 const db = createDb(env.DATABASE_URL)
 

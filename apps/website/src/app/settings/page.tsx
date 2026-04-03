@@ -1,3 +1,6 @@
+import { Metadata } from "next"
+import { redirect } from "next/navigation"
+
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { auth } from "@/lib/server/auth"
 import { getUserProviders } from "@/lib/server/queries"
@@ -14,9 +17,6 @@ import {
   GoogleCard,
 } from "./_components/provider-cards"
 import { ThemeToggle } from "./_components/theme-toggle"
-
-import { Metadata } from "next"
-import { redirect } from "next/navigation"
 
 export const metadata: Metadata = {
   title: "easyshell - account settings",

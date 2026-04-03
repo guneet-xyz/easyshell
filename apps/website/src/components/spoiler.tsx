@@ -1,8 +1,8 @@
 "use client"
 
-import { cn } from "@/lib/utils"
-
 import { useState } from "react"
+
+import { cn } from "@/lib/utils"
 
 export function Spoiler({
   className,
@@ -24,7 +24,7 @@ export function Spoiler({
     >
       <div
         className={cn(
-          "absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 text-sm font-semibold",
+          "absolute top-1/2 left-1/2 z-10 -translate-x-1/2 -translate-y-1/2 text-sm font-semibold",
           { hidden: open },
         )}
       >

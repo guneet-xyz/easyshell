@@ -1,9 +1,9 @@
 "use client"
 
+import { createContext, useContext, useEffect, useState } from "react"
+
 import { Switch } from "@/components/ui/switch"
 import type { SetState } from "@/lib/client"
-
-import { createContext, useContext, useEffect, useState } from "react"
 
 export function PromptSettings() {
   const { multiline, setMultiline } = usePromptSettingsContext()

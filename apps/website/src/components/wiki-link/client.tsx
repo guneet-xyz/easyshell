@@ -1,10 +1,10 @@
 "use client"
 
+import { useEffect, useState } from "react"
+
 import { getWikiMetadata } from "@/lib/server/actions/get-wiki-metadata"
 
 import { WikiLinkBase } from "."
-
-import { useEffect, useState } from "react"
 
 export function WikiLink({
   slug,

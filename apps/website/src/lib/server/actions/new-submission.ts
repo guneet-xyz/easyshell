@@ -1,6 +1,6 @@
 "use server"
 
-import { submissionTestcaseQueue, submissions } from "@easyshell/db/schema"
+import { submissions, submissionTestcaseQueue } from "@easyshell/db/schema"
 
 import { db } from "@/db"
 import { auth } from "@/lib/server/auth"

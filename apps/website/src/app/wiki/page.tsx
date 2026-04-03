@@ -1,9 +1,9 @@
+import moment from "moment"
+import Link from "next/link"
+
 import { Footer } from "@/components/footer"
 import { Card } from "@/components/ui/card"
 import { getWikiPages } from "@/lib/server/wiki"
-
-import moment from "moment"
-import Link from "next/link"
 
 export const metadata = {
   title: "easyshell - wiki",
@@ -21,7 +21,7 @@ export default async function Page() {
           backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%239C92AC' fill-opacity='0.4' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E")`,
         }}
       >
-        <h1 className="font-clash-display text-center text-3xl font-bold lg:text-6xl dark:text-emerald-100">
+        <h1 className="text-center font-clash-display text-3xl font-bold lg:text-6xl dark:text-emerald-100">
           Wiki
         </h1>
       </div>
@@ -66,7 +66,7 @@ async function WikiEditorialCard({
       <Card className="flex w-full flex-col gap-4 border p-4 transition-colors hover:bg-neutral-100/60 dark:hover:bg-neutral-950/60">
         <div className="flex flex-col justify-center">
           <div className="font-clash-display text-4xl font-bold">{title}</div>
-          <div className="font-clash-display flex justify-between text-neutral-500">
+          <div className="flex justify-between font-clash-display text-neutral-500">
             <div>{moment(lastEdited).format("MMMM Do YYYY")}</div>
             <div>{"EDITORIAL"}</div>
           </div>

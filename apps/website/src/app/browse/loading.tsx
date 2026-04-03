@@ -17,10 +17,10 @@ export default async function Page() {
           <SeriesCardSkeleton key={series.slug} series={series} />
         ))}
       </div>
-      <div className="font-clash-display mt-4 text-2xl font-semibold">
+      <div className="mt-4 font-clash-display text-2xl font-semibold">
         Problems
       </div>
-      <div className="font-clash-display mb-4 text-neutral-500">
+      <div className="mb-4 font-clash-display text-neutral-500">
         Browse all problems and filter by tags.
       </div>
       <ProblemListSkeleton />

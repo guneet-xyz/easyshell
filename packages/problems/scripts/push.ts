@@ -1,9 +1,9 @@
+import { $ } from "execa"
+
 import { getProblemInfo, getProblems } from "@easyshell/problems"
 
 import { env } from "../env"
 import { RunParallelStuff, Task } from "./_utils"
-
-import { $ } from "execa"
 
 async function dockerPush(tag: string) {
   if (!env.DOCKER_REGISTRY) return

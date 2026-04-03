@@ -1,10 +1,10 @@
 "use client"
 
-import { ResizableHandle, ResizablePanel } from "@/components/ui/resizable"
-
 import { useRef, useState } from "react"
 import { PiCaretDoubleRightDuotone, PiCaretLeftFill } from "react-icons/pi"
 import type { ImperativePanelHandle } from "react-resizable-panels"
+
+import { ResizableHandle, ResizablePanel } from "@/components/ui/resizable"
 
 export function CollapsibleProblemPanel({
   children,
@@ -40,7 +40,7 @@ export function CollapsibleProblemPanel({
         >
           <PiCaretDoubleRightDuotone />
           <PiCaretDoubleRightDuotone />
-          <p className="font-clash-display absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-90 text-nowrap font-semibold">
+          <p className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rotate-90 font-clash-display font-semibold text-nowrap">
             <p>View Problem</p>
           </p>
         </div>

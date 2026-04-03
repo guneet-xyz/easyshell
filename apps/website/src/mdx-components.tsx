@@ -19,7 +19,7 @@ export const customComponents: MDXComponents = {
     return (
       <>
         {language && (
-          <p className="absolute right-0 top-0 rounded-bl-md rounded-tr-md bg-neutral-600 p-1 text-xs opacity-0 group-hover:opacity-100 dark:text-white">
+          <p className="absolute top-0 right-0 rounded-tr-md rounded-bl-md bg-neutral-600 p-1 text-xs opacity-0 group-hover:opacity-100 dark:text-white">
             {language}
           </p>
         )}

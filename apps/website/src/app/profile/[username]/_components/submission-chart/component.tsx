@@ -86,7 +86,7 @@ export default function SubmissionsChart({
   return (
     <div className="relative aspect-square h-full">
       <div
-        className="z-1 absolute left-1/2 top-1/2 aspect-square h-[90%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300 dark:border-emerald-900"
+        className="absolute top-1/2 left-1/2 z-1 aspect-square h-[90%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300 dark:border-emerald-900"
         style={{
           background: `conic-gradient(${COLORS[theme].nothover.easy.primary} 0% ${easyPercent}%, ${COLORS[theme].nothover.easy.secondary} ${easyPercent}% 100%)`,
         }}
@@ -99,21 +99,21 @@ export default function SubmissionsChart({
             <div className="text-sm font-semibold text-emerald-500">
               Easy Problems
             </div>
-            <div className="font-geist-mono z-10 rounded-full border border-emerald-400 bg-emerald-200 px-2 text-emerald-700 shadow-sm">
+            <div className="z-10 rounded-full border border-emerald-400 bg-emerald-200 px-2 font-geist-mono text-emerald-700 shadow-sm">
               {stats.easy}/{stats.totalEasy}
             </div>
           </div>
         }
       >
         <div
-          className="z-2 absolute left-1/2 top-1/2 aspect-square h-[90%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-500 opacity-0 transition-opacity hover:opacity-100"
+          className="absolute top-1/2 left-1/2 z-2 aspect-square h-[90%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-500 opacity-0 transition-opacity hover:opacity-100"
           style={{
             background: `conic-gradient(${COLORS[theme].hover.easy.primary} 0% ${easyPercent}%, ${COLORS[theme].hover.easy.secondary} ${easyPercent}% 100%)`,
           }}
         />
       </EasyTooltip>
       <div
-        className="z-3 absolute left-1/2 top-1/2 aspect-square h-[75%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-300 transition-all dark:border-amber-900"
+        className="absolute top-1/2 left-1/2 z-3 aspect-square h-[75%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-300 transition-all dark:border-amber-900"
         style={{
           background: `conic-gradient(${COLORS[theme].nothover.medium.primary} 0% ${mediumPercent}%, ${COLORS[theme].nothover.medium.secondary} ${mediumPercent}% 100%)`,
         }}
@@ -126,21 +126,21 @@ export default function SubmissionsChart({
             <div className="text-sm font-semibold text-amber-500">
               Medium Problems
             </div>
-            <div className="font-geist-mono z-10 rounded-full border border-amber-400 bg-amber-200 px-2 text-amber-700 shadow-sm">
+            <div className="z-10 rounded-full border border-amber-400 bg-amber-200 px-2 font-geist-mono text-amber-700 shadow-sm">
               {stats.medium}/{stats.totalMedium}
             </div>
           </div>
         }
       >
         <div
-          className="z-4 absolute left-1/2 top-1/2 aspect-square h-[75%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-500 opacity-0 transition-opacity hover:opacity-100"
+          className="absolute top-1/2 left-1/2 z-4 aspect-square h-[75%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-amber-500 opacity-0 transition-opacity hover:opacity-100"
           style={{
             background: `conic-gradient(${COLORS[theme].hover.medium.primary} 0% ${mediumPercent}%, ${COLORS[theme].hover.medium.secondary} ${mediumPercent}% 100%)`,
           }}
         />
       </EasyTooltip>
       <div
-        className="z-5 absolute left-1/2 top-1/2 aspect-square h-[60%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-red-300 transition-all dark:border-red-900"
+        className="absolute top-1/2 left-1/2 z-5 aspect-square h-[60%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-red-300 transition-all dark:border-red-900"
         style={{
           background: `conic-gradient(${COLORS[theme].nothover.hard.primary} 0% ${hardPercent}%, ${COLORS[theme].nothover.hard.secondary} ${hardPercent}% 100%)`,
         }}
@@ -153,35 +153,35 @@ export default function SubmissionsChart({
             <div className="text-sm font-semibold text-red-500">
               Hard Problems
             </div>
-            <div className="font-geist-mono z-10 rounded-full border border-red-400 bg-red-200 px-2 text-red-700 shadow-sm">
+            <div className="z-10 rounded-full border border-red-400 bg-red-200 px-2 font-geist-mono text-red-700 shadow-sm">
               {stats.hard}/{stats.totalHard}
             </div>
           </div>
         }
       >
         <div
-          className="z-6 absolute left-1/2 top-1/2 aspect-square h-[60%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-red-500 opacity-0 transition-opacity hover:opacity-100"
+          className="absolute top-1/2 left-1/2 z-6 aspect-square h-[60%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-red-500 opacity-0 transition-opacity hover:opacity-100"
           style={{
             background: `conic-gradient(${COLORS[theme].hover.hard.primary} 0% ${hardPercent}%, ${COLORS[theme].hover.hard.secondary} ${hardPercent}% 100%)`,
           }}
         />
       </EasyTooltip>
-      <div className="z-7 absolute left-1/2 top-1/2 flex aspect-square h-[45%] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-2 rounded-full border border-neutral-300 bg-neutral-100 text-sm dark:border-neutral-900 dark:bg-neutral-950">
+      <div className="absolute top-1/2 left-1/2 z-7 flex aspect-square h-[45%] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-2 rounded-full border border-neutral-300 bg-neutral-100 text-sm dark:border-neutral-900 dark:bg-neutral-950">
         <div className="flex items-center gap-2">
           <div className="font-semibold text-emerald-500">Easy</div>
-          <div className="font-geist-mono rounded-full border border-emerald-200 bg-emerald-50 px-2 text-emerald-700 shadow-sm shadow-emerald-200 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 dark:shadow-emerald-800">
+          <div className="rounded-full border border-emerald-200 bg-emerald-50 px-2 font-geist-mono text-emerald-700 shadow-sm shadow-emerald-200 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 dark:shadow-emerald-800">
             {stats.easy}/{stats.totalEasy}
           </div>
         </div>
         <div className="flex items-center gap-2">
           <div className="font-semibold text-amber-500">Medium</div>
-          <div className="font-geist-mono rounded-full border border-amber-200 bg-amber-50 px-2 text-amber-700 shadow-sm shadow-amber-200 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300 dark:shadow-amber-800">
+          <div className="rounded-full border border-amber-200 bg-amber-50 px-2 font-geist-mono text-amber-700 shadow-sm shadow-amber-200 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300 dark:shadow-amber-800">
             {stats.medium}/{stats.totalMedium}
           </div>
         </div>
         <div className="flex items-center gap-2">
           <div className="font-semibold text-red-500">Hard</div>
-          <div className="font-geist-mono rounded-full border border-red-200 bg-red-50 px-2 text-red-700 shadow-sm shadow-red-200 dark:border-red-800 dark:bg-red-950 dark:text-red-300 dark:shadow-red-800">
+          <div className="rounded-full border border-red-200 bg-red-50 px-2 font-geist-mono text-red-700 shadow-sm shadow-red-200 dark:border-red-800 dark:bg-red-950 dark:text-red-300 dark:shadow-red-800">
             {stats.hard}/{stats.totalHard}
           </div>
         </div>

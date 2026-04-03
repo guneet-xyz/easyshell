@@ -1,3 +1,7 @@
+import Link from "next/link"
+import { notFound } from "next/navigation"
+import { PiPlayDuotone } from "react-icons/pi"
+
 import { AlternativeProblemStatus } from "@/components/problem-status"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -7,10 +11,6 @@ import { getUserSubmissionStats } from "@/lib/server/queries"
 import { getSeries } from "@/lib/server/series"
 import { getPathname } from "@/lib/server/utils"
 import { cn } from "@/lib/utils"
-
-import Link from "next/link"
-import { notFound } from "next/navigation"
-import { PiPlayDuotone } from "react-icons/pi"
 
 export async function generateMetadata({
   params,
@@ -44,10 +44,10 @@ export default async function Page({
 
   return (
     <div className="flex flex-col">
-      <div className="font-clash-display mt-10 text-4xl font-bold">
+      <div className="mt-10 font-clash-display text-4xl font-bold">
         {series.name}
       </div>
-      <div className="font-clash-display mb-10 text-2xl">
+      <div className="mb-10 font-clash-display text-2xl">
         {series.description}
       </div>
       <div className="flex flex-col-reverse gap-8 md:flex-row">
@@ -75,7 +75,7 @@ export default async function Page({
             <ProgressColumn userId={userId} problems={problems} />
           ) : (
             <div>
-              <div className="font-clash-display text-center text-2xl font-semibold">
+              <div className="text-center font-clash-display text-2xl font-semibold">
                 Progress
               </div>
               <div className="mt-2 rounded-xl border p-4 shadow-lg">
@@ -125,7 +125,7 @@ async function ProgressColumn({
   return (
     <div className="flex flex-row items-center justify-between gap-20 md:flex-col md:gap-4">
       <div className="flex w-full flex-col">
-        <div className="font-clash-display text-center text-2xl font-semibold">
+        <div className="text-center font-clash-display text-2xl font-semibold">
           Progress
         </div>
         <Progress
@@ -133,17 +133,17 @@ async function ProgressColumn({
           className="my-2 bg-emerald-100 *:bg-emerald-600 dark:bg-emerald-950 dark:*:bg-emerald-800"
         />
         <div className="flex w-full items-center justify-between">
-          <div className="font-geist-mono whitespace-nowrap rounded-full border px-2 text-sm dark:border-emerald-500/20 dark:bg-emerald-700/20">
+          <div className="rounded-full border px-2 font-geist-mono text-sm whitespace-nowrap dark:border-emerald-500/20 dark:bg-emerald-700/20">
             {num_solved}/{total}
           </div>
-          <div className="font-geist-mono whitespace-nowrap rounded-full border px-2 text-sm dark:border-emerald-500/20 dark:bg-emerald-700/20">
+          <div className="rounded-full border px-2 font-geist-mono text-sm whitespace-nowrap dark:border-emerald-500/20 dark:bg-emerald-700/20">
             {progress} %
           </div>
         </div>
       </div>
       {next_problem_info && (
         <div className="flex w-full flex-col">
-          <div className="font-clash-display text-center font-semibold">
+          <div className="text-center font-clash-display font-semibold">
             {progress === 0 ? `Start Your Journey :` : `Next Up :`}
           </div>
           <Link
@@ -170,10 +170,10 @@ async function ProgressColumn({
             )}
           >
             <div className="flex flex-col justify-between">
-              <div className="font-clash-display whitespace-nowrap font-medium">
+              <div className="font-clash-display font-medium whitespace-nowrap">
                 {next_problem_info.title}
               </div>
-              <div className="font-geist-mono whitespace-nowrap text-xs">
+              <div className="font-geist-mono text-xs whitespace-nowrap">
                 {next_problem_info.slug}
               </div>
             </div>
@@ -207,7 +207,7 @@ async function Problem({ slug, userId }: { slug: string; userId?: string }) {
       prefetch={true}
       href={`/problems/${slug}`}
       className={cn(
-        "w-120 group flex items-center justify-between overflow-hidden rounded-xl px-4 py-2 shadow",
+        "group flex w-120 items-center justify-between overflow-hidden rounded-xl px-4 py-2 shadow",
         "relative border border-b-4",
         {
           "border-green-600/40 dark:border-green-400/40": difficulty === "easy",
@@ -219,7 +219,7 @@ async function Problem({ slug, userId }: { slug: string; userId?: string }) {
     >
       <div
         className={cn(
-          "absolute left-0 top-0 -z-10 h-full w-full",
+          "absolute top-0 left-0 -z-10 h-full w-full",
           "bg-linear-to-b via-10% to-neutral-100 opacity-50 transition-opacity group-hover:opacity-100 dark:to-neutral-900",
           {
             "from-emerald-100 via-emerald-50 dark:from-emerald-500/20 dark:via-emerald-300/10":
@@ -233,7 +233,7 @@ async function Problem({ slug, userId }: { slug: string; userId?: string }) {
       />
       <div className="flex flex-col">
         <div className="font-clash-display text-xl font-medium">{title}</div>
-        <div className="font-geist-mono flex gap-2 text-xs">
+        <div className="flex gap-2 font-geist-mono text-xs">
           <span className="dark:text-neutral-400">{slug}</span>
           <span
             className={cn({
@@ -246,7 +246,7 @@ async function Problem({ slug, userId }: { slug: string; userId?: string }) {
           </span>
         </div>
       </div>
-      <div className="font-clash-display flex flex-col items-end font-semibold text-neutral-600">
+      <div className="flex flex-col items-end font-clash-display font-semibold text-neutral-600">
         <div>#{id}</div>
         <AlternativeProblemStatus
           status={status}

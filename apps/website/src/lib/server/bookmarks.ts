@@ -1,8 +1,8 @@
+import { eq } from "drizzle-orm"
+
 import { bookmarks } from "@easyshell/db/schema"
 
 import { db } from "@/db"
-
-import { eq } from "drizzle-orm"
 
 /**
  * Returns bookmarked problem ids

@@ -51,7 +51,7 @@ export default async function Page() {
           <div className="font-clash-display text-2xl font-semibold">
             Series
           </div>
-          <div className="font-clash-display mb-4 text-sm text-neutral-500 md:text-base">
+          <div className="mb-4 font-clash-display text-sm text-neutral-500 md:text-base">
             Curated list of problems to master specific topics.
           </div>
           <SeriesCarousel

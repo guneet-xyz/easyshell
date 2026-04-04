@@ -8,7 +8,6 @@ import (
 	"regexp"
 	"session-manager/utils"
 	"strconv"
-	"strings"
 )
 
 type request struct {
@@ -23,10 +22,14 @@ type response struct {
 	RawOutput  string `json:"raw_output"`
 }
 
-var validContainerName = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.-]+$`)
+var validContainerName = utils.ValidContainerName
 
 // scoreRegex matches check.sh score output like "Score: 2/2 (100%)"
 var scoreRegex = regexp.MustCompile(`Score:\s*(\d+)/(\d+)\s*\((\d+)%\)`)
+
+// fallback regexes for counting PASS/FAIL lines when score line is absent
+var passRegex = regexp.MustCompile(`\bPASS\b`)
+var failRegex = regexp.MustCompile(`\bFAIL\b`)
 
 // stripAnsi removes ANSI escape codes from a string
 var ansiRegex = regexp.MustCompile(`\x1b\[[0-9;]*[a-zA-Z]`)
@@ -95,8 +98,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		resp.Passed = resp.Score == resp.Total && resp.Total > 0
 	} else {
 		// Couldn't parse score - check if the output contains any PASS/FAIL lines
-		passCount := strings.Count(cleanOutput, "PASS")
-		failCount := strings.Count(cleanOutput, "FAIL")
+		passCount := len(passRegex.FindAllString(cleanOutput, -1))
+		failCount := len(failRegex.FindAllString(cleanOutput, -1))
 		resp.Score = passCount
 		resp.Total = passCount + failCount
 		if resp.Total > 0 {

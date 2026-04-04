@@ -23,6 +23,8 @@ type ErrorResponse struct {
 	Error    string `json:"error"`
 }
 
+var validContainerName = utils.ValidContainerName
+
 func Handler(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Authorization") != "Bearer "+utils.Token {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
@@ -41,7 +43,10 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		// This should never happen.
 		return
 	}
-	// TODO: input validation
+	if !validContainerName.MatchString(reqBody.ContainerName) {
+		http.Error(w, "Invalid container name", http.StatusBadRequest)
+		return
+	}
 
 	fmt.Println("Container: ", reqBody.ContainerName)
 	fmt.Println("Command: ", string(reqBody.Command))

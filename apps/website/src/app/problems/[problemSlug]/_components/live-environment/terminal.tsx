@@ -169,7 +169,7 @@ function LoadedTerminal({
     "",
   ])
   const [promptHistoryIndex, setPromptHistoryIndex] = useState<number>(
-    session.logs.length + 1,
+    session.logs.length,
   )
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [onlineStatus, setOnlineStatus] = useState<{
@@ -188,49 +188,52 @@ function LoadedTerminal({
     showTimes: true,
   })
 
-  async function handleSubmit() {
-    if (!session) return
-    if (!promptHistory[promptHistoryIndex]) return
-    setRunning(true)
-    const submissionResponse = await submitTerminalSessionCommand({
-      sessionId: session.id,
-      command: promptHistory[promptHistoryIndex],
-    })
-    if (submissionResponse.status === "success") {
-      const log = submissionResponse.log
-      setSession((prev) => {
-        if (!prev) return prev
-        return {
-          ...prev,
-          logs: [...prev.logs, log],
-        }
+  const handleSubmit = useCallback(
+    async function handleSubmit() {
+      if (!session) return
+      if (!promptHistory[promptHistoryIndex]) return
+      setRunning(true)
+      const submissionResponse = await submitTerminalSessionCommand({
+        sessionId: session.id,
+        command: promptHistory[promptHistoryIndex],
       })
-      setPromptHistory((prev) => [...prev, ""])
-      setPromptHistoryIndex((prev) => prev + 1)
-    } else {
-      setOnlineStatus({
-        isOnline: false,
-        lastChecked: new Date(),
-      })
-      if (submissionResponse.type === "took_too_long") {
-        toast.error("Aborted", {
-          description: submissionResponse.message,
+      if (submissionResponse.status === "success") {
+        const log = submissionResponse.log
+        setSession((prev) => {
+          if (!prev) return prev
+          return {
+            ...prev,
+            logs: [...prev.logs, log],
+          }
         })
-      } else if (submissionResponse.type === "session_not_running")
-        toast.error("Failed", {
-          description: submissionResponse.message,
+        setPromptHistory((prev) => [...prev, ""])
+        setPromptHistoryIndex((prev) => prev + 1)
+      } else {
+        setOnlineStatus({
+          isOnline: false,
+          lastChecked: new Date(),
         })
-      else if (submissionResponse.type === "session_error")
-        toast.error("Failed", {
-          description: submissionResponse.message,
-        })
-      else if (submissionResponse.type === "critical_server_error")
-        toast.error("Critical Error", {
-          description: submissionResponse.message,
-        })
-    }
-    setRunning(false)
-  }
+        if (submissionResponse.type === "took_too_long") {
+          toast.error("Aborted", {
+            description: submissionResponse.message,
+          })
+        } else if (submissionResponse.type === "session_not_running")
+          toast.error("Failed", {
+            description: submissionResponse.message,
+          })
+        else if (submissionResponse.type === "session_error")
+          toast.error("Failed", {
+            description: submissionResponse.message,
+          })
+        else if (submissionResponse.type === "critical_server_error")
+          toast.error("Critical Error", {
+            description: submissionResponse.message,
+          })
+      }
+      setRunning(false)
+    },
+    [session, promptHistory, promptHistoryIndex],
+  )
 
   function handlePromptUpArrow() {
     if (promptHistoryIndex > 0) {
@@ -271,7 +274,7 @@ function LoadedTerminal({
     return () => {
       clearInterval(interval)
     }
-  }, [onlineStatus, session])
+  }, [session])
 
   return (
     <div className="flex h-full flex-col gap-4">

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"os/exec"
-	"regexp"
 	"session-manager/utils"
 )
 
@@ -17,7 +16,7 @@ type responseBody struct {
 	IsRunning bool `json:"is_running"`
 }
 
-var validContainerName = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.-]+$`)
+var validContainerName = utils.ValidContainerName
 
 func Handler(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Authorization") != "Bearer "+utils.Token {

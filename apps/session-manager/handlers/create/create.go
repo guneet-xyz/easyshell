@@ -21,18 +21,23 @@ type request struct {
 	Privileged bool     `json:"privileged,omitempty"` // run in privileged mode
 	Tmpfs      []string `json:"tmpfs,omitempty"`      // e.g. ["/run", "/var/run"]
 	CgroupNs   string   `json:"cgroupns,omitempty"`   // e.g. "private", "host"
-	Entrypoint []string `json:"entrypoint,omitempty"` // override entrypoint
 	Command    []string `json:"command,omitempty"`    // container command/args (replaces default "-mode session")
 }
 
 // validateContainerName ensures the name is safe for use as a Docker container name.
-var validContainerName = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.-]+$`)
+var validContainerName = utils.ValidContainerName
 
 // validateImageName ensures the image name is safe.
 var validImageName = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_./:@-]+$`)
 
 // validateResourceLimit ensures memory/cpu values are safe.
 var validResourceLimit = regexp.MustCompile(`^[0-9]+(\.[0-9]+)?[kmgKMG]?$`)
+
+// validateTmpfsPath ensures tmpfs mount paths are safe absolute paths.
+var validTmpfsPath = regexp.MustCompile(`^/[a-zA-Z0-9/_.-]+$`)
+
+// allowedCgroupNs is the set of valid values for --cgroupns.
+var allowedCgroupNs = map[string]bool{"private": true, "host": true}
 
 func Handler(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Authorization") != "Bearer "+utils.Token {
@@ -95,6 +100,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		"run", "-q", "-d", "--rm",
 		"--name", req.ContainerName,
 		"-m", memory,
+		"--memory-swap", memory,
 		"--cpus", cpu,
 		"-v", containerDir + ":/tmp/easyshell",
 	}
@@ -111,19 +117,24 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	// Cgroup namespace
 	if req.CgroupNs != "" {
+		if !allowedCgroupNs[req.CgroupNs] {
+			http.Error(w, "Invalid cgroupns value (must be 'private' or 'host')", http.StatusBadRequest)
+			return
+		}
 		args = append(args, "--cgroupns="+req.CgroupNs)
 	}
 
 	// Tmpfs mounts
 	for _, mount := range req.Tmpfs {
+		if !validTmpfsPath.MatchString(mount) {
+			http.Error(w, "Invalid tmpfs path", http.StatusBadRequest)
+			return
+		}
 		args = append(args, "--tmpfs", mount)
 	}
 
 	// Image
 	args = append(args, imageTag)
-
-	// Entrypoint override (if specified)
-	// Note: when entrypoint is overridden, command args follow the image
 
 	// Command / args (defaults to "-mode session" if not specified)
 	if len(req.Command) > 0 {

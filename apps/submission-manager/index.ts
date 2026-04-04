@@ -108,15 +108,22 @@ async function processQueueItem(
       passed,
     })
 
-    await db
-      .update(submissionTestcaseQueue)
-      .set({ status: "finished" })
-      .where(
-        and(
-          eq(submissionTestcaseQueue.submissionId, item.submissionId),
-          eq(submissionTestcaseQueue.testcaseId, item.testcaseId),
-        ),
+    try {
+      await db
+        .update(submissionTestcaseQueue)
+        .set({ status: "finished" })
+        .where(
+          and(
+            eq(submissionTestcaseQueue.submissionId, item.submissionId),
+            eq(submissionTestcaseQueue.testcaseId, item.testcaseId),
+          ),
+        )
+    } catch (updateError) {
+      console.error(
+        `Failed to mark queue item as finished (submission=${item.submissionId}, testcase=${item.testcaseId}):`,
+        updateError,
       )
+    }
   } catch (error) {
     console.error(
       `Failed to process queue item (submission=${item.submissionId}, testcase=${item.testcaseId}):`,
@@ -143,15 +150,22 @@ async function processQueueItem(
       // Testcase result may already exist if the error was after insert
     }
 
-    await db
-      .update(submissionTestcaseQueue)
-      .set({ status: "finished" })
-      .where(
-        and(
-          eq(submissionTestcaseQueue.submissionId, item.submissionId),
-          eq(submissionTestcaseQueue.testcaseId, item.testcaseId),
-        ),
+    try {
+      await db
+        .update(submissionTestcaseQueue)
+        .set({ status: "finished" })
+        .where(
+          and(
+            eq(submissionTestcaseQueue.submissionId, item.submissionId),
+            eq(submissionTestcaseQueue.testcaseId, item.testcaseId),
+          ),
+        )
+    } catch (updateError) {
+      console.error(
+        `Failed to mark queue item as finished (submission=${item.submissionId}, testcase=${item.testcaseId}):`,
+        updateError,
       )
+    }
   }
 }
 

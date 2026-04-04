@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"os/exec"
-	"regexp"
 	"session-manager/utils"
 )
 
@@ -13,7 +12,7 @@ type request struct {
 	ContainerName string `json:"container_name"`
 }
 
-var validContainerName = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.-]+$`)
+var validContainerName = utils.ValidContainerName
 
 func Handler(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Authorization") != "Bearer "+utils.Token {

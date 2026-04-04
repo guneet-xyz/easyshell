@@ -1,10 +1,7 @@
 package k3s_session
 
 import (
-	"bufio"
 	"fmt"
-	"net"
-	"net/http"
 	"os"
 	"os/exec"
 	"time"
@@ -30,6 +27,7 @@ func Main() {
 	if err != nil {
 		panic("[k3s-session] Failed to open k3s log file: " + err.Error())
 	}
+	defer logFile.Close()
 
 	k3sCmd := exec.Command("k3s", "server",
 		"--disable=traefik",
@@ -105,76 +103,9 @@ func waitForK3s(timeoutSeconds int) bool {
 	return false
 }
 
-// SetupShellEnv prepares environment for the session shell by writing
-// KUBECONFIG export to the shell profile so it's available in user commands.
-func SetupShellEnv() {
-	// Write a profile that sets KUBECONFIG for interactive shells
-	profileContent := `export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-`
-	os.WriteFile("/etc/profile.d/k3s.sh", []byte(profileContent), 0644)
-
-	// Also write to /home/.profile for shells that read it
-	os.MkdirAll("/home", 0755)
-	f, err := os.OpenFile("/home/.profile", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err == nil {
-		f.WriteString(profileContent)
-		f.Close()
-	}
-}
-
-// StreamK3sLogs tails the k3s log file (useful for debugging)
-func StreamK3sLogs() {
-	f, err := os.Open("/var/log/k3s.log")
-	if err != nil {
-		return
-	}
-	defer f.Close()
-
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		fmt.Println("[k3s]", scanner.Text())
-	}
-}
-
 // IsReady checks if the readiness file exists (used by session-manager polling)
 func IsReady() bool {
 	socketPath := "/tmp/easyshell/ready"
 	_, err := os.Stat(socketPath)
 	return err == nil
-}
-
-// IsReadyHTTP is a simple HTTP handler that can be used for readiness checks
-func IsReadyHTTP(w http.ResponseWriter, r *http.Request) {
-	if IsReady() {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ready"))
-	} else {
-		// Check if there's an error file
-		errFile := readyFilePath + ".error"
-		if errContent, err := os.ReadFile(errFile); err == nil {
-			w.WriteHeader(http.StatusServiceUnavailable)
-			w.Write(errContent)
-		} else {
-			w.WriteHeader(http.StatusServiceUnavailable)
-			w.Write([]byte("not ready"))
-		}
-	}
-}
-
-// readyServer starts a small HTTP server on a Unix socket for readiness polling
-func readyServer() {
-	socketPath := "/tmp/easyshell/ready.sock"
-	if _, err := os.Stat(socketPath); err == nil {
-		os.Remove(socketPath)
-	}
-
-	socket, err := net.Listen("unix", socketPath)
-	if err != nil {
-		fmt.Printf("[k3s-session] Warning: could not start readiness server: %v\n", err)
-		return
-	}
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", IsReadyHTTP)
-	http.Serve(socket, mux)
 }

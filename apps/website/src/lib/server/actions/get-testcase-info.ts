@@ -73,7 +73,7 @@ export async function getTestcaseInfo({
   // Standard problem: match against expected values from config
   const testcase = problem.testcases.find((t) => t.id === testcaseId)
   if (!testcase)
-    throw new Error("CRITITCAL: Testcase not found (This should not happen)")
+    throw new Error("CRITICAL: Testcase not found (This should not happen)")
 
   const testcaseInfo = {
     input: dataFromDb.input,

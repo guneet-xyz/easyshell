@@ -1,7 +1,12 @@
 import { cp, mkdir, rm, stat, writeFile } from "fs/promises"
 import { $ } from "execa"
 
-import { getProblemInfo, getProblems } from "@easyshell/problems"
+import {
+  getProblemConfig,
+  getProblemInfo,
+  getProblems,
+} from "@easyshell/problems"
+import { isStandardProblem } from "@easyshell/problems/schema"
 import { PROBLEMS_DIR, PROJECT_ROOT } from "@easyshell/utils/build"
 
 import { env } from "../env"
@@ -60,7 +65,79 @@ async function _existsAndIsDir(path: string) {
 
 async function buildProblemTasks(problem: string): Promise<Array<Task>> {
   const tasks: Array<Task> = []
-  const info = await getProblemInfo(problem)
+  const info = await getProblemConfig(problem)
+
+  if (!isStandardProblem(info)) {
+    // Build a single image for live-environment problems.
+    // Uses the k3s base image and copies setup.sh + check.sh into it.
+    const tag = `easyshell-${problem}-1` // sentinel testcaseId=1
+    const IMAGE_DIR = `${WORKING_DIR}/images/${tag}`
+    await mkdir(IMAGE_DIR, { recursive: true })
+
+    // Copy entrypoint source (needed for k3s-base Dockerfile build)
+    await cp(`${PROJECT_ROOT}/apps/entrypoint`, `${IMAGE_DIR}/entrypoint`, {
+      recursive: true,
+    })
+
+    // Copy k3s-base files
+    await cp(
+      `${PROJECT_ROOT}/packages/problems/k3s-base`,
+      `${IMAGE_DIR}/k3s-base`,
+      { recursive: true },
+    )
+
+    // Copy problem-specific files (setup.sh, check.sh)
+    const problemDir = `${PROBLEMS_DIR}/${problem}`
+    await cp(`${problemDir}/setup.sh`, `${IMAGE_DIR}/setup.sh`)
+    await cp(`${problemDir}/check.sh`, `${IMAGE_DIR}/check.sh`)
+
+    // Generate Dockerfile
+    await writeFile(
+      `${IMAGE_DIR}/Dockerfile`,
+      `
+FROM golang:1.23-alpine AS build-entrypoint
+WORKDIR /src
+COPY entrypoint/ /src/
+RUN go build -o /bin/entrypoint
+
+FROM alpine:3.21 AS tools
+RUN apk add --no-cache bash
+
+FROM rancher/k3s:v1.32.3-k3s1
+
+COPY --from=tools /bin/bash /bin/bash
+COPY --from=tools /lib/ld-musl-x86_64.so.1 /lib/ld-musl-x86_64.so.1
+COPY --from=tools /usr/lib/libreadline.so* /usr/lib/
+COPY --from=tools /usr/lib/libncursesw.so* /usr/lib/
+
+COPY --from=build-entrypoint /bin/entrypoint /entrypoint
+COPY k3s-base/cgroupv2-fix.sh /usr/local/bin/cgroupv2-fix.sh
+COPY k3s-base/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/cgroupv2-fix.sh /usr/local/bin/docker-entrypoint.sh
+
+COPY setup.sh /setup.sh
+COPY check.sh /check.sh
+RUN chmod +x /setup.sh /check.sh
+
+RUN mkdir -p /tmp/easyshell /home
+WORKDIR /home
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+CMD ["-mode", "k3s-session"]
+`,
+    )
+
+    tasks.push({
+      name: `build-${tag}`,
+      callable: async () => {
+        await dockerBuild({ tag, dir: IMAGE_DIR })
+        return "done"
+      },
+    })
+
+    return tasks
+  }
+
   for (const testcase of info.testcases) {
     const tag = `easyshell-${problem}-${testcase.id}`
 

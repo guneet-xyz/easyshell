@@ -23,6 +23,8 @@ type ErrorResponse struct {
 	Error    string `json:"error"`
 }
 
+var validContainerName = utils.ValidContainerName
+
 func Handler(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Authorization") != "Bearer "+utils.Token {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
@@ -41,7 +43,10 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		// This should never happen.
 		return
 	}
-	//TODO: input validation
+	if !validContainerName.MatchString(reqBody.ContainerName) {
+		http.Error(w, "Invalid container name", http.StatusBadRequest)
+		return
+	}
 
 	fmt.Println("Container: ", reqBody.ContainerName)
 	fmt.Println("Command: ", string(reqBody.Command))
@@ -52,6 +57,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	req, err := http.NewRequest("POST", endpoint, strings.NewReader(reqBody.Command))
 	if err != nil {
+		fmt.Println("Failed to construct request: ", err)
 		http.Error(w, "Failed (couldn't construct request) : "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -61,6 +67,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := client.Do(req)
 	if err != nil {
+		fmt.Println("Request failed: ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		if json.NewEncoder(w).Encode(ErrorResponse{
 			Critical: true,
@@ -73,6 +80,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
+		fmt.Println("Container error: ", resp.StatusCode)
 		if resp.StatusCode == http.StatusLocked {
 			w.WriteHeader(http.StatusLocked)
 			if json.NewEncoder(w).Encode(ErrorResponse{
@@ -88,6 +96,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		containerError, err := io.ReadAll(resp.Body)
 		if err != nil {
+			fmt.Println("Couldn't read response body: ", err)
 			if json.NewEncoder(w).Encode(ErrorResponse{
 				Critical: true,
 				Message:  "container error",
@@ -98,6 +107,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		fmt.Println("Container error response: ", string(containerError))
 		if json.NewEncoder(w).Encode(ErrorResponse{
 			Critical: true,
 			Message:  "container error",
@@ -111,6 +121,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	resp_body, err := io.ReadAll(resp.Body)
 	if err != nil {
+		fmt.Println("Couldn't read response body: ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		if json.NewEncoder(w).Encode(ErrorResponse{
 			Critical: true,
@@ -122,6 +133,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Println("Command output: ", string(resp_body))
 	w.WriteHeader(http.StatusOK)
 	_, err = w.Write(resp_body)
 	if err != nil {

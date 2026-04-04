@@ -1,6 +1,6 @@
-import type { ProblemConfig } from "@easyshell/problems/schema"
+import type { ProblemConfigInput } from "@easyshell/problems/schema"
 
-const config: ProblemConfig = {
+const config: ProblemConfigInput = {
   id: 1,
   slug: "say-hello",
   title: "Say Hello to the Shell",

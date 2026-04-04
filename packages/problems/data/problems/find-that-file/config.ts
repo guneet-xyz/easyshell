@@ -1,4 +1,4 @@
-import type { ProblemConfig } from "@easyshell/problems/schema"
+import type { ProblemConfigInput } from "@easyshell/problems/schema"
 import { PROBLEMS_DIR } from "@easyshell/utils/build"
 
 import { readdir } from "fs/promises"
@@ -31,7 +31,7 @@ async function testcaseConfig({
   }
 }
 
-const config: ProblemConfig = {
+const config: ProblemConfigInput = {
   id: 3,
   slug: SLUG,
   title: "Find That File",

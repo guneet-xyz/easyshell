@@ -1,6 +1,7 @@
 import { $ } from "execa"
 
 import { getProblemInfo, getProblems } from "@easyshell/problems"
+import { isStandardProblem } from "@easyshell/problems/schema"
 
 import { env } from "../env"
 import { RunParallelStuff, Task } from "./_utils"
@@ -15,6 +16,21 @@ async function dockerPush(tag: string) {
 async function pushProblemTasks(problem: string): Promise<Array<Task>> {
   const tasks: Array<Task> = []
   const info = await getProblemInfo(problem)
+
+  if (!isStandardProblem(info)) {
+    // Live-environment: single image with sentinel testcaseId=1
+    const tag = `easyshell-${problem}-1`
+    tasks.push({
+      name: `push-${tag}`,
+      callable: async () => {
+        if (!env.DOCKER_REGISTRY) return "skipped"
+        await dockerPush(tag)
+        return "done"
+      },
+    })
+    return tasks
+  }
+
   for (const testcase of info.testcases) {
     const tag = `easyshell-${problem}-${testcase.id}`
     tasks.push({

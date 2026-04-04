@@ -6,13 +6,46 @@ import (
 	"net/http"
 	"os/exec"
 	"path"
+	"regexp"
 	"session-manager/utils"
+	"strings"
 )
 
 type request struct {
 	Image         string `json:"image"`
 	ContainerName string `json:"container_name"`
+
+	// Optional resource configuration for heavier containers (e.g., k3s).
+	// If not set, defaults are used (10m memory, 0.1 CPU).
+	Memory     string   `json:"memory,omitempty"`     // e.g. "1g", "512m"
+	CPU        string   `json:"cpu,omitempty"`        // e.g. "1.0", "0.5"
+	Privileged bool     `json:"privileged,omitempty"` // run in privileged mode
+	Tmpfs      []string `json:"tmpfs,omitempty"`      // e.g. ["/run", "/var/run"]
+	CgroupNs   string   `json:"cgroupns,omitempty"`   // e.g. "private", "host"
+	Command    []string `json:"command,omitempty"`    // container command/args (replaces default "-mode session")
 }
+
+// validateContainerName ensures the name is safe for use as a Docker container name.
+var validContainerName = utils.ValidContainerName
+
+// validateImageName ensures the image name is safe.
+var validImageName = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_./:@-]+$`)
+
+// validateResourceLimit ensures memory/cpu values are safe.
+var validResourceLimit = regexp.MustCompile(`^[0-9]+(\.[0-9]+)?[kmgKMG]?$`)
+
+// validateTmpfsPath ensures tmpfs mount paths are safe absolute paths.
+var validTmpfsPath = regexp.MustCompile(`^/[a-zA-Z0-9/_.-]+$`)
+
+// allowedCgroupNs is the set of valid values for --cgroupns.
+var allowedCgroupNs = map[string]bool{"private": true, "host": true}
+
+// validCommandArg ensures each command/arg element contains only safe characters.
+// Allows single-hyphen flags (e.g. "-mode") used by container entrypoints, but
+// double-hyphen Docker flags (e.g. "--privileged", "--volume") are blocked separately
+// via a strings.HasPrefix check before this regex is applied.
+// Context: session-manager.ts sends command: ["-mode", "k3s-session"].
+var validCommandArg = regexp.MustCompile(`^[a-zA-Z0-9-][a-zA-Z0-9_./:@=-]*$`)
 
 func Handler(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Authorization") != "Bearer "+utils.Token {
@@ -32,9 +65,32 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pullPolicy := ""
-	if utils.DockerRegistry != "" {
-		pullPolicy = "--pull=always"
+	// Input validation
+	if !validContainerName.MatchString(req.ContainerName) {
+		http.Error(w, "Invalid container name", http.StatusBadRequest)
+		return
+	}
+	if !validImageName.MatchString(req.Image) {
+		http.Error(w, "Invalid image name", http.StatusBadRequest)
+		return
+	}
+
+	// Determine resource limits (defaults for standard containers)
+	memory := "10m"
+	cpu := "0.1"
+	if req.Memory != "" {
+		if !validResourceLimit.MatchString(req.Memory) {
+			http.Error(w, "Invalid memory value", http.StatusBadRequest)
+			return
+		}
+		memory = req.Memory
+	}
+	if req.CPU != "" {
+		if !validResourceLimit.MatchString(req.CPU) {
+			http.Error(w, "Invalid cpu value", http.StatusBadRequest)
+			return
+		}
+		cpu = req.CPU
 	}
 
 	containerDir := path.Join(utils.WorkingDir, "sessions", req.ContainerName)
@@ -46,16 +102,78 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		imageTag = req.Image
 	}
-	command := fmt.Sprintf("docker run -q -d --rm --name %s -m 10m --cpus 0.1 -v %s:/tmp/easyshell %s %s -mode session", req.ContainerName, containerDir, pullPolicy, imageTag)
 
-	fmt.Println("Command: ", command)
+	// Build docker run args using exec.Command (no shell interpolation)
+	args := []string{
+		"run", "-q", "-d", "--rm",
+		"--name", req.ContainerName,
+		"-m", memory,
+		"--memory-swap", memory, // equal to -m to disable swap (total memory+swap = memory, leaving 0 for swap)
+		"--cpus", cpu,
+		"-v", containerDir + ":/tmp/easyshell",
+	}
 
-	cmd := exec.Command("sh", "-c", command)
-	output, _ := cmd.CombinedOutput()
+	// Pull policy
+	if utils.DockerRegistry != "" {
+		args = append(args, "--pull=always")
+	}
+
+	// Privileged mode (required for k3s containers)
+	if req.Privileged {
+		args = append(args, "--privileged")
+	}
+
+	// Cgroup namespace
+	if req.CgroupNs != "" {
+		if !allowedCgroupNs[req.CgroupNs] {
+			http.Error(w, "Invalid cgroupns value (must be 'private' or 'host')", http.StatusBadRequest)
+			return
+		}
+		args = append(args, "--cgroupns="+req.CgroupNs)
+	}
+
+	// Tmpfs mounts
+	for _, mount := range req.Tmpfs {
+		if !validTmpfsPath.MatchString(mount) {
+			http.Error(w, "Invalid tmpfs path", http.StatusBadRequest)
+			return
+		}
+		args = append(args, "--tmpfs", mount)
+	}
+
+	// Validate command args before use
+	for _, arg := range req.Command {
+		if strings.HasPrefix(arg, "--") {
+			http.Error(w, "Docker flags are not allowed in command arguments", http.StatusBadRequest)
+			return
+		}
+		if !validCommandArg.MatchString(arg) {
+			http.Error(w, "Invalid command argument", http.StatusBadRequest)
+			return
+		}
+	}
+
+	// Image
+	args = append(args, imageTag)
+
+	// Command / args (defaults to "-mode session" if not specified)
+	if len(req.Command) > 0 {
+		args = append(args, req.Command...)
+	} else {
+		args = append(args, "-mode", "session")
+	}
+
+	fmt.Printf("Docker run args: %v\n", args)
+
+	cmd := exec.Command("docker", args...)
+	output, err := cmd.CombinedOutput()
 
 	if err != nil {
-		fmt.Printf("Command Failed : %s\n", string(output))
-		http.Error(w, "Failed"+err.Error(), http.StatusInternalServerError)
+		fmt.Printf("Command Failed: %s (output: %s)\n", err.Error(), string(output))
+		http.Error(w, "Failed to create container: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	fmt.Printf("Container created: %s\n", req.ContainerName)
+	w.WriteHeader(http.StatusOK)
 }

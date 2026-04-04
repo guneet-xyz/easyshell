@@ -1,4 +1,4 @@
-import type { ProblemConfig } from "@easyshell/problems/schema"
+import type { ProblemConfigInput, StandardProblemConfig } from "@easyshell/problems/schema"
 import { testcaseDir } from "@easyshell/utils/build"
 
 import { execa } from "execa"
@@ -11,7 +11,7 @@ async function testcaseConfig({
 }: {
   id: number
   isPublic: boolean
-}): Promise<ProblemConfig["testcases"][number]> {
+}): Promise<StandardProblemConfig["testcases"][number]> {
   const testcase_dir = testcaseDir(SLUG, id)
   const exitCode = await execa("./flaky-command.sh", {
     cwd: testcase_dir,
@@ -25,7 +25,7 @@ async function testcaseConfig({
   }
 }
 
-const config: ProblemConfig = {
+const config: ProblemConfigInput = {
   id: 25,
   slug: SLUG,
   title: "Flaky or Not",

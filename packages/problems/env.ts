@@ -11,6 +11,20 @@ export const env = createEnv({
       .optional()
       .transform((v) => (v ? parseInt(v, 10) : 5)),
   },
+  onValidationError: (issues) => {
+    const details = issues
+      .map((issue) => {
+        const path =
+          issue.path
+            ?.map((p) => (typeof p === "object" ? String(p.key) : String(p)))
+            .join(".") ?? "unknown"
+        const message = issue.message ?? "invalid"
+        return `  - ${path}: ${message}`
+      })
+      .join("\n")
+    console.error(`\n❌ Invalid environment variables:\n${details}\n`)
+    throw new Error(`Invalid environment variables:\n${details}`)
+  },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
 })

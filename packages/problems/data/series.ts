@@ -71,4 +71,19 @@ export const SeriesList: Array<{
       },
     ],
   },
+  {
+    slug: "ckad-application-deployment",
+    name: "CKAD: Application Deployment",
+    description:
+      "Practice deploying, scaling, updating, and rolling back applications on Kubernetes — a core CKAD exam domain.",
+    image: "",
+    sections: [
+      {
+        title: "Deployments",
+        description:
+          "Create, scale, and manage Kubernetes Deployments.",
+        problems: ["scale-deployment"],
+      },
+    ],
+  },
 ]

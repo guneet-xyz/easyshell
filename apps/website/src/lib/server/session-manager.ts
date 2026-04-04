@@ -5,13 +5,15 @@ import { and, asc, eq, isNull } from "drizzle-orm"
 import { z } from "zod"
 
 import { terminalSessionLogs, terminalSessions } from "@easyshell/db/schema"
+import { isLiveEnvironmentProblem } from "@easyshell/problems/schema"
 
 import { db } from "@/db"
 import { env } from "@/env"
-import { getProblemSlugFromId } from "@/lib/server/problems"
+import { getProblemInfo, getProblemSlugFromId } from "@/lib/server/problems"
 import {
   HTTP_STATUS_INTERNAL_SERVER_ERROR,
   HTTP_STATUS_LOCKED,
+  sleep,
 } from "@/lib/utils"
 
 export async function runTerminalSession({
@@ -26,10 +28,44 @@ export async function runTerminalSession({
   const problemSlug = await getProblemSlugFromId(parseInt(problemId))
   if (!problemSlug) throw new Error("Problem not found")
 
-  await sessionManagerCreate({
-    image: `easyshell-${problemSlug}-${testcaseId}`,
-    container_name: `easyshell-${problemSlug}-${testcaseId}-session-${sessionId}`,
-  })
+  const problemInfo = await getProblemInfo(problemSlug)
+
+  if (isLiveEnvironmentProblem(problemInfo)) {
+    // K3s container with higher resource limits
+    const containerName = `easyshell-${problemSlug}-${testcaseId}-session-${sessionId}`
+    await sessionManagerCreate({
+      image: `easyshell-${problemSlug}-${testcaseId}`,
+      container_name: containerName,
+      memory: "1g",
+      cpu: "1.0",
+      privileged: true,
+      cgroupns: "private",
+      tmpfs: ["/run", "/var/run"],
+      command: ["-mode", "k3s-session"],
+    })
+
+    // Wait for k3s + setup.sh to finish before returning the session.
+    // Without this, the frontend shows the terminal immediately but
+    // commands fail because k3s isn't ready yet.
+    const maxWaitMs = 180_000 // 3 minutes
+    const pollIntervalMs = 2_000
+    const startTime = Date.now()
+
+    while (Date.now() - startTime < maxWaitMs) {
+      const readyResult = await sessionManagerReady(containerName)
+      if (readyResult.ready) break
+      if (readyResult.error) {
+        throw new Error(`Environment setup failed: ${readyResult.error}`)
+      }
+      await sleep(pollIntervalMs)
+    }
+  } else {
+    // Standard container (existing behavior)
+    await sessionManagerCreate({
+      image: `easyshell-${problemSlug}-${testcaseId}`,
+      container_name: `easyshell-${problemSlug}-${testcaseId}-session-${sessionId}`,
+    })
+  }
 }
 
 export async function getTerminalSession({
@@ -178,9 +214,11 @@ const SessionManagerExecResponseSchema = z.object({
 export async function sessionManagerExec({
   containerName,
   command,
+  timeoutMs = 5000,
 }: {
   containerName: string
   command: string
+  timeoutMs?: number
 }): Promise<
   | {
       status: "success"
@@ -216,7 +254,7 @@ export async function sessionManagerExec({
         container_name: containerName,
         command,
       }),
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(timeoutMs),
     })
   } catch (e) {
     if (e instanceof Error && e.name === "TimeoutError")
@@ -308,6 +346,12 @@ export async function sessionManagerIsRunning(containerName: string) {
 export async function sessionManagerCreate(args: {
   container_name: string
   image: string
+  memory?: string
+  cpu?: string
+  privileged?: boolean
+  cgroupns?: string
+  tmpfs?: string[]
+  command?: string[]
 }) {
   const resp = await fetch(`${env.SESSION_MANAGER_URL}/create`, {
     method: "POST",
@@ -334,6 +378,33 @@ export async function sessionManagerKill(containerName: string) {
   if (!resp.ok) {
     throw new Error(await resp.text())
   }
+}
+
+const SessionManagerReadyResponseSchema = z.object({
+  ready: z.boolean(),
+  error: z.string().optional(),
+})
+
+export async function sessionManagerReady(
+  containerName: string,
+): Promise<{ ready: boolean; error?: string }> {
+  const resp = await fetch(`${env.SESSION_MANAGER_URL}/ready`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.SESSION_MANAGER_TOKEN}`,
+    },
+    body: JSON.stringify({
+      container_name: containerName,
+    }),
+  })
+  if (!resp.ok) {
+    return { ready: false }
+  }
+  const parsed = SessionManagerReadyResponseSchema.safeParse(await resp.json())
+  if (!parsed.success) {
+    return { ready: false }
+  }
+  return parsed.data
 }
 
 export async function insertTerminalSessionLog({
@@ -366,4 +437,77 @@ export async function insertTerminalSessionLog({
     throw new Error("Failed to insert terminal session log")
   }
   return log[0].id
+}
+
+// ========================== Check (live-environment) ==========================
+
+const SessionManagerCheckResponseSchema = z.object({
+  score: z.number(),
+  total: z.number(),
+  percentage: z.number(),
+  passed: z.boolean(),
+  raw_output: z.string(),
+})
+
+export type CheckResult = z.infer<typeof SessionManagerCheckResponseSchema>
+
+export async function sessionManagerCheck(
+  containerName: string,
+): Promise<
+  | { status: "success"; result: CheckResult }
+  | { status: "error"; message: string }
+> {
+  let resp: Response
+  try {
+    resp = await fetch(`${env.SESSION_MANAGER_URL}/check`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.SESSION_MANAGER_TOKEN}`,
+      },
+      body: JSON.stringify({
+        container_name: containerName,
+      }),
+      signal: AbortSignal.timeout(30000), // 30s timeout for kubectl operations
+    })
+  } catch (e) {
+    if (e instanceof Error && e.name === "TimeoutError")
+      return {
+        status: "error",
+        message: "The check took too long to execute",
+      }
+    return {
+      status: "error",
+      message: "Request failed (session manager might be down)",
+    }
+  }
+
+  if (!resp.ok) {
+    return {
+      status: "error",
+      message: `Check failed: ${await resp.text()}`,
+    }
+  }
+
+  let json: unknown
+  try {
+    json = await resp.json()
+  } catch {
+    return {
+      status: "error",
+      message: "Failed to parse check response",
+    }
+  }
+
+  const parseResult = SessionManagerCheckResponseSchema.safeParse(json)
+  if (!parseResult.success) {
+    return {
+      status: "error",
+      message: "Invalid check response format",
+    }
+  }
+
+  return {
+    status: "success",
+    result: parseResult.data,
+  }
 }

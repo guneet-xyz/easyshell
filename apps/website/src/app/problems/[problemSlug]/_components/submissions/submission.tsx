@@ -161,7 +161,7 @@ function Testcase({
     <div className={cn("flex h-full flex-col gap-4")}>
       <div className="flex flex-col gap-0">
         <h1 className="text-center text-xl font-bold">
-          Testcase #{testcaseId}
+          {info.isLiveEnvironment ? "Check Result" : `Testcase #${testcaseId}`}
         </h1>
         <h2
           className={cn("text-center font-semibold", {
@@ -172,18 +172,27 @@ function Testcase({
           {info.passed ? "Passed" : "Failed"}
         </h2>
       </div>
-      {info.expected_stdout !== undefined ? (
+      {info.isLiveEnvironment ? (
         <div className="flex flex-col gap-2 rounded-xl border p-8 shadow">
-          <div className="text-center text-lg font-semibold">Stdout</div>
-          <Diff expected={info.expected_stdout} actual={info.stdout} />
+          <div className="text-center text-lg font-semibold">Check Output</div>
+          <CheckOutputDisplay output={info.stdout} />
         </div>
-      ) : null}
-      {info.expected_stderr !== undefined ? (
-        <Diff expected={info.expected_stderr} actual={info.stderr} />
-      ) : null}
-      {info.expected_fs !== undefined ? (
-        <FsDiff expected={info.expected_fs} actual={info.fs!} />
-      ) : null}
+      ) : (
+        <>
+          {info.expected_stdout !== undefined ? (
+            <div className="flex flex-col gap-2 rounded-xl border p-8 shadow">
+              <div className="text-center text-lg font-semibold">Stdout</div>
+              <Diff expected={info.expected_stdout} actual={info.stdout} />
+            </div>
+          ) : null}
+          {info.expected_stderr !== undefined ? (
+            <Diff expected={info.expected_stderr} actual={info.stderr} />
+          ) : null}
+          {info.expected_fs !== undefined ? (
+            <FsDiff expected={info.expected_fs} actual={info.fs!} />
+          ) : null}
+        </>
+      )}
     </div>
   )
 }
@@ -243,6 +252,66 @@ function TestcaseSkeleton() {
         <h1 className="text-center text-xl font-bold">Loading Testcase</h1>
         <h2 className="mt-2 h-6 w-20 animate-pulse rounded-full bg-neutral-200 dark:bg-neutral-800" />
       </div>
+    </div>
+  )
+}
+
+function CheckOutputDisplay({ output }: { output: string }) {
+  const lines = output.split("\n")
+
+  return (
+    <div className="space-y-1 font-mono text-sm">
+      {lines.map((line, i) => {
+        const trimmed = line.trim()
+        if (!trimmed) return null
+
+        if (trimmed.includes("PASS")) {
+          const description = trimmed.replace(/^\s*PASS\s*-\s*/, "")
+          return (
+            <div key={i} className="flex items-center gap-2">
+              <span className="font-bold text-green-600 dark:text-green-400">
+                PASS
+              </span>
+              <span className="text-neutral-700 dark:text-neutral-300">
+                {description}
+              </span>
+            </div>
+          )
+        }
+
+        if (trimmed.includes("FAIL")) {
+          const description = trimmed.replace(/^\s*FAIL\s*-\s*/, "")
+          return (
+            <div key={i} className="flex items-center gap-2">
+              <span className="font-bold text-red-600 dark:text-red-400">
+                FAIL
+              </span>
+              <span className="text-neutral-700 dark:text-neutral-300">
+                {description}
+              </span>
+            </div>
+          )
+        }
+
+        if (trimmed.includes("Score:")) {
+          return (
+            <div
+              key={i}
+              className="mt-2 font-semibold text-neutral-800 dark:text-neutral-200"
+            >
+              {trimmed}
+            </div>
+          )
+        }
+
+        if (trimmed.includes("====")) return null
+
+        return (
+          <div key={i} className="text-neutral-600 dark:text-neutral-400">
+            {trimmed}
+          </div>
+        )
+      })}
     </div>
   )
 }

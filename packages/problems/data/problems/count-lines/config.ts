@@ -1,4 +1,4 @@
-import type { ProblemConfig } from "@easyshell/problems/schema"
+import type { ProblemConfigInput, StandardProblemConfig } from "@easyshell/problems/schema"
 
 import { readFile } from "fs/promises"
 import { testcaseDir } from "packages/utils/build"
@@ -11,7 +11,7 @@ async function testcaseConfig({
 }: {
   id: number
   isPublic: boolean
-}): Promise<ProblemConfig["testcases"][number]> {
+}): Promise<StandardProblemConfig["testcases"][number]> {
   const testcase_dir = testcaseDir(SLUG, id)
   const lines =
     (await readFile(`${testcase_dir}/notes.txt`, "utf-8")).split("\n").length -
@@ -23,7 +23,7 @@ async function testcaseConfig({
   }
 }
 
-const config: ProblemConfig = {
+const config: ProblemConfigInput = {
   id: 20,
   slug: SLUG,
   title: "Count Lines",

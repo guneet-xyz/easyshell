@@ -1,4 +1,4 @@
-import type { ProblemConfig } from "@easyshell/problems/schema"
+import type { ProblemConfigInput, StandardProblemConfig } from "@easyshell/problems/schema"
 
 import { writeFile } from "fs/promises"
 import { cp } from "fs/promises"
@@ -14,7 +14,7 @@ async function testcaseConfig({
   id: number
   isPublic: boolean
   replace: { id: number; content: string; author: string }
-}): Promise<ProblemConfig["testcases"][number]> {
+}): Promise<StandardProblemConfig["testcases"][number]> {
   return {
     id: id,
     public: isPublic,
@@ -39,7 +39,7 @@ RUN go build -C /src/daemon -o /daemon
   }
 }
 
-const config: ProblemConfig = {
+const config: ProblemConfigInput = {
   id: 10,
   slug: SLUG,
   title: "Get it Curl",

@@ -25,6 +25,8 @@ export const env = createEnv({
     SMTP_USERNAME: z.string(),
     SMTP_PASSWORD: z.string(),
     SMTP_MAIL_FROM: z.string(),
+
+    POSTHOG_HOST: z.string(),
   },
 
   clientPrefix: "NEXT_PUBLIC_",

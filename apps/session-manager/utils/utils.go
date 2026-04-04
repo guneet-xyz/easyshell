@@ -16,7 +16,7 @@ var (
 )
 
 // ValidContainerName ensures a container name is safe for use with Docker.
-var ValidContainerName = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.-]+$`)
+var ValidContainerName = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.-]{1,127}$`)
 
 func Init() {
 	DockerRegistry = os.Getenv("DOCKER_REGISTRY")

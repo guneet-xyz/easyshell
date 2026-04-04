@@ -188,52 +188,49 @@ function LoadedTerminal({
     showTimes: true,
   })
 
-  const handleSubmit = useCallback(
-    async function handleSubmit() {
-      if (!session) return
-      if (!promptHistory[promptHistoryIndex]) return
-      setRunning(true)
-      const submissionResponse = await submitTerminalSessionCommand({
-        sessionId: session.id,
-        command: promptHistory[promptHistoryIndex],
+  async function handleSubmit() {
+    if (!session) return
+    if (!promptHistory[promptHistoryIndex]) return
+    setRunning(true)
+    const submissionResponse = await submitTerminalSessionCommand({
+      sessionId: session.id,
+      command: promptHistory[promptHistoryIndex],
+    })
+    if (submissionResponse.status === "success") {
+      const log = submissionResponse.log
+      setSession((prev) => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          logs: [...prev.logs, log],
+        }
       })
-      if (submissionResponse.status === "success") {
-        const log = submissionResponse.log
-        setSession((prev) => {
-          if (!prev) return prev
-          return {
-            ...prev,
-            logs: [...prev.logs, log],
-          }
+      setPromptHistory((prev) => [...prev, ""])
+      setPromptHistoryIndex((prev) => prev + 1)
+    } else {
+      setOnlineStatus({
+        isOnline: false,
+        lastChecked: new Date(),
+      })
+      if (submissionResponse.type === "took_too_long") {
+        toast.error("Aborted", {
+          description: submissionResponse.message,
         })
-        setPromptHistory((prev) => [...prev, ""])
-        setPromptHistoryIndex((prev) => prev + 1)
-      } else {
-        setOnlineStatus({
-          isOnline: false,
-          lastChecked: new Date(),
+      } else if (submissionResponse.type === "session_not_running")
+        toast.error("Failed", {
+          description: submissionResponse.message,
         })
-        if (submissionResponse.type === "took_too_long") {
-          toast.error("Aborted", {
-            description: submissionResponse.message,
-          })
-        } else if (submissionResponse.type === "session_not_running")
-          toast.error("Failed", {
-            description: submissionResponse.message,
-          })
-        else if (submissionResponse.type === "session_error")
-          toast.error("Failed", {
-            description: submissionResponse.message,
-          })
-        else if (submissionResponse.type === "critical_server_error")
-          toast.error("Critical Error", {
-            description: submissionResponse.message,
-          })
-      }
-      setRunning(false)
-    },
-    [session, promptHistory, promptHistoryIndex],
-  )
+      else if (submissionResponse.type === "session_error")
+        toast.error("Failed", {
+          description: submissionResponse.message,
+        })
+      else if (submissionResponse.type === "critical_server_error")
+        toast.error("Critical Error", {
+          description: submissionResponse.message,
+        })
+    }
+    setRunning(false)
+  }
 
   function handlePromptUpArrow() {
     if (promptHistoryIndex > 0) {

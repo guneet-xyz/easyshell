@@ -16,6 +16,42 @@ const db = createDb(env.DATABASE_URL)
 
 const WORKING_DIR = `${env.WORKING_DIR}/submission-manager`
 
+async function markQueueItemFinished(submissionId: number, testcaseId: number) {
+  try {
+    await db
+      .update(submissionTestcaseQueue)
+      .set({ status: "finished" })
+      .where(
+        and(
+          eq(submissionTestcaseQueue.submissionId, submissionId),
+          eq(submissionTestcaseQueue.testcaseId, testcaseId),
+        ),
+      )
+  } catch (firstError) {
+    console.error(
+      `Failed to mark queue item as finished (submission=${submissionId}, testcase=${testcaseId}), retrying in 1s:`,
+      firstError,
+    )
+    await sleep(1000)
+    try {
+      await db
+        .update(submissionTestcaseQueue)
+        .set({ status: "finished" })
+        .where(
+          and(
+            eq(submissionTestcaseQueue.submissionId, submissionId),
+            eq(submissionTestcaseQueue.testcaseId, testcaseId),
+          ),
+        )
+    } catch (retryError) {
+      console.error(
+        `Retry also failed to mark queue item as finished (submission=${submissionId}, testcase=${testcaseId}):`,
+        retryError,
+      )
+    }
+  }
+}
+
 async function getQueueItem() {
   const item = db.$with("item").as(
     db
@@ -96,33 +132,20 @@ async function processQueueItem(
         dockerRegistry: env.DOCKER_REGISTRY,
       })
 
-    await db.insert(submissionTestcases).values({
-      submissionId: item.submissionId,
-      testcaseId: item.testcaseId,
-      stdout: output.stdout,
-      stderr: output.stderr,
-      exitCode: output.exit_code,
-      fs: output.fs,
-      startedAt,
-      finishedAt,
-      passed,
-    })
-
     try {
-      await db
-        .update(submissionTestcaseQueue)
-        .set({ status: "finished" })
-        .where(
-          and(
-            eq(submissionTestcaseQueue.submissionId, item.submissionId),
-            eq(submissionTestcaseQueue.testcaseId, item.testcaseId),
-          ),
-        )
-    } catch (updateError) {
-      console.error(
-        `Failed to mark queue item as finished (submission=${item.submissionId}, testcase=${item.testcaseId}):`,
-        updateError,
-      )
+      await db.insert(submissionTestcases).values({
+        submissionId: item.submissionId,
+        testcaseId: item.testcaseId,
+        stdout: output.stdout,
+        stderr: output.stderr,
+        exitCode: output.exit_code,
+        fs: output.fs,
+        startedAt,
+        finishedAt,
+        passed,
+      })
+    } finally {
+      await markQueueItemFinished(item.submissionId, item.testcaseId)
     }
   } catch (error) {
     console.error(
@@ -150,22 +173,7 @@ async function processQueueItem(
       // Testcase result may already exist if the error was after insert
     }
 
-    try {
-      await db
-        .update(submissionTestcaseQueue)
-        .set({ status: "finished" })
-        .where(
-          and(
-            eq(submissionTestcaseQueue.submissionId, item.submissionId),
-            eq(submissionTestcaseQueue.testcaseId, item.testcaseId),
-          ),
-        )
-    } catch (updateError) {
-      console.error(
-        `Failed to mark queue item as finished (submission=${item.submissionId}, testcase=${item.testcaseId}):`,
-        updateError,
-      )
-    }
+    await markQueueItemFinished(item.submissionId, item.testcaseId)
   }
 }
 

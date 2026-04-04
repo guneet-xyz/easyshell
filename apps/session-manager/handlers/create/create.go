@@ -39,6 +39,9 @@ var validTmpfsPath = regexp.MustCompile(`^/[a-zA-Z0-9/_.-]+$`)
 // allowedCgroupNs is the set of valid values for --cgroupns.
 var allowedCgroupNs = map[string]bool{"private": true, "host": true}
 
+// validCommandArg ensures each command/arg element is safe (no Docker flags injection).
+var validCommandArg = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_./:@=-]*$`)
+
 func Handler(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Authorization") != "Bearer "+utils.Token {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
@@ -100,7 +103,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		"run", "-q", "-d", "--rm",
 		"--name", req.ContainerName,
 		"-m", memory,
-		"--memory-swap", memory,
+		"--memory-swap", memory, // equal to -m to disable swap (total memory+swap = memory, leaving 0 for swap)
 		"--cpus", cpu,
 		"-v", containerDir + ":/tmp/easyshell",
 	}
@@ -131,6 +134,14 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		args = append(args, "--tmpfs", mount)
+	}
+
+	// Validate command args before use
+	for _, arg := range req.Command {
+		if !validCommandArg.MatchString(arg) {
+			http.Error(w, "Invalid command argument", http.StatusBadRequest)
+			return
+		}
 	}
 
 	// Image

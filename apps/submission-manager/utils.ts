@@ -174,21 +174,29 @@ async function runLiveEnvironmentSubmission({
 
   try {
     // Start the k3s container
-    await execa("docker", [
+    const dockerArgs = [
       "run",
       "-d",
       "--name",
       containerName,
+      "-m",
+      "1g",
+      "--memory-swap",
+      "1g",
+      "--cpus",
+      "1.0",
       "--privileged",
       "--cgroupns=private",
       "--tmpfs",
       "/run",
       "--tmpfs",
       "/var/run",
+      ...(dockerRegistry ? ["--pull=always"] : []),
       image,
       "-mode",
       "k3s-session",
-    ])
+    ]
+    await execa("docker", dockerArgs)
 
     // Wait for readiness (k3s startup + setup.sh)
     const maxWaitMs = 180_000 // 3 minutes

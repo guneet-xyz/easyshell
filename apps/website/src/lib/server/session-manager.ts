@@ -13,6 +13,7 @@ import { getProblemInfo, getProblemSlugFromId } from "@/lib/server/problems"
 import {
   HTTP_STATUS_INTERNAL_SERVER_ERROR,
   HTTP_STATUS_LOCKED,
+  sleep,
 } from "@/lib/utils"
 
 export async function runTerminalSession({
@@ -31,9 +32,10 @@ export async function runTerminalSession({
 
   if (isLiveEnvironmentProblem(problemInfo)) {
     // K3s container with higher resource limits
+    const containerName = `easyshell-${problemSlug}-${testcaseId}-session-${sessionId}`
     await sessionManagerCreate({
       image: `easyshell-${problemSlug}-${testcaseId}`,
-      container_name: `easyshell-${problemSlug}-${testcaseId}-session-${sessionId}`,
+      container_name: containerName,
       memory: "1g",
       cpu: "1.0",
       privileged: true,
@@ -41,6 +43,22 @@ export async function runTerminalSession({
       tmpfs: ["/run", "/var/run"],
       command: ["-mode", "k3s-session"],
     })
+
+    // Wait for k3s + setup.sh to finish before returning the session.
+    // Without this, the frontend shows the terminal immediately but
+    // commands fail because k3s isn't ready yet.
+    const maxWaitMs = 180_000 // 3 minutes
+    const pollIntervalMs = 2_000
+    const startTime = Date.now()
+
+    while (Date.now() - startTime < maxWaitMs) {
+      const readyResult = await sessionManagerReady(containerName)
+      if (readyResult.ready) break
+      if (readyResult.error) {
+        throw new Error(`Environment setup failed: ${readyResult.error}`)
+      }
+      await sleep(pollIntervalMs)
+    }
   } else {
     // Standard container (existing behavior)
     await sessionManagerCreate({
@@ -360,6 +378,33 @@ export async function sessionManagerKill(containerName: string) {
   if (!resp.ok) {
     throw new Error(await resp.text())
   }
+}
+
+const SessionManagerReadyResponseSchema = z.object({
+  ready: z.boolean(),
+  error: z.string().optional(),
+})
+
+export async function sessionManagerReady(
+  containerName: string,
+): Promise<{ ready: boolean; error?: string }> {
+  const resp = await fetch(`${env.SESSION_MANAGER_URL}/ready`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.SESSION_MANAGER_TOKEN}`,
+    },
+    body: JSON.stringify({
+      container_name: containerName,
+    }),
+  })
+  if (!resp.ok) {
+    return { ready: false }
+  }
+  const parsed = SessionManagerReadyResponseSchema.safeParse(await resp.json())
+  if (!parsed.success) {
+    return { ready: false }
+  }
+  return parsed.data
 }
 
 export async function insertTerminalSessionLog({

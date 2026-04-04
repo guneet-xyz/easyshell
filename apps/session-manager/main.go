@@ -8,6 +8,7 @@ import (
 	"session-manager/handlers/exec"
 	is_running "session-manager/handlers/is-running"
 	"session-manager/handlers/kill"
+	"session-manager/handlers/ready"
 	"session-manager/utils"
 )
 
@@ -19,6 +20,7 @@ func main() {
 	http.HandleFunc("/is-running", is_running.Handler)
 	http.HandleFunc("/kill", kill.Handler)
 	http.HandleFunc("/check", check.Handler)
+	http.HandleFunc("/ready", ready.Handler)
 
 	fmt.Println("Listening on port 4000")
 	err := http.ListenAndServe(":4000", nil)

@@ -54,7 +54,7 @@ func Main() {
 	fmt.Println("[k3s-session] Waiting for k3s API server...")
 	if !waitForK3s(maxK3sWaitSeconds) {
 		// Write error status and exit
-		os.WriteFile(readyFilePath+".error", []byte("k3s failed to start within timeout"), 0644)
+		_ = os.WriteFile(readyFilePath+".error", []byte("k3s failed to start within timeout"), 0644)
 		panic("[k3s-session] k3s failed to become ready within timeout")
 	}
 	fmt.Println("[k3s-session] k3s API server is ready")
@@ -68,7 +68,7 @@ func Main() {
 		setupCmd.Env = append(os.Environ(), "KUBECONFIG=/etc/rancher/k3s/k3s.yaml")
 
 		if err := setupCmd.Run(); err != nil {
-			os.WriteFile(readyFilePath+".error", []byte("setup.sh failed: "+err.Error()), 0644)
+			_ = os.WriteFile(readyFilePath+".error", []byte("setup.sh failed: "+err.Error()), 0644)
 			panic("[k3s-session] setup.sh failed: " + err.Error())
 		}
 		fmt.Println("[k3s-session] setup.sh completed successfully")

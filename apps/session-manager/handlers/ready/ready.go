@@ -51,10 +51,12 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	if errErr == nil {
 		// Error file exists — setup failed
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response{
+		if json.NewEncoder(w).Encode(response{
 			Ready: false,
 			Error: strings.TrimSpace(string(errOutput)),
-		})
+		}) != nil {
+			fmt.Println("Failed to encode ready response")
+		}
 		return
 	}
 
@@ -64,7 +66,9 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// Neither file exists yet — still starting up
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response{Ready: false})
+		if json.NewEncoder(w).Encode(response{Ready: false}) != nil {
+			fmt.Println("Failed to encode ready response")
+		}
 		return
 	}
 
@@ -74,5 +78,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response{Ready: isReady})
+	if json.NewEncoder(w).Encode(response{Ready: isReady}) != nil {
+		fmt.Println("Failed to encode ready response")
+	}
 }

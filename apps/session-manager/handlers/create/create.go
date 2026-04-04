@@ -8,6 +8,7 @@ import (
 	"path"
 	"regexp"
 	"session-manager/utils"
+	"strings"
 )
 
 type request struct {
@@ -39,8 +40,12 @@ var validTmpfsPath = regexp.MustCompile(`^/[a-zA-Z0-9/_.-]+$`)
 // allowedCgroupNs is the set of valid values for --cgroupns.
 var allowedCgroupNs = map[string]bool{"private": true, "host": true}
 
-// validCommandArg ensures each command/arg element is safe (no Docker flags injection).
-var validCommandArg = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_./:@=-]*$`)
+// validCommandArg ensures each command/arg element contains only safe characters.
+// Allows single-hyphen flags (e.g. "-mode") used by container entrypoints, but
+// double-hyphen Docker flags (e.g. "--privileged", "--volume") are blocked separately
+// via a strings.HasPrefix check before this regex is applied.
+// Context: session-manager.ts sends command: ["-mode", "k3s-session"].
+var validCommandArg = regexp.MustCompile(`^[a-zA-Z0-9-][a-zA-Z0-9_./:@=-]*$`)
 
 func Handler(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Authorization") != "Bearer "+utils.Token {
@@ -138,6 +143,10 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	// Validate command args before use
 	for _, arg := range req.Command {
+		if strings.HasPrefix(arg, "--") {
+			http.Error(w, "Docker flags are not allowed in command arguments", http.StatusBadRequest)
+			return
+		}
 		if !validCommandArg.MatchString(arg) {
 			http.Error(w, "Invalid command argument", http.StatusBadRequest)
 			return

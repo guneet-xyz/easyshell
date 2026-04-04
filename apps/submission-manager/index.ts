@@ -17,22 +17,10 @@ const db = createDb(env.DATABASE_URL)
 const WORKING_DIR = `${env.WORKING_DIR}/submission-manager`
 
 async function markQueueItemFinished(submissionId: number, testcaseId: number) {
-  try {
-    await db
-      .update(submissionTestcaseQueue)
-      .set({ status: "finished" })
-      .where(
-        and(
-          eq(submissionTestcaseQueue.submissionId, submissionId),
-          eq(submissionTestcaseQueue.testcaseId, testcaseId),
-        ),
-      )
-  } catch (firstError) {
-    console.error(
-      `Failed to mark queue item as finished (submission=${submissionId}, testcase=${testcaseId}), retrying in 1s:`,
-      firstError,
-    )
-    await sleep(1000)
+  const maxAttempts = 2
+  let lastError: unknown
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       await db
         .update(submissionTestcaseQueue)
@@ -43,13 +31,21 @@ async function markQueueItemFinished(submissionId: number, testcaseId: number) {
             eq(submissionTestcaseQueue.testcaseId, testcaseId),
           ),
         )
-    } catch (retryError) {
+      return
+    } catch (error) {
+      lastError = error
       console.error(
-        `Retry also failed to mark queue item as finished (submission=${submissionId}, testcase=${testcaseId}):`,
-        retryError,
+        `Attempt ${attempt}/${maxAttempts} failed to mark queue item as finished (submission=${submissionId}, testcase=${testcaseId}):`,
+        error,
       )
+      if (attempt < maxAttempts) await sleep(1000)
     }
   }
+
+  console.error(
+    `CRITICAL: Failed to mark queue item as finished after ${maxAttempts} attempts (submission=${submissionId}, testcase=${testcaseId}):`,
+    lastError,
+  )
 }
 
 async function getQueueItem() {

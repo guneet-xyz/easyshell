@@ -6,9 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mustang/utils"
 	"net/http"
+	osexec "os/exec"
 	"path"
-	"session-manager/utils"
 	"strings"
 )
 
@@ -63,6 +64,14 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	socketPath := path.Join(utils.WorkingDir, "sessions", reqBody.ContainerName, "main.sock")
+
+	// Ensure the socket is accessible — the container creates it as root,
+	// so chmod it from inside the container where we have root permissions.
+	chmodCmd := osexec.Command("docker", "exec", reqBody.ContainerName, "chmod", "0777", "/tmp/easyshell/main.sock")
+	if out, err := chmodCmd.CombinedOutput(); err != nil {
+		fmt.Printf("Warning: failed to chmod socket in %s: %s (%s)\n", reqBody.ContainerName, err, string(out))
+	}
+
 	client := utils.SocketClient(socketPath)
 
 	resp, err := client.Do(req)

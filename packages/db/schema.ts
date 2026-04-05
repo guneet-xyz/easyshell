@@ -135,6 +135,7 @@ export const terminalSessions = createTable(
       .references(() => users.id),
     problemId: integer("problem_id").notNull(),
     testcaseId: integer("testcase_id").notNull(),
+    containerName: varchar("container_name", { length: 255 }),
     createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
       .notNull()
       .defaultNow(),

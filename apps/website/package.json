@@ -6,13 +6,14 @@
   "scripts": {
     "build": "SKIP_ENV_VALIDATION=1 next build",
     "cache": "pnpm --filter @easyshell/problems run cache:website",
-    "dev": "next dev",
+    "dev": "pnpm run cache && next dev",
     "lint": "eslint",
     "start": "next start"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.7.4",
     "@easyshell/db": "workspace:*",
+    "@easyshell/mustang": "workspace:*",
     "@easyshell/problems": "workspace:*",
     "@mdx-js/loader": "^3.1.0",
     "@mdx-js/react": "^3.1.0",

@@ -3,9 +3,9 @@ package kill
 import (
 	"encoding/json"
 	"fmt"
+	"mustang/utils"
 	"net/http"
 	"os/exec"
-	"session-manager/utils"
 )
 
 type request struct {
@@ -37,9 +37,11 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("Killing container:", req.ContainerName)
+	fmt.Println("Removing container:", req.ContainerName)
 
-	cmd := exec.Command("docker", "container", "kill", req.ContainerName)
+	// Use "docker rm -f" instead of "docker kill" so it works on both
+	// running and stopped/exited containers.
+	cmd := exec.Command("docker", "rm", "-f", req.ContainerName)
 	err = cmd.Run()
 	if err != nil {
 		http.Error(w, "Failed: "+err.Error(), http.StatusInternalServerError)

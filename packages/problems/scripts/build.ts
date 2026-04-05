@@ -86,12 +86,28 @@ async function buildProblemTasks(problem: string): Promise<Array<Task>> {
       { recursive: true },
     )
 
-    // Copy problem-specific files (setup.sh, check.sh)
+    // Copy problem-specific files (setup.sh, check.sh, manifests/)
     const problemDir = `${PROBLEMS_DIR}/${problem}`
     await cp(`${problemDir}/setup.sh`, `${IMAGE_DIR}/setup.sh`)
     await cp(`${problemDir}/check.sh`, `${IMAGE_DIR}/check.sh`)
 
+    // Copy k3s manifests if the problem has them (auto-deployed on k3s startup)
+    const hasManifests = await _existsAndIsDir(`${problemDir}/manifests`)
+    if (hasManifests) {
+      await cp(`${problemDir}/manifests`, `${IMAGE_DIR}/manifests`, {
+        recursive: true,
+      })
+    }
+
     // Generate Dockerfile
+    // If the problem has a manifests/ directory, include a COPY for auto-deploy.
+    const manifestsCopy = hasManifests
+      ? `
+# Pre-baked k3s manifests (auto-applied by k3s deploy controller on startup)
+COPY manifests/ /var/lib/rancher/k3s/server/manifests/
+`
+      : ""
+
     await writeFile(
       `${IMAGE_DIR}/Dockerfile`,
       `
@@ -103,6 +119,16 @@ RUN go build -o /bin/entrypoint
 FROM alpine:3.21 AS tools
 RUN apk add --no-cache bash
 
+# Pre-bake container images into a tarball so k3s can import them on startup
+# without pulling from Docker Hub at runtime. This eliminates slow/flaky pulls
+# that cause setup.sh rollout timeouts under resource-constrained containers.
+# IMPORTANT: The image tag here MUST match what the manifests/ directory
+# references. If you change the image here, update the manifests too.
+FROM gcr.io/go-containerregistry/crane:latest AS crane-bin
+FROM alpine:3.21 AS crane
+COPY --from=crane-bin /ko-app/crane /usr/local/bin/crane
+RUN crane pull --platform linux/amd64 docker.io/library/nginx:1.27-alpine /nginx.tar
+
 FROM rancher/k3s:v1.32.3-k3s1
 
 COPY --from=tools /bin/bash /bin/bash
@@ -110,6 +136,10 @@ COPY --from=tools /lib/ld-musl-x86_64.so.1 /lib/ld-musl-x86_64.so.1
 COPY --from=tools /usr/lib/libreadline.so* /usr/lib/
 COPY --from=tools /usr/lib/libncursesw.so* /usr/lib/
 
+# Pre-baked images for k3s airgap import (loaded automatically on k3s startup)
+RUN mkdir -p /var/lib/rancher/k3s/agent/images
+COPY --from=crane /nginx.tar /var/lib/rancher/k3s/agent/images/nginx.tar
+${manifestsCopy}
 COPY --from=build-entrypoint /bin/entrypoint /entrypoint
 COPY k3s-base/cgroupv2-fix.sh /usr/local/bin/cgroupv2-fix.sh
 COPY k3s-base/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh

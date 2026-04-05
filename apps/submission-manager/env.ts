@@ -7,6 +7,8 @@ export const env = createEnv({
     DATABASE_URL: z.string(),
     DOCKER_REGISTRY: z.string().optional(),
     WORKING_DIR: z.string().default("/tmp/easyshell"),
+    MUSTANG_URL: z.string().url(),
+    MUSTANG_TOKEN: z.string(),
   },
   onValidationError: (issues) => {
     const details = issues
@@ -22,6 +24,11 @@ export const env = createEnv({
     console.error(`\n❌ Invalid environment variables:\n${details}\n`)
     throw new Error(`Invalid environment variables:\n${details}`)
   },
-  runtimeEnv: process.env,
+  runtimeEnv: {
+    ...process.env,
+    MUSTANG_URL: process.env.MUSTANG_URL || process.env.SESSION_MANAGER_URL,
+    MUSTANG_TOKEN:
+      process.env.MUSTANG_TOKEN || process.env.SESSION_MANAGER_TOKEN,
+  },
   emptyStringAsUndefined: true,
 })

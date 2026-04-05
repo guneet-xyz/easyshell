@@ -45,6 +45,9 @@ importers:
       "@easyshell/db":
         specifier: workspace:*
         version: link:../../packages/db
+      "@easyshell/mustang":
+        specifier: workspace:*
+        version: link:../../packages/mustang
       "@easyshell/utils":
         specifier: workspace:*
         version: link:../../packages/utils
@@ -54,9 +57,6 @@ importers:
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(pg@8.15.6)(postgres@3.4.8)
-      execa:
-        specifier: ^9.5.2
-        version: 9.5.2
       zod:
         specifier: ^3.24.2
         version: 3.25.76
@@ -82,6 +82,9 @@ importers:
       "@easyshell/db":
         specifier: workspace:*
         version: link:../../packages/db
+      "@easyshell/mustang":
+        specifier: workspace:*
+        version: link:../../packages/mustang
       "@easyshell/problems":
         specifier: workspace:*
         version: link:../../packages/problems
@@ -310,6 +313,28 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
 
+  packages/mustang:
+    dependencies:
+      "@easyshell/db":
+        specifier: workspace:*
+        version: link:../db
+      "@easyshell/utils":
+        specifier: workspace:*
+        version: link:../utils
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(pg@8.15.6)(postgres@3.4.8)
+      zod:
+        specifier: ^3.24.2
+        version: 3.25.76
+    devDependencies:
+      "@easyshell/problems":
+        specifier: workspace:*
+        version: link:../problems
+      "@types/node":
+        specifier: ^20.17.16
+        version: 20.19.39
+
   packages/problems:
     dependencies:
       "@easyshell/utils":
@@ -322,6 +347,9 @@ importers:
         specifier: ^3.24.1
         version: 3.25.76
     devDependencies:
+      "@easyshell/mustang":
+        specifier: workspace:*
+        version: link:../mustang
       "@easyshell/submission-manager":
         specifier: workspace:*
         version: link:../../apps/submission-manager
@@ -8848,7 +8876,6 @@ snapshots:
   "@types/node@20.19.39":
     dependencies:
       undici-types: 6.21.0
-    optional: true
 
   "@types/nodemailer@7.0.11":
     dependencies:
@@ -11100,7 +11127,7 @@ snapshots:
       "@protobufjs/path": 1.1.2
       "@protobufjs/pool": 1.1.0
       "@protobufjs/utf8": 1.1.0
-      "@types/node": 20.17.30
+      "@types/node": 20.19.39
       long: 5.3.2
 
   proxy-from-env@1.1.0: {}
@@ -11623,8 +11650,7 @@ snapshots:
 
   undici-types@6.19.8: {}
 
-  undici-types@6.21.0:
-    optional: true
+  undici-types@6.21.0: {}
 
   unicorn-magic@0.3.0: {}
 

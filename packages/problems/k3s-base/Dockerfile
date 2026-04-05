@@ -26,7 +26,19 @@ RUN go build -o /bin/entrypoint
 FROM alpine:3.21 AS tools
 RUN apk add --no-cache bash
 
-# Stage 3: Final image based on rancher/k3s
+# Stage 3: Pre-bake container images into tarballs for k3s airgap import.
+# k3s automatically imports all tarballs from /var/lib/rancher/k3s/agent/images/
+# on startup (via PreloadImages()), before the kubelet starts. This eliminates
+# slow/flaky image pulls from Docker Hub at runtime, which cause setup.sh
+# rollout timeouts under resource-constrained containers.
+# IMPORTANT: The image tag here MUST match what the manifests/ directory
+# references. If you change the image here, update the manifests too.
+FROM gcr.io/go-containerregistry/crane:latest AS crane-bin
+FROM alpine:3.21 AS crane
+COPY --from=crane-bin /ko-app/crane /usr/local/bin/crane
+RUN crane pull --platform linux/amd64 docker.io/library/nginx:1.27-alpine /nginx.tar
+
+# Stage 4: Final image based on rancher/k3s
 FROM rancher/k3s:v1.32.3-k3s1
 
 # Copy bash and its dependencies from Alpine
@@ -38,6 +50,16 @@ COPY --from=tools /usr/lib/libncursesw.so* /usr/lib/
 
 # Copy our entrypoint binary
 COPY --from=build-entrypoint /bin/entrypoint /entrypoint
+
+# Pre-baked images for k3s airgap import (loaded automatically on k3s startup)
+RUN mkdir -p /var/lib/rancher/k3s/agent/images
+COPY --from=crane /nginx.tar /var/lib/rancher/k3s/agent/images/nginx.tar
+
+# Pre-baked k3s manifests (auto-applied by k3s deploy controller on startup).
+# Problems place their namespace/deployment YAML in a manifests/ directory,
+# which is copied here. k3s applies them automatically after the API server
+# starts, so setup.sh only needs to wait for rollout — not create resources.
+# COPY manifests/ /var/lib/rancher/k3s/server/manifests/
 
 # Copy cgroupv2 compatibility script
 COPY k3s-base/cgroupv2-fix.sh /usr/local/bin/cgroupv2-fix.sh

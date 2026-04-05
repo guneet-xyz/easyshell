@@ -1,7 +1,7 @@
 "use server"
 
 import { auth } from "@/lib/server/auth"
-import { getTerminalSession as _getTerminalSession } from "@/lib/server/session-manager"
+import { getTerminalSession as _getTerminalSession } from "@/lib/server/mustang"
 
 export async function getTerminalSession({
   problemId,

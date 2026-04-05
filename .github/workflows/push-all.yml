@@ -24,9 +24,9 @@ jobs:
       - uses: actions/checkout@v4
       - run: docker build -t ${{ vars.DOCKER_REGISTRY }}/easyshell/website:latest -f ./apps/website/Dockerfile . --build-arg POSTHOG_HOST=${{ vars.POSTHOG_HOST }} --build-arg NEXT_PUBLIC_POSTHOG_KEY=${{ vars.NEXT_PUBLIC_POSTHOG_KEY }}
       - run: docker push ${{ vars.DOCKER_REGISTRY }}/easyshell/website:latest
-  push-session-manager:
+  push-mustang:
     concurrency:
-      group: push-session-manager
+      group: push-mustang
       cancel-in-progress: false
     environment: registry-push
     runs-on: ubuntu-latest
@@ -44,8 +44,8 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       - uses: actions/checkout@v4
-      - run: docker build -t ${{ vars.DOCKER_REGISTRY }}/easyshell/session-manager:latest -f ./apps/session-manager/Dockerfile ./apps/session-manager
-      - run: docker push ${{ vars.DOCKER_REGISTRY }}/easyshell/session-manager:latest
+      - run: docker build -t ${{ vars.DOCKER_REGISTRY }}/easyshell/mustang:latest -f ./apps/mustang/Dockerfile ./apps/mustang
+      - run: docker push ${{ vars.DOCKER_REGISTRY }}/easyshell/mustang:latest
   push-submission-manager:
     concurrency:
       group: push-submission-manager

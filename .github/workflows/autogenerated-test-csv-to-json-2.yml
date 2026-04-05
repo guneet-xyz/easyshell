@@ -26,9 +26,10 @@ jobs:
         name: Install dependencies
       - name: Build and start mustang
         run: |
-          go build -o /tmp/mustang-bin ./apps/mustang
+          go build -o /tmp/mustang-bin .
           TOKEN=token nohup /tmp/mustang-bin &
           sleep 2
+        working-directory: ./apps/mustang
       - run: pnpm run build csv-to-json-2
         working-directory: ./packages/problems
       - run: pnpm run test csv-to-json-2

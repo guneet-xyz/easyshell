@@ -43,9 +43,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Build and start mustang
         run: |
-          go build -o /tmp/mustang-bin ./apps/mustang
+          go build -o /tmp/mustang-bin .
           TOKEN=token nohup /tmp/mustang-bin &
           sleep 2
+        working-directory: ./apps/mustang
       - run: pnpm run build post-with-token
         name: build problem
         working-directory: ./packages/problems

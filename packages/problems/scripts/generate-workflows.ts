@@ -61,9 +61,10 @@ jobs:
         name: Install dependencies
       - name: Build and start mustang
         run: |
-          go build -o /tmp/mustang-bin ./apps/mustang
+          go build -o /tmp/mustang-bin .
           TOKEN=token nohup /tmp/mustang-bin &
           sleep 2
+        working-directory: ./apps/mustang
       - run: pnpm run build ${problemSlug}
         working-directory: ./packages/problems
       - run: pnpm run test ${problemSlug}
@@ -127,9 +128,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Build and start mustang
         run: |
-          go build -o /tmp/mustang-bin ./apps/mustang
+          go build -o /tmp/mustang-bin .
           TOKEN=token nohup /tmp/mustang-bin &
           sleep 2
+        working-directory: ./apps/mustang
       - run: pnpm run build ${problemSlug}
         name: build problem
         working-directory: ./packages/problems

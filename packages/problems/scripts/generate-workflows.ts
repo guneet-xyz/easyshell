@@ -54,8 +54,16 @@ jobs:
         with:
           node-version: 22.14.0
           cache: "pnpm"
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 1.23.6
       - run: pnpm install --frozen-lockfile
         name: Install dependencies
+      - name: Build and start mustang
+        run: |
+          go build -o /tmp/mustang-bin ./apps/mustang
+          TOKEN=token nohup /tmp/mustang-bin &
+          sleep 2
       - run: pnpm run build ${problemSlug}
         working-directory: ./packages/problems
       - run: pnpm run test ${problemSlug}
@@ -113,7 +121,15 @@ jobs:
         with:
           node-version: 22.14.0
           cache: "pnpm"
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 1.23.6
       - run: pnpm install --frozen-lockfile
+      - name: Build and start mustang
+        run: |
+          go build -o /tmp/mustang-bin ./apps/mustang
+          TOKEN=token nohup /tmp/mustang-bin &
+          sleep 2
       - run: pnpm run build ${problemSlug}
         name: build problem
         working-directory: ./packages/problems

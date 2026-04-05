@@ -103,12 +103,26 @@ RUN go build -o /bin/entrypoint
 FROM alpine:3.21 AS tools
 RUN apk add --no-cache bash
 
+# Pre-bake container images into a tarball so k3s can import them on startup
+# without pulling from Docker Hub at runtime. This eliminates slow/flaky pulls
+# that cause setup.sh rollout timeouts under resource-constrained containers.
+# IMPORTANT: The image tag here MUST match what setup.sh references in its
+# Deployment manifests. If you change the image here, update setup.sh too.
+FROM gcr.io/go-containerregistry/crane:latest AS crane-bin
+FROM alpine:3.21 AS crane
+COPY --from=crane-bin /ko-app/crane /usr/local/bin/crane
+RUN crane pull --platform linux/amd64 docker.io/library/nginx:1.27-alpine /nginx.tar
+
 FROM rancher/k3s:v1.32.3-k3s1
 
 COPY --from=tools /bin/bash /bin/bash
 COPY --from=tools /lib/ld-musl-x86_64.so.1 /lib/ld-musl-x86_64.so.1
 COPY --from=tools /usr/lib/libreadline.so* /usr/lib/
 COPY --from=tools /usr/lib/libncursesw.so* /usr/lib/
+
+# Pre-baked images for k3s airgap import (loaded automatically on k3s startup)
+RUN mkdir -p /var/lib/rancher/k3s/agent/images
+COPY --from=crane /nginx.tar /var/lib/rancher/k3s/agent/images/nginx.tar
 
 COPY --from=build-entrypoint /bin/entrypoint /entrypoint
 COPY k3s-base/cgroupv2-fix.sh /usr/local/bin/cgroupv2-fix.sh

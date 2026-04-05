@@ -3,17 +3,22 @@ package create
 import (
 	"encoding/json"
 	"fmt"
+	"mustang/utils"
 	"net/http"
 	"os/exec"
 	"path"
 	"regexp"
-	"session-manager/utils"
+	"strconv"
 	"strings"
 )
 
 type request struct {
-	Image         string `json:"image"`
-	ContainerName string `json:"container_name"`
+	Image   string `json:"image"`
+	Problem string `json:"problem"`
+	// Testcase number. Defaults to 0 if omitted.
+	Testcase int    `json:"testcase"`
+	Mode     string `json:"mode"` // "session" or "submission"
+	Type     string `json:"type"` // "standard" or "k3s"
 
 	// Optional resource configuration for heavier containers (e.g., k3s).
 	// If not set, defaults are used (10m memory, 0.1 CPU).
@@ -25,8 +30,9 @@ type request struct {
 	Command    []string `json:"command,omitempty"`    // container command/args (replaces default "-mode session")
 }
 
-// validateContainerName ensures the name is safe for use as a Docker container name.
-var validContainerName = utils.ValidContainerName
+type response struct {
+	ContainerName string `json:"container_name"`
+}
 
 // validateImageName ensures the image name is safe.
 var validImageName = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_./:@-]+$`)
@@ -40,11 +46,19 @@ var validTmpfsPath = regexp.MustCompile(`^/[a-zA-Z0-9/_.-]+$`)
 // allowedCgroupNs is the set of valid values for --cgroupns.
 var allowedCgroupNs = map[string]bool{"private": true, "host": true}
 
+// allowedModes is the set of valid container modes.
+var allowedModes = map[string]bool{"session": true, "submission": true}
+
+// allowedTypes is the set of valid container types.
+var allowedTypes = map[string]bool{"standard": true, "k3s": true}
+
+// validProblemSlug ensures the problem slug is safe for use in labels.
+var validProblemSlug = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_-]*$`)
+
 // validCommandArg ensures each command/arg element contains only safe characters.
 // Allows single-hyphen flags (e.g. "-mode") used by container entrypoints, but
 // double-hyphen Docker flags (e.g. "--privileged", "--volume") are blocked separately
 // via a strings.HasPrefix check before this regex is applied.
-// Context: session-manager.ts sends command: ["-mode", "k3s-session"].
 var validCommandArg = regexp.MustCompile(`^[a-zA-Z0-9-][a-zA-Z0-9_./:@=-]*$`)
 
 func Handler(w http.ResponseWriter, r *http.Request) {
@@ -66,12 +80,20 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Input validation
-	if !validContainerName.MatchString(req.ContainerName) {
-		http.Error(w, "Invalid container name", http.StatusBadRequest)
-		return
-	}
 	if !validImageName.MatchString(req.Image) {
 		http.Error(w, "Invalid image name", http.StatusBadRequest)
+		return
+	}
+	if req.Problem == "" || !validProblemSlug.MatchString(req.Problem) {
+		http.Error(w, "Invalid problem slug", http.StatusBadRequest)
+		return
+	}
+	if !allowedModes[req.Mode] {
+		http.Error(w, "Invalid mode (must be 'session' or 'submission')", http.StatusBadRequest)
+		return
+	}
+	if !allowedTypes[req.Type] {
+		http.Error(w, "Invalid type (must be 'standard' or 'k3s')", http.StatusBadRequest)
 		return
 	}
 
@@ -93,7 +115,10 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		cpu = req.CPU
 	}
 
-	containerDir := path.Join(utils.WorkingDir, "sessions", req.ContainerName)
+	// Generate container name server-side
+	containerName := utils.GenerateContainerName()
+
+	containerDir := path.Join(utils.WorkingDir, "sessions", containerName)
 	utils.Mkdirp(containerDir)
 
 	var imageTag string
@@ -106,11 +131,16 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	// Build docker run args using exec.Command (no shell interpolation)
 	args := []string{
 		"run", "-q", "-d", "--rm",
-		"--name", req.ContainerName,
+		"--name", containerName,
 		"-m", memory,
-		"--memory-swap", memory, // equal to -m to disable swap (total memory+swap = memory, leaving 0 for swap)
+		"--memory-swap", memory, // equal to -m to disable swap
 		"--cpus", cpu,
 		"-v", containerDir + ":/tmp/easyshell",
+		// Docker labels for metadata
+		"--label", "sh.easyshell.problem=" + req.Problem,
+		"--label", "sh.easyshell.testcase=" + strconv.Itoa(req.Testcase),
+		"--label", "sh.easyshell.mode=" + req.Mode,
+		"--label", "sh.easyshell.type=" + req.Type,
 	}
 
 	// Pull policy
@@ -174,6 +204,11 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("Container created: %s\n", req.ContainerName)
+	fmt.Printf("Container created: %s\n", containerName)
+
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	if json.NewEncoder(w).Encode(response{ContainerName: containerName}) != nil {
+		fmt.Println("Failed to encode create response")
+	}
 }

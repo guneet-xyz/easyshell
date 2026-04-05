@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "cache": "pnpm --filter @easyshell/problems run cache:website && pnpm --filter @easyshell/problems run cache:submission-manager",
+    "db:generate": "infisical run --env=dev -- pnpm exec drizzle-kit generate",
     "db:migrate": "infisical run --env=dev -- pnpm exec drizzle-kit migrate",
-    "dev:session-manager": "infisical run --env=dev -- go run -C apps/session-manager .",
+    "dev:mustang": "infisical run --env=dev -- go run -C apps/mustang .",
     "dev:submission-manager": "infisical run --env=dev -- pnpm --filter @easyshell/submission-manager run dev",
     "dev:website": "infisical run --env=dev -- pnpm --filter @easyshell/website run dev",
     "docker:build": "infisical run --env=dev -- docker compose build",
@@ -15,7 +16,8 @@
     "format:write": "pnpm exec prettier --write . && gofmt -w -s .",
     "lint": "pnpm run lint:tsc && pnpm run lint:next",
     "lint:next": "pnpm --filter @easyshell/website run lint",
-    "lint:tsc": "pnpm exec tsc --noEmit"
+    "lint:tsc": "pnpm exec tsc --noEmit",
+    "test": "infisical run --env=dev -- pnpm --filter @easyshell/problems run test"
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^4.7.1",

@@ -18,8 +18,8 @@ export const env = createEnv({
     GOOGLE_CLIENT_ID: z.string(),
     GOOGLE_CLIENT_SECRET: z.string(),
 
-    SESSION_MANAGER_URL: z.string().url(),
-    SESSION_MANAGER_TOKEN: z.string(),
+    MUSTANG_URL: z.string().url(),
+    MUSTANG_TOKEN: z.string(),
 
     SMTP_HOST: z.string(),
     SMTP_USERNAME: z.string(),
@@ -51,6 +51,9 @@ export const env = createEnv({
 
   runtimeEnv: {
     ...process.env,
+    MUSTANG_URL: process.env.MUSTANG_URL || process.env.SESSION_MANAGER_URL,
+    MUSTANG_TOKEN:
+      process.env.MUSTANG_TOKEN || process.env.SESSION_MANAGER_TOKEN,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
   },
   skipValidation:

@@ -19,7 +19,6 @@ RUN pnpm run cache
 RUN pnpm exec esbuild index.ts --bundle --platform=node --outfile=submission-manager.cjs
 
 FROM node:22-alpine
-RUN apk add --no-cache docker
 
 WORKDIR /app
 

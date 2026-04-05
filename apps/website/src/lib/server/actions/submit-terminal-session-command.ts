@@ -6,11 +6,7 @@ import { terminalSessions } from "@easyshell/db/schema"
 
 import { db } from "@/db"
 import { auth } from "@/lib/server/auth"
-import { getProblemSlugFromId } from "@/lib/server/problems"
-import {
-  insertTerminalSessionLog,
-  sessionManagerExec,
-} from "@/lib/server/session-manager"
+import { insertTerminalSessionLog, submitCommand } from "@/lib/server/mustang"
 
 import type { getTerminalSession } from "./get-terminal-session"
 
@@ -31,7 +27,14 @@ export async function submitTerminalSessionCommand({
   | ({
       status: "error"
     } & (
-      | Awaited<ReturnType<typeof sessionManagerExec>>
+      | {
+          type:
+            | "took_too_long"
+            | "session_not_running"
+            | "session_error"
+            | "critical_server_error"
+          message: string
+        }
       | {
           type: "not-authenticated"
         }
@@ -55,34 +58,32 @@ export async function submitTerminalSessionCommand({
     throw new Error("Session not found")
   }
 
-  const problemSlug = await getProblemSlugFromId(terminalSession[0].problemId)
-
-  const container_name = `easyshell-${problemSlug}-${terminalSession[0].testcaseId}-session-${sessionId}`
+  const containerName = terminalSession[0].containerName
+  if (!containerName) {
+    throw new Error("Session has no container name (legacy session)")
+  }
 
   const startedAt = new Date()
-  const execResponse = await sessionManagerExec({
-    containerName: container_name,
+  const result = await submitCommand({
+    sessionId,
+    containerName,
     command,
   })
   const finishedAt = new Date()
 
-  if (execResponse.status === "error") {
-    return execResponse
+  if (result.status === "error") {
+    return result
   }
-
-  const { stdout, stderr } = execResponse
-
-  const logId = await insertTerminalSessionLog({
-    sessionId,
-    stdin: command,
-    stdout,
-    stderr,
-    startedAt,
-    finishedAt,
-  })
 
   return {
     status: "success",
-    log: { id: logId, stdin: command, stdout, stderr, startedAt, finishedAt },
+    log: {
+      id: result.logId!,
+      stdin: command,
+      stdout: result.stdout,
+      stderr: result.stderr,
+      startedAt,
+      finishedAt,
+    },
   }
 }

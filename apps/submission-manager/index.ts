@@ -6,6 +6,7 @@ import {
   submissionTestcaseQueue,
   submissionTestcases,
 } from "@easyshell/db/schema"
+import { createMustangClient } from "@easyshell/mustang/client"
 import { sleep } from "@easyshell/utils"
 
 import { env } from "./env"
@@ -13,6 +14,10 @@ import { getProblemSlugFromId } from "./problems"
 import { runSubmissionAndGetOutput } from "./utils"
 
 const db = createDb(env.DATABASE_URL)
+const mustangClient = createMustangClient({
+  baseUrl: env.MUSTANG_URL,
+  token: env.MUSTANG_TOKEN,
+})
 
 const WORKING_DIR = `${env.WORKING_DIR}/submission-manager`
 
@@ -120,12 +125,11 @@ async function processQueueItem(
 
     const { startedAt, finishedAt, output, passed } =
       await runSubmissionAndGetOutput({
+        client: mustangClient,
         problemSlug,
         testcaseId: item.testcaseId,
         input: item.input,
-        suffix: `submission-${item.submissionId}`,
         workingDir: WORKING_DIR,
-        dockerRegistry: env.DOCKER_REGISTRY,
       })
 
     try {

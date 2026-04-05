@@ -3,23 +3,27 @@ networks:
     external: true
 services:
   submission-manager:
+    user: 1000:1000
     build:
       context: .
       dockerfile: ./apps/submission-manager/Dockerfile
     container_name: easyshell-dev-submission-manager
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - /tmp/easyshell:/tmp/easyshell
-      - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - easyshell
     environment:
       DATABASE_URL: ${DATABASE_URL}
-  session-manager:
+      SESSION_MANAGER_URL: http://host.docker.internal:4000
+      SESSION_MANAGER_TOKEN: token
+  mustang:
     build:
-      context: ./apps/session-manager
-    container_name: easyshell-dev-session-manager
+      context: ./apps/mustang
+    container_name: easyshell-dev-mustang
     environment:
-      TOKEN: token
+      MUSTANG_TOKEN: token
     networks:
       - easyshell
     ports:
@@ -36,6 +40,7 @@ services:
         POSTHOG_HOST: ${POSTHOG_HOST}
     container_name: easyshell-dev-website
     environment:
+      POSTHOG_HOST: ${POSTHOG_HOST}
       AUTH_TRUST_HOST: true
       DATABASE_URL: ${DATABASE_URL}
       NEXTAUTH_SECRET: secret
@@ -46,7 +51,7 @@ services:
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-      SESSION_MANAGER_URL: http://session-manager:4000
+      SESSION_MANAGER_URL: http://mustang:4000
       SESSION_MANAGER_TOKEN: token
       SMTP_HOST: ${SMTP_HOST}
       SMTP_USERNAME: ${SMTP_USERNAME}

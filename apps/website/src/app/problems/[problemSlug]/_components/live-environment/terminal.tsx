@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dialog"
 import { Slider } from "@/components/ui/slider"
 import { EasyTooltip } from "@/components/ui/tooltip"
+import { checkSessionReady } from "@/lib/server/actions/check-session-ready"
 import { getTerminalSession } from "@/lib/server/actions/get-terminal-session"
 import { isSessionAlive } from "@/lib/server/actions/is-session-alive"
 import { killTerminalSessions } from "@/lib/server/actions/kill-terminal-sessions"
@@ -34,19 +35,41 @@ import { cn } from "@/lib/utils"
 
 const SENTINEL_TESTCASE_ID = 1
 
-async function resetSession({
-  setSession,
-  problemId,
-}: {
-  setSession: Dispatch<Awaited<ReturnType<typeof getTerminalSession>> | null>
-  problemId: number
-}) {
-  setSession(null)
-  const session = await getTerminalSession({
-    problemId: problemId,
-    testcaseId: SENTINEL_TESTCASE_ID,
-  })
-  setSession(session)
+type Session = Exclude<Awaited<ReturnType<typeof getTerminalSession>>, null>
+
+/**
+ * Poll the session's container for readiness. Returns once ready or throws on
+ * fatal errors (container stopped, disappeared, setup failed).
+ */
+async function waitForReady(
+  containerName: string,
+  signal: AbortSignal,
+): Promise<void> {
+  const POLL_INTERVAL = 2_000
+  const MAX_WAIT = 180_000
+  const start = Date.now()
+
+  while (Date.now() - start < MAX_WAIT) {
+    if (signal.aborted) return
+
+    const result = await checkSessionReady(containerName)
+
+    if (result.ready) return
+
+    if (result.error) {
+      throw new Error(`Environment setup failed: ${result.error}`)
+    }
+    if (result.exists && !result.running) {
+      throw new Error("Container stopped before becoming ready")
+    }
+    if (!result.exists) {
+      throw new Error("Container disappeared before becoming ready")
+    }
+
+    await new Promise((r) => setTimeout(r, POLL_INTERVAL))
+  }
+
+  throw new Error("Timed out waiting for environment to be ready")
 }
 
 export function LiveEnvironmentTerminal({
@@ -56,36 +79,98 @@ export function LiveEnvironmentTerminal({
   problemId: number
   problemSlug: string
 }) {
-  const [session, setSession] = useState<Awaited<
-    ReturnType<typeof getTerminalSession>
-  > | null>(null)
-
+  const [session, setSession] = useState<Session | null>(null)
+  const [ready, setReady] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [restarting, setRestarting] = useState(false)
+  const abortRef = useRef<AbortController | null>(null)
 
-  useEffect(() => {
-    void resetSession({
-      setSession: setSession,
-      problemId: problemId,
-    })
-  }, [problemId])
-
-  const handleRestartTerminal = useCallback(
+  const initSession = useCallback(
     async function () {
-      setRestarting(true)
-      await killTerminalSessions({
-        problemId,
-        testcaseId: SENTINEL_TESTCASE_ID,
-      })
-      await resetSession({
-        setSession: setSession,
-        problemId: problemId,
-      })
-      setRestarting(false)
+      // Abort any in-flight polling from a previous call
+      abortRef.current?.abort()
+      const ac = new AbortController()
+      abortRef.current = ac
+
+      setSession(null)
+      setReady(false)
+      setError(null)
+
+      try {
+        const result = await getTerminalSession({
+          problemId,
+          testcaseId: SENTINEL_TESTCASE_ID,
+        })
+
+        if (!result || ac.signal.aborted) return
+
+        setSession(result)
+
+        if (result.ready) {
+          setReady(true)
+          return
+        }
+
+        // k3s session — poll readiness from the client
+        if (result.containerName) {
+          await waitForReady(result.containerName, ac.signal)
+          if (!ac.signal.aborted) {
+            setReady(true)
+          }
+        }
+      } catch (err) {
+        if (!ac.signal.aborted) {
+          const message =
+            err instanceof Error ? err.message : "Failed to create session"
+          console.error("[live-env terminal]", message)
+          setError(message)
+        }
+      }
     },
     [problemId],
   )
 
-  if (!session)
+  useEffect(() => {
+    void initSession()
+    return () => {
+      abortRef.current?.abort()
+    }
+  }, [initSession])
+
+  const handleRestartTerminal = useCallback(
+    async function () {
+      setRestarting(true)
+      try {
+        await killTerminalSessions({
+          problemId,
+          testcaseId: SENTINEL_TESTCASE_ID,
+        })
+        await initSession()
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to restart session"
+        setError(message)
+      } finally {
+        setRestarting(false)
+      }
+    },
+    [problemId, initSession],
+  )
+
+  if (error) {
+    return (
+      <ErrorTerminal
+        problemSlug={problemSlug}
+        error={error}
+        onRetry={() => {
+          setError(null)
+          void initSession()
+        }}
+      />
+    )
+  }
+
+  if (!session || !ready)
     return <LoadingTerminal problemSlug={problemSlug} restarting={restarting} />
 
   return (
@@ -147,6 +232,51 @@ function LoadingTerminal({
   )
 }
 
+function ErrorTerminal({
+  problemSlug,
+  error,
+  onRetry,
+}: {
+  problemSlug: string
+  error: string
+  onRetry: () => void
+}) {
+  return (
+    <div className="flex h-full flex-col rounded-md border-4 border-red-400/50 font-geist-mono">
+      <div className="relative flex h-80 grow flex-col overflow-scroll bg-black px-2 py-1 whitespace-pre-line">
+        <p className="absolute top-0 left-1/2 -translate-x-1/2 rounded-b-md bg-neutral-800 px-4 text-center font-semibold text-white opacity-100 transition-opacity select-none hover:opacity-0">
+          {problemSlug}
+        </p>
+        <div className="absolute top-1/2 left-1/2 z-20 flex h-full w-full -translate-x-1/2 -translate-y-1/2 items-center justify-center bg-black">
+          <div className="flex flex-col items-center gap-3">
+            <p className="text-red-400">Failed to set up environment</p>
+            <p className="max-w-md text-center text-xs text-neutral-500">
+              {error}
+            </p>
+            <button
+              onClick={onRetry}
+              className="mt-2 cursor-pointer rounded-md bg-neutral-800 px-4 py-1.5 text-sm text-white transition-colors hover:bg-neutral-700"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+      <div className="flex">
+        <input
+          className="grow bg-neutral-800 px-2 py-1 text-white outline-hidden"
+          disabled
+          placeholder="Environment unavailable"
+        />
+        <button
+          className="w-20 bg-green-800 px-2 text-neutral-200 select-none"
+          disabled
+        />
+      </div>
+    </div>
+  )
+}
+
 function LoadedTerminal({
   problemSlug,
   session,
@@ -156,10 +286,8 @@ function LoadedTerminal({
 }: {
   problemId: number
   problemSlug: string
-  session: Exclude<Awaited<ReturnType<typeof getTerminalSession>>, null>
-  setSession: Dispatch<
-    SetStateAction<Awaited<ReturnType<typeof getTerminalSession>>>
-  >
+  session: Session
+  setSession: Dispatch<SetStateAction<Session | null>>
   restarting: boolean
   handleRestartTerminal: () => void
 }) {

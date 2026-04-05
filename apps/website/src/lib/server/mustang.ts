@@ -5,6 +5,7 @@
 import { createMustangClient } from "@easyshell/mustang/client"
 import {
   checkSession as _checkSession,
+  getSessionReadiness as _getSessionReadiness,
   getTerminalSession as _getTerminalSession,
   insertTerminalSessionLog as _insertTerminalSessionLog,
   killTerminalSessions as _killTerminalSessions,
@@ -105,4 +106,11 @@ export async function insertTerminalSessionLog(params: {
   finishedAt: Date
 }) {
   return _insertTerminalSessionLog(db, params)
+}
+
+export async function getSessionReadiness(containerName: string) {
+  return _getSessionReadiness({
+    client: mustangClient,
+    containerName,
+  })
 }

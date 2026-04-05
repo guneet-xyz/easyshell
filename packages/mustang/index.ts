@@ -21,6 +21,7 @@ export {
   getTerminalSession,
   createTerminalSession,
   getActiveTerminalSession,
+  getSessionReadiness,
   killTerminalSessions,
   submitCommand,
   checkSession,

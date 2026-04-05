@@ -28,7 +28,8 @@ const logError = (...args: unknown[]) =>
 
 /**
  * Create and start a terminal session container.
- * For k3s problems, waits for the container to become ready (up to 3 minutes).
+ * For k3s problems, the container is created but readiness is NOT polled here —
+ * the caller (client UI) should poll via getSessionReadiness().
  * Returns the container name.
  */
 export async function runTerminalSession({
@@ -72,40 +73,8 @@ export async function runTerminalSession({
       .where(eq(terminalSessions.id, sessionId))
 
     log(
-      `k3s container ${containerName} created for session ${sessionId}, polling readiness...`,
+      `k3s container ${containerName} created for session ${sessionId} (readiness polling deferred to client)`,
     )
-
-    // Wait for k3s + setup.sh to finish before returning
-    const maxWaitMs = 180_000 // 3 minutes
-    const pollIntervalMs = 2_000
-    const startTime = Date.now()
-
-    while (Date.now() - startTime < maxWaitMs) {
-      const readyResult = await client.getSessionReady(containerName)
-      if (readyResult.ready) {
-        log(
-          `k3s session ${containerName} ready after ${((Date.now() - startTime) / 1000).toFixed(1)}s`,
-        )
-        break
-      }
-      if (readyResult.error) {
-        logError(
-          `k3s session ${containerName} setup failed: ${readyResult.error}`,
-        )
-        throw new Error(`Environment setup failed: ${readyResult.error}`)
-      }
-      if (readyResult.exists && !readyResult.running) {
-        logError(
-          `k3s session ${containerName} container stopped before becoming ready`,
-        )
-        throw new Error("Container stopped before becoming ready")
-      }
-      if (!readyResult.exists) {
-        logError(`k3s session ${containerName} container disappeared`)
-        throw new Error("Container disappeared before becoming ready")
-      }
-      await sleep(pollIntervalMs)
-    }
 
     return containerName
   } else {
@@ -135,7 +104,9 @@ export async function runTerminalSession({
 
 /**
  * Get an existing active terminal session or create a new one.
- * Returns session info with logs.
+ * Returns session info with logs and a `ready` flag.
+ * For k3s sessions that were just created, ready=false — the client should
+ * poll getSessionReadiness() until ready.
  */
 export async function getTerminalSession({
   db,
@@ -162,42 +133,72 @@ export async function getTerminalSession({
     testcaseId,
   })
 
-  if (!session) {
+  // Existing session is alive — return it as ready
+  if (session) {
     log(
-      `getTerminalSession: no active session found, creating new one (user=${userId}, problem=${problemId}, testcase=${testcaseId})`,
+      `getTerminalSession: returning existing session ${session.id} (container=${session.containerName})`,
     )
-    await createTerminalSession({
-      db,
-      client,
-      userId,
-      problemId,
-      testcaseId,
-      problemSlug,
-      problemInfo,
-    })
-    session = await getActiveTerminalSession({
-      db,
-      client,
-      userId,
-      problemId,
-      testcaseId,
-    })
+    const logs = await getTerminalSessionLogs(db, session.id)
+    return {
+      id: session.id,
+      containerName: session.containerName,
+      createdAt: session.createdAt,
+      expiresAt: session.expiresAt,
+      deletedAt: session.deletedAt,
+      ready: true as const,
+      logs,
+    }
   }
 
-  if (!session) throw new Error("Failed to create terminal session")
+  // No active session — create a new one
+  log(
+    `getTerminalSession: no active session found, creating new one (user=${userId}, problem=${problemId}, testcase=${testcaseId})`,
+  )
+  await createTerminalSession({
+    db,
+    client,
+    userId,
+    problemId,
+    testcaseId,
+    problemSlug,
+    problemInfo,
+  })
+
+  // Fetch the session we just created directly from DB
+  // (don't use getActiveTerminalSession which re-checks container liveness —
+  //  for k3s sessions the container isn't ready yet)
+  const newSession = (
+    await db
+      .select()
+      .from(terminalSessions)
+      .where(
+        and(
+          eq(terminalSessions.userId, userId),
+          eq(terminalSessions.problemId, problemId),
+          eq(terminalSessions.testcaseId, testcaseId),
+          isNull(terminalSessions.deletedAt),
+        ),
+      )
+      .limit(1)
+  )[0]
+
+  if (!newSession) throw new Error("Failed to create terminal session")
 
   log(
-    `getTerminalSession: returning session ${session.id} (container=${session.containerName})`,
+    `getTerminalSession: returning new session ${newSession.id} (container=${newSession.containerName})`,
   )
 
-  const logs = await getTerminalSessionLogs(db, session.id)
+  const logs = await getTerminalSessionLogs(db, newSession.id)
+  const isK3s = isLiveEnvironmentProblem(problemInfo)
 
   return {
-    id: session.id,
-    containerName: session.containerName,
-    createdAt: session.createdAt,
-    expiresAt: session.expiresAt,
-    deletedAt: session.deletedAt,
+    id: newSession.id,
+    containerName: newSession.containerName,
+    createdAt: newSession.createdAt,
+    expiresAt: newSession.expiresAt,
+    deletedAt: newSession.deletedAt,
+    // K3s sessions need client-side readiness polling; standard sessions are ready immediately
+    ready: !isK3s as boolean,
     logs,
   }
 }
@@ -298,6 +299,26 @@ export async function getActiveTerminalSession({
     .where(eq(terminalSessions.id, session.id))
 
   return null
+}
+
+/**
+ * Check the readiness of a session's container.
+ * Used by the client to poll for k3s session readiness.
+ * Returns { ready, exists, running, error? }.
+ */
+export async function getSessionReadiness({
+  client,
+  containerName,
+}: {
+  client: MustangClient
+  containerName: string
+}) {
+  log(`getSessionReadiness: checking ${containerName}`)
+  const result = await client.getSessionReady(containerName)
+  log(
+    `getSessionReadiness: ${containerName} -> exists=${result.exists} running=${result.running} ready=${result.ready}${result.error ? ` error=${result.error}` : ""}`,
+  )
+  return result
 }
 
 /**

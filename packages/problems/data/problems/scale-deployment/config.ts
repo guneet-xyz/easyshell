@@ -22,6 +22,7 @@ const config: LiveEnvironmentProblemConfigInput = {
       pass: false,
     },
   ],
+  warmInstances: 3
 }
 
 export default config

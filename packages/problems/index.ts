@@ -63,6 +63,7 @@ export async function getProblemInfo(problem: string): Promise<ProblemInfo> {
       difficulty: config.difficulty,
       tags: config.tags,
       check: config.check,
+      warmInstances: config.warmInstances,
     }
   }
   return {
@@ -80,6 +81,7 @@ export async function getProblemInfo(problem: string): Promise<ProblemInfo> {
       expected_stderr: tc.expected_stderr,
       expected_exit_code: tc.expected_exit_code,
       expected_fs: tc.expected_fs,
+      warmInstances: tc.warmInstances,
     })),
   }
 }

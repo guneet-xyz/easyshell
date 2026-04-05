@@ -15,7 +15,7 @@ const CreateSessionRequestSchema = z.object({
   image: z.string(),
   problem: z.string(),
   testcase: z.number().int().default(0),
-  mode: z.enum(["session", "submission"]),
+  mode: z.enum(["session", "submission", "warm"]),
   type: z.enum(["standard", "k3s"]),
   memory: z.string().optional(),
   cpu: z.string().optional(),
@@ -94,6 +94,24 @@ const PollSubmissionResponseSchema = z.discriminatedUnion("status", [
   }),
 ])
 
+// ========================= Container List Schemas ============================
+
+const ContainerSchema = z.object({
+  name: z.string(),
+  labels: z.record(z.string()),
+  created_at: z.string(),
+  status: z.string(),
+})
+
+const ListContainersResponseSchema = z.object({
+  containers: z.array(ContainerSchema),
+})
+
+const ClaimSessionResponseSchema = z.object({
+  claimed: z.boolean(),
+  error: z.string().optional(),
+})
+
 // =============================== Types =======================================
 
 export type CreateSessionRequest = z.input<typeof CreateSessionRequestSchema>
@@ -113,6 +131,18 @@ export type ScoreResult = z.infer<typeof ScoreResultSchema>
 export type PollSubmissionResponse = z.infer<
   typeof PollSubmissionResponseSchema
 >
+
+export type ContainerInfo = z.infer<typeof ContainerSchema>
+export type ListContainersResponse = z.infer<
+  typeof ListContainersResponseSchema
+>
+export type ClaimSessionResponse = z.infer<typeof ClaimSessionResponseSchema>
+
+export type ListContainersFilters = {
+  mode?: string
+  problem?: string
+  testcase?: number
+}
 
 export type ExecError = {
   status: "error"
@@ -151,6 +181,10 @@ export interface MustangClient {
     containerName: string,
     outputFilePath?: string,
   ): Promise<PollSubmissionResponse>
+  listContainers(
+    filters?: ListContainersFilters,
+  ): Promise<ListContainersResponse>
+  claimSession(containerName: string): Promise<ClaimSessionResponse>
 }
 
 export function createMustangClient(config: {
@@ -405,6 +439,51 @@ export function createMustangClient(config: {
           `POST /submission/poll -> status=finished${result.output ? ` exit_code=${result.output.exit_code}` : ""}${result.score ? ` score=${result.score.score}/${result.score.total}` : ""}`,
         )
       }
+      return result
+    },
+
+    async listContainers(filters) {
+      const params = new URLSearchParams()
+      if (filters?.mode) params.set("mode", filters.mode)
+      if (filters?.problem) params.set("problem", filters.problem)
+      if (filters?.testcase !== undefined)
+        params.set("testcase", String(filters.testcase))
+
+      const qs = params.toString()
+      log(`GET /containers/list${qs ? `?${qs}` : ""}`)
+      const resp = await fetch(
+        `${baseUrl}/containers/list${qs ? `?${qs}` : ""}`,
+        {
+          method: "GET",
+          headers: headers(),
+        },
+      )
+      if (!resp.ok) {
+        const text = await resp.text()
+        logError(`GET /containers/list failed: ${resp.status} ${text}`)
+        throw new Error(`Failed to list containers: ${resp.status} ${text}`)
+      }
+      const result = ListContainersResponseSchema.parse(await resp.json())
+      log(`GET /containers/list -> ${result.containers.length} containers`)
+      return result
+    },
+
+    async claimSession(containerName) {
+      log(`POST /session/claim (name=${containerName})`)
+      const resp = await fetch(`${baseUrl}/session/claim`, {
+        method: "POST",
+        headers: headers(),
+        body: JSON.stringify({ container_name: containerName }),
+      })
+      if (!resp.ok) {
+        const text = await resp.text()
+        logError(`POST /session/claim failed: ${resp.status} ${text}`)
+        throw new Error(`Failed to claim session: ${resp.status} ${text}`)
+      }
+      const result = ClaimSessionResponseSchema.parse(await resp.json())
+      log(
+        `POST /session/claim -> claimed=${result.claimed}${result.error ? ` error=${result.error}` : ""}`,
+      )
       return result
     },
   }

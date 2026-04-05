@@ -18,6 +18,17 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       SESSION_MANAGER_URL: http://host.docker.internal:4000
       SESSION_MANAGER_TOKEN: token
+  cron:
+    build:
+      context: .
+      dockerfile: ./apps/cron/Dockerfile
+    container_name: easyshell-dev-cron
+    networks:
+      - easyshell
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      MUSTANG_URL: http://mustang:4000
+      MUSTANG_TOKEN: token
   mustang:
     build:
       context: ./apps/mustang

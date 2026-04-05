@@ -47,7 +47,7 @@ var validTmpfsPath = regexp.MustCompile(`^/[a-zA-Z0-9/_.-]+$`)
 var allowedCgroupNs = map[string]bool{"private": true, "host": true}
 
 // allowedModes is the set of valid container modes.
-var allowedModes = map[string]bool{"session": true, "submission": true}
+var allowedModes = map[string]bool{"session": true, "submission": true, "warm": true}
 
 // allowedTypes is the set of valid container types.
 var allowedTypes = map[string]bool{"standard": true, "k3s": true}

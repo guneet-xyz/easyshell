@@ -3,9 +3,11 @@ package main
 import (
 	"fmt"
 	"mustang/handlers/check"
+	"mustang/handlers/claim"
 	"mustang/handlers/create"
 	"mustang/handlers/exec"
 	"mustang/handlers/kill"
+	"mustang/handlers/list"
 	"mustang/handlers/ready"
 	exec_stream "mustang/handlers/session/exec_stream"
 	submission_create "mustang/handlers/submission/create"
@@ -34,6 +36,10 @@ func main() {
 	// Submission endpoints
 	http.HandleFunc("/submission/create", submission_create.Handler)
 	http.HandleFunc("/submission/poll", submission_poll.Handler)
+
+	// Container management endpoints
+	http.HandleFunc("/containers/list", list.Handler)
+	http.HandleFunc("/session/claim", claim.Handler)
 
 	fmt.Println("Listening on port 4000")
 	err := http.ListenAndServe(":4000", nil)

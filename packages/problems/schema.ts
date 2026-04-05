@@ -32,6 +32,8 @@ const TestcaseSchema = z.object({
   expected_stderr: z.string().optional(),
   expected_exit_code: z.number().optional(),
   expected_fs: FsSchema.optional(),
+  /** Number of warm container instances to keep ready for this testcase. Defaults to 0. */
+  warmInstances: z.number().int().nonnegative().optional(),
   daemonSetup: z
     .function()
     .args(
@@ -95,6 +97,8 @@ const LiveEnvironmentProblemConfigSchema = z
     difficulty: DifficultySchema,
     tags: TagsSchema,
     check: CheckConfigSchema,
+    /** Number of warm container instances to keep ready for this problem. Defaults to 0. */
+    warmInstances: z.number().int().nonnegative().optional(),
     tests: z.array(LiveEnvironmentTestSchema).optional(),
   })
   .strict()
@@ -162,6 +166,8 @@ const TestcaseInfoSchema = z.object({
   expected_stderr: z.string().optional(),
   expected_exit_code: z.number().optional(),
   expected_fs: FsSchema.optional(),
+  /** Number of warm container instances to keep ready for this testcase. Defaults to 0. */
+  warmInstances: z.number().int().nonnegative().optional(),
 })
 
 const StandardProblemInfoSchema = z.object({
@@ -184,6 +190,8 @@ const LiveEnvironmentProblemInfoSchema = z.object({
   difficulty: DifficultySchema,
   tags: TagsSchema,
   check: CheckConfigSchema,
+  /** Number of warm container instances to keep ready for this problem. Defaults to 0. */
+  warmInstances: z.number().int().nonnegative().optional(),
 })
 
 export const ProblemInfoSchema = z.preprocess(

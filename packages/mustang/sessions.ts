@@ -51,6 +51,26 @@ export async function runTerminalSession({
     log(
       `runTerminalSession: creating k3s session (problem=${problemSlug}, testcase=${testcaseId}, session=${sessionId})`,
     )
+
+    // Try to claim a warm container first (k3s containers have long startup times)
+    const claimed = await tryClaimWarmContainer({
+      client,
+      problemSlug,
+      testcaseId,
+    })
+
+    if (claimed) {
+      await db
+        .update(terminalSessions)
+        .set({ containerName: claimed })
+        .where(eq(terminalSessions.id, sessionId))
+
+      log(`claimed warm k3s container ${claimed} for session ${sessionId}`)
+
+      return claimed
+    }
+
+    // No warm container available — create on-demand
     // K3s container with higher resource limits
     const { container_name: containerName } = await client.createSession({
       image: `easyshell-${problemSlug}-${testcaseId}`,
@@ -81,8 +101,28 @@ export async function runTerminalSession({
     log(
       `runTerminalSession: creating standard session (problem=${problemSlug}, testcase=${testcaseId}, session=${sessionId})`,
     )
-    // Standard container
-    const { container_name: containerName } = await client.createSession({
+
+    // Try to claim a warm container first (faster than creating on-demand)
+    const containerName = await tryClaimWarmContainer({
+      client,
+      problemSlug,
+      testcaseId,
+    })
+
+    if (containerName) {
+      // Store the claimed container name in the DB
+      await db
+        .update(terminalSessions)
+        .set({ containerName })
+        .where(eq(terminalSessions.id, sessionId))
+
+      log(`claimed warm container ${containerName} for session ${sessionId}`)
+
+      return containerName
+    }
+
+    // No warm container available — create on-demand
+    const { container_name: newContainerName } = await client.createSession({
       image: `easyshell-${problemSlug}-${testcaseId}`,
       problem: problemSlug,
       testcase: testcaseId,
@@ -93,12 +133,14 @@ export async function runTerminalSession({
     // Store the container name in the DB
     await db
       .update(terminalSessions)
-      .set({ containerName })
+      .set({ containerName: newContainerName })
       .where(eq(terminalSessions.id, sessionId))
 
-    log(`standard container ${containerName} created for session ${sessionId}`)
+    log(
+      `standard container ${newContainerName} created for session ${sessionId}`,
+    )
 
-    return containerName
+    return newContainerName
   }
 }
 
@@ -272,6 +314,29 @@ export async function getActiveTerminalSession({
   )[0]
 
   if (!session) return null
+
+  // Check if the session has expired
+  if (session.expiresAt && session.expiresAt < new Date()) {
+    log(
+      `getActiveTerminalSession: session ${session.id} has expired (expiresAt=${session.expiresAt.toISOString()})`,
+    )
+    // Soft-delete the expired session
+    await db
+      .update(terminalSessions)
+      .set({ deletedAt: new Date() })
+      .where(eq(terminalSessions.id, session.id))
+
+    // Best-effort kill the container
+    if (session.containerName) {
+      try {
+        await client.killSession(session.containerName)
+      } catch {
+        // Container may already be gone
+      }
+    }
+
+    return null
+  }
 
   // Check container liveness via the ready endpoint
   if (session.containerName) {
@@ -453,6 +518,67 @@ export async function checkSession({
       status: "error",
       message: e instanceof Error ? e.message : String(e),
     }
+  }
+}
+
+// =============================================================================
+// Warm Container Claiming
+// =============================================================================
+
+/**
+ * Try to claim a warm container for the given problem+testcase.
+ * Returns the container name if successfully claimed, or null if none available.
+ * This is a best-effort operation — if it fails, the caller should fall back
+ * to creating a container on-demand.
+ */
+async function tryClaimWarmContainer({
+  client,
+  problemSlug,
+  testcaseId,
+}: {
+  client: MustangClient
+  problemSlug: string
+  testcaseId: number
+}): Promise<string | null> {
+  try {
+    // Check if any warm containers are available for this problem+testcase
+    const { containers } = await client.listContainers({
+      mode: "warm",
+      problem: problemSlug,
+      testcase: testcaseId,
+    })
+
+    if (containers.length === 0) {
+      log(
+        `tryClaimWarmContainer: no warm containers for ${problemSlug} testcase=${testcaseId}`,
+      )
+      return null
+    }
+
+    // Try to claim the first available container
+    for (const container of containers) {
+      const result = await client.claimSession(container.name)
+      if (result.claimed) {
+        log(
+          `tryClaimWarmContainer: claimed ${container.name} for ${problemSlug} testcase=${testcaseId}`,
+        )
+        return container.name
+      }
+      // If claim failed (another request beat us), try the next one
+      log(
+        `tryClaimWarmContainer: claim failed for ${container.name}: ${result.error}`,
+      )
+    }
+
+    log(
+      `tryClaimWarmContainer: all warm containers already claimed for ${problemSlug} testcase=${testcaseId}`,
+    )
+    return null
+  } catch (error) {
+    logError(
+      `tryClaimWarmContainer: error (will fall back to on-demand): ${error}`,
+    )
+    return null
   }
 }
 

@@ -40,6 +40,43 @@ importers:
         specifier: 5.7.3
         version: 5.7.3
 
+  apps/cron:
+    dependencies:
+      "@easyshell/db":
+        specifier: workspace:*
+        version: link:../../packages/db
+      "@easyshell/mustang":
+        specifier: workspace:*
+        version: link:../../packages/mustang
+      "@easyshell/utils":
+        specifier: workspace:*
+        version: link:../../packages/utils
+      "@t3-oss/env-core":
+        specifier: ^0.12.0
+        version: 0.12.0(typescript@5.7.3)(zod@3.25.76)
+      croner:
+        specifier: ^9.0.0
+        version: 9.1.0
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(pg@8.15.6)(postgres@3.4.8)
+      zod:
+        specifier: ^3.24.2
+        version: 3.25.76
+    devDependencies:
+      "@easyshell/problems":
+        specifier: workspace:*
+        version: link:../../packages/problems
+      "@types/node":
+        specifier: ^20.17.16
+        version: 20.19.39
+      esbuild:
+        specifier: ^0.27.3
+        version: 0.27.7
+      tsx:
+        specifier: ^4.19.3
+        version: 4.21.0
+
   apps/submission-manager:
     dependencies:
       "@easyshell/db":
@@ -347,6 +384,9 @@ importers:
         specifier: ^3.24.1
         version: 3.25.76
     devDependencies:
+      "@easyshell/cron":
+        specifier: workspace:*
+        version: link:../../apps/cron
       "@easyshell/mustang":
         specifier: workspace:*
         version: link:../mustang
@@ -3925,6 +3965,13 @@ packages:
         integrity: sha512-SJ4/EHwS36QMJd6h/Rg+GyR4A5xE0FSI3eZ+iBVpfqf1x0eTSg1smWLHrA+2jQThZSh97fmSgFSU8B61nxosxA==,
       }
 
+  croner@9.1.0:
+    resolution:
+      {
+        integrity: sha512-p9nwwR4qyT5W996vBZhdvBCnMhicY5ytZkR4D1Xj0wuTDEiMnjwR57Q3RXYY/s0EpX6Ay3vgIcfaR+ewGHsi+g==,
+      }
+    engines: { node: ">=18.0" }
+
   cross-spawn@7.0.6:
     resolution:
       {
@@ -7457,7 +7504,7 @@ snapshots:
 
   "@esbuild-kit/core-utils@3.3.2":
     dependencies:
-      esbuild: 0.27.3
+      esbuild: 0.27.7
       source-map-support: 0.5.21
 
   "@esbuild-kit/esm-loader@2.6.5":
@@ -8879,7 +8926,7 @@ snapshots:
 
   "@types/nodemailer@7.0.11":
     dependencies:
-      "@types/node": 20.17.30
+      "@types/node": 20.19.39
 
   "@types/pg@8.20.0":
     dependencies:
@@ -9347,6 +9394,8 @@ snapshots:
   convert-source-map@2.0.0: {}
 
   core-js@3.41.0: {}
+
+  croner@9.1.0: {}
 
   cross-spawn@7.0.6:
     dependencies:

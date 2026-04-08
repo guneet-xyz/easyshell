@@ -4,9 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "cache": "pnpm --filter @easyshell/problems run cache:website && pnpm --filter @easyshell/problems run cache:submission-manager",
+    "cache": "pnpm --filter @easyshell/problems run cache:website && pnpm --filter @easyshell/problems run cache:submission-manager && pnpm --filter @easyshell/problems run cache:cron",
     "db:generate": "infisical run --env=dev -- pnpm exec drizzle-kit generate",
     "db:migrate": "infisical run --env=dev -- pnpm exec drizzle-kit migrate",
+    "dev:cron": "infisical run --env=dev -- pnpm --filter @easyshell/cron run dev",
     "dev:mustang": "infisical run --env=dev -- go run -C apps/mustang .",
     "dev:submission-manager": "infisical run --env=dev -- pnpm --filter @easyshell/submission-manager run dev",
     "dev:website": "infisical run --env=dev -- pnpm --filter @easyshell/website run dev",
@@ -17,7 +18,11 @@
     "lint": "pnpm run lint:tsc && pnpm run lint:next",
     "lint:next": "pnpm --filter @easyshell/website run lint",
     "lint:tsc": "pnpm exec tsc --noEmit",
-    "test": "infisical run --env=dev -- pnpm --filter @easyshell/problems run test"
+    "problems:build": "infisical run --env=dev -- pnpm --filter @easyshell/problems run build",
+    "problems:push": "infisical run --env=dev -- pnpm --filter @easyshell/problems run push",
+    "test": "infisical run --env=dev -- pnpm --filter @easyshell/problems run test",
+    "trigger:cleanup": "infisical run --env=dev -- pnpm --filter @easyshell/cron run trigger:cleanup",
+    "trigger:pool": "infisical run --env=dev -- pnpm --filter @easyshell/cron run trigger:pool"
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^4.7.1",

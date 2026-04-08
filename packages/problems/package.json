@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "tsx ./scripts/build.ts",
+    "cache:cron": "tsx ./scripts/cache-cron.ts",
     "cache:submission-manager": "tsx ./scripts/cache-submission-manager.ts",
     "cache:website": "tsx ./scripts/cache-website.ts",
     "generate-workflows": "tsx ./scripts/generate-workflows.ts",
@@ -22,6 +23,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@easyshell/cron": "workspace:*",
     "@easyshell/mustang": "workspace:*",
     "@easyshell/submission-manager": "workspace:*",
     "@types/node": "^20.17.16",

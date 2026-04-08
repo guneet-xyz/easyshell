@@ -2,6 +2,7 @@ packages:
   - "packages/*"
   - "apps/website"
   - "apps/submission-manager"
+  - "apps/cron"
 
 onlyBuiltDependencies:
   - core-js

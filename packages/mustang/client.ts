@@ -611,9 +611,18 @@ export function createMustangClient(config: {
           `Failed to get or create terminal session: ${resp.status} ${text}`,
         )
       }
-      const result = GetOrCreateTerminalSessionResponseSchema.parse(
+      const parsed = GetOrCreateTerminalSessionResponseSchema.safeParse(
         await resp.json(),
       )
+      if (!parsed.success) {
+        logError(
+          `POST /terminal-session/get-or-create -> response parse error: ${parsed.error.message}`,
+        )
+        throw new Error(
+          `Failed to parse terminal session response: ${parsed.error.message}`,
+        )
+      }
+      const result = parsed.data
       log(
         `POST /terminal-session/get-or-create -> id=${result.id} container=${result.container_name} ready=${result.ready}`,
       )
@@ -640,9 +649,7 @@ export function createMustangClient(config: {
           `Failed to kill terminal sessions: ${resp.status} ${text}`,
         )
       }
-      const result = KillTerminalSessionsResponseSchema.parse(
-        await resp.json(),
-      )
+      const result = KillTerminalSessionsResponseSchema.parse(await resp.json())
       log(
         `POST /terminal-session/kill -> deleted_sessions=${result.deleted_sessions}`,
       )
@@ -664,7 +671,8 @@ export function createMustangClient(config: {
             command: opts.command,
             timeout_ms: opts.timeoutMs,
           }),
-          signal: AbortSignal.timeout(opts.timeoutMs ?? 5000),
+          // Allow extra time beyond the exec timeout for container checks, chmod, and DB write
+          signal: AbortSignal.timeout((opts.timeoutMs ?? 5000) + 10_000),
         })
       } catch (e) {
         if (e instanceof Error && e.name === "TimeoutError") {
@@ -685,9 +693,7 @@ export function createMustangClient(config: {
             message: "Request Failed (mustang service might be down)",
           }
         }
-        logError(
-          `POST /terminal-session/submit-command -> unknown error: ${e}`,
-        )
+        logError(`POST /terminal-session/submit-command -> unknown error: ${e}`)
         return {
           status: "error" as const,
           type: "critical_server_error" as const,
@@ -705,7 +711,18 @@ export function createMustangClient(config: {
           message: `Failed to submit command: ${resp.status} ${text}`,
         }
       }
-      const result = SubmitCommandResponseSchema.parse(await resp.json())
+      const parsed = SubmitCommandResponseSchema.safeParse(await resp.json())
+      if (!parsed.success) {
+        logError(
+          `POST /terminal-session/submit-command -> response parse error: ${parsed.error.message}`,
+        )
+        return {
+          status: "error" as const,
+          type: "critical_server_error" as const,
+          message: "Failed to parse response from mustang service",
+        }
+      }
+      const result = parsed.data
       if (result.status === "success") {
         log(
           `POST /terminal-session/submit-command -> success (log_id=${result.log_id})`,

@@ -1,40 +1,37 @@
-# Session Manager
+# Mustang
 
 ## Overview
 
-This is a Go application that manages the terminal sessions. It uses the port `4000` to communicate directly with the [website](../website/README.md) to manage the terminal sessions.
+Mustang is the container orchestration service for EasyShell. It manages Docker containers for terminal sessions, submissions, and warm container pooling. It communicates via HTTP on port `4000` with the [website](../website/README.md), [submission-manager](../submission-manager/README.md), and [cron](../cron/README.md) services.
 
-It creates and destroys containers for problem testcases as required by the website. See [entrypoint](../entrypoint/README.md) for more information.
+It creates, monitors, and destroys containers for problem testcases. See [entrypoint](../entrypoint/README.md) for more information on what runs inside those containers.
 
-The following environment variables are required to run this service. See [Environment Variables](../../README.md#environment-variables) for more information.
+## Environment Variables
 
-- `DOCKER_REGISTRY`
-- `TOKEN`
+| Variable          | Required | Default          | Description                                                 |
+| ----------------- | -------- | ---------------- | ----------------------------------------------------------- |
+| `DATABASE_URL`    | Yes      | —                | PostgreSQL connection string                                |
+| `MUSTANG_TOKEN`   | Yes      | —                | Bearer token for API authentication (falls back to `TOKEN`) |
+| `DOCKER_REGISTRY` | No       | `""`             | Private registry prefix for images                          |
+| `WORKING_DIR`     | No       | `/tmp/easyshell` | Host directory for session volumes                          |
+| `PORT`            | No       | `4000`           | HTTP server port                                            |
 
 ## Scripts
 
-There isn't a script management system for this service. Use the following commands to achieve what you want.
-
-- Format
+- **Dev** (runs with tsx, no build required):
 
   ```sh
-  gofmt -w .
+  pnpm run dev
   ```
 
-- Lint
+- **Build** (bundles into a single CJS file via esbuild):
 
   ```sh
-  golangci-lint run
+  pnpm run build
   ```
 
-- Build `session-manager` binary
+- **Start** (runs the bundled CJS file):
 
   ```sh
-  go build
-  ```
-
-- Run `session-manager`
-
-  ```sh
-  ./session-manager
+  pnpm run start
   ```

@@ -3,6 +3,7 @@ packages:
   - "apps/website"
   - "apps/submission-manager"
   - "apps/cron"
+  - "apps/mustang"
 
 onlyBuiltDependencies:
   - core-js

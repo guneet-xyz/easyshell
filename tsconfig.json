@@ -32,6 +32,7 @@
   "exclude": [
     "node_modules",
     "apps/submission-manager/submission-manager.cjs",
-    "apps/cron/cron.cjs"
+    "apps/cron/cron.cjs",
+    "apps/mustang/mustang.cjs"
   ]
 }

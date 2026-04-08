@@ -1,0 +1,30 @@
+{
+  "name": "@easyshell/mustang-service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "scripts": {
+    "build": "pnpm exec esbuild index.ts --bundle --platform=node --outfile=mustang.cjs",
+    "dev": "tsx index.ts",
+    "start": "node mustang.cjs"
+  },
+  "dependencies": {
+    "@easyshell/db": "workspace:*",
+    "@hono/node-server": "^1.14.1",
+    "@t3-oss/env-core": "^0.12.0",
+    "drizzle-orm": "^0.45.2",
+    "execa": "^9.5.2",
+    "hono": "^4.7.7",
+    "postgres": "^3.4.5",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.16",
+    "esbuild": "^0.27.3",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  }
+}

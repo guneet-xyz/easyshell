@@ -4,16 +4,22 @@ on:
     paths:
       - ".github/workflows/test-mustang.yml"
       - "apps/mustang/**"
+      - "packages/db/**"
 jobs:
   test-mustang:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v4
         with:
-          go-version: 1.23.6
-      - name: check linting
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: v1.64.2
-          working-directory: apps/mustang
+          node-version: 22.14.0
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+        name: Install dependencies
+      - run: pnpm exec tsc --noEmit
+        name: Type check
+        working-directory: ./apps/mustang
+      - run: pnpm run build
+        name: Build (esbuild bundle)
+        working-directory: ./apps/mustang

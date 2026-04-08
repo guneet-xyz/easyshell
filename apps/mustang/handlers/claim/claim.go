@@ -73,7 +73,9 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("Claim failed: container %s not found: %s\n", req.ContainerName, err.Error())
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response{Claimed: false, Error: "container not found"})
+		if json.NewEncoder(w).Encode(response{Claimed: false, Error: "container not found"}) != nil {
+			fmt.Println("Failed to encode claim response")
+		}
 		return
 	}
 
@@ -81,7 +83,9 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("Claim failed: container %s has mode=%s (expected warm)\n", req.ContainerName, mode)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response{Claimed: false, Error: "container is not a warm instance"})
+		if json.NewEncoder(w).Encode(response{Claimed: false, Error: "container is not a warm instance"}) != nil {
+			fmt.Println("Failed to encode claim response")
+		}
 		return
 	}
 
@@ -116,7 +120,9 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("Claim failed: could not write claim marker for %s: %s\n", req.ContainerName, err.Error())
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(response{Claimed: false, Error: "failed to write claim marker"})
+		if json.NewEncoder(w).Encode(response{Claimed: false, Error: "failed to write claim marker"}) != nil {
+			fmt.Println("Failed to encode claim response")
+		}
 		return
 	}
 

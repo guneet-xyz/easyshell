@@ -1,15 +1,28 @@
-FROM golang:1.23-alpine AS build
+FROM node:22-alpine AS build
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
 
 WORKDIR /src
+
+COPY pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm fetch
+
 COPY . .
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --offline --frozen-lockfile
 
-RUN go build -o mustang
+WORKDIR /src/apps/mustang
 
-FROM alpine:3.21
+RUN pnpm exec esbuild index.ts --bundle --platform=node --outfile=mustang.cjs
 
-RUN apk add --no-cache docker
+FROM node:22-alpine
+
+RUN apk add --no-cache docker-cli
+
+WORKDIR /app
+
+COPY --from=build /src/apps/mustang/mustang.cjs mustang.cjs
+
 EXPOSE 4000
 
-COPY --from=build /src/mustang /mustang
-
-ENTRYPOINT ["/mustang"]
+ENTRYPOINT ["node", "mustang.cjs"]

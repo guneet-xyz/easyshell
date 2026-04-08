@@ -239,6 +239,37 @@ export const submissionTestcaseQueue = createTable(
   ],
 )
 
+export const containers = createTable(
+  "container",
+  {
+    id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
+    name: varchar("name", { length: 255 }).notNull().unique(),
+    image: varchar("image", { length: 512 }).notNull(),
+    problem: varchar("problem", { length: 255 }).notNull(),
+    testcase: integer("testcase").notNull().default(0),
+    mode: varchar("mode", { length: 20 }).notNull(), // "session" | "submission" | "warm"
+    type: varchar("type", { length: 20 }).notNull(), // "standard" | "k3s"
+    status: varchar("status", { length: 20 }).notNull().default("created"), // "created" | "running" | "claimed" | "stopped"
+    memory: varchar("memory", { length: 20 }).default("10m"),
+    cpu: varchar("cpu", { length: 20 }).default("0.1"),
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    claimedAt: timestamp("claimed_at", { mode: "date", withTimezone: true }),
+    deletedAt: timestamp("deleted_at", { mode: "date", withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("container_name_idx").on(t.name),
+    index("container_mode_problem_testcase_idx").on(
+      t.mode,
+      t.problem,
+      t.testcase,
+      t.deletedAt,
+    ),
+    index("container_status_idx").on(t.status),
+  ],
+)
+
 export const bookmarks = createTable(
   "bookmark",
   {

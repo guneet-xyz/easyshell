@@ -31,9 +31,11 @@ services:
       MUSTANG_TOKEN: token
   mustang:
     build:
-      context: ./apps/mustang
+      context: .
+      dockerfile: ./apps/mustang/Dockerfile
     container_name: easyshell-dev-mustang
     environment:
+      DATABASE_URL: ${DATABASE_URL}
       MUSTANG_TOKEN: token
     networks:
       - easyshell

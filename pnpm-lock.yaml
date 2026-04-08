@@ -77,6 +77,46 @@ importers:
         specifier: ^4.19.3
         version: 4.21.0
 
+  apps/mustang:
+    dependencies:
+      "@easyshell/db":
+        specifier: workspace:*
+        version: link:../../packages/db
+      "@hono/node-server":
+        specifier: ^1.14.1
+        version: 1.19.13(hono@4.12.12)
+      "@t3-oss/env-core":
+        specifier: ^0.12.0
+        version: 0.12.0(typescript@5.7.3)(zod@3.25.76)
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(pg@8.15.6)(postgres@3.4.8)
+      execa:
+        specifier: ^9.5.2
+        version: 9.5.2
+      hono:
+        specifier: ^4.7.7
+        version: 4.12.12
+      postgres:
+        specifier: ^3.4.5
+        version: 3.4.8
+      zod:
+        specifier: ^3.24.2
+        version: 3.25.76
+    devDependencies:
+      "@types/node":
+        specifier: ^20.17.16
+        version: 20.19.39
+      esbuild:
+        specifier: ^0.27.3
+        version: 0.27.7
+      tsx:
+        specifier: ^4.19.3
+        version: 4.21.0
+      typescript:
+        specifier: ^5.7.3
+        version: 5.7.3
+
   apps/submission-manager:
     dependencies:
       "@easyshell/db":
@@ -1415,6 +1455,15 @@ packages:
       {
         integrity: sha512-MDWhGtE+eHw5JW7lq4qhc5yRLS11ERl1c7Z6Xd0a58DozHES6EnNNwUWbMiG4J9Cgj053Bhk8zvlhFYKVhULwg==,
       }
+
+  "@hono/node-server@1.19.13":
+    resolution:
+      {
+        integrity: sha512-TsQLe4i2gvoTtrHje625ngThGBySOgSK3Xo2XRYOdqGN1teR8+I7vchQC46uLJi8OF62YTYA3AhSpumtkhsaKQ==,
+      }
+    engines: { node: ">=18.14.1" }
+    peerDependencies:
+      hono: ^4
 
   "@humanfs/core@0.19.1":
     resolution:
@@ -5011,6 +5060,13 @@ packages:
         integrity: sha512-6pEjquH3rqaI6cYAXYPcz9MS4rY6R4ngRgrgfDshRptUZIc3lw0MCIJIGDj9++mfySOuPTHB4nrSW99BCvOPIA==,
       }
 
+  hono@4.12.12:
+    resolution:
+      {
+        integrity: sha512-p1JfQMKaceuCbpJKAPKVqyqviZdS0eUxH9v82oWo1kb9xjQ5wA6iP3FNVAPDFlz5/p7d45lO+BpSk1tuSZMF4Q==,
+      }
+    engines: { node: ">=16.9.0" }
+
   html-to-text@9.0.5:
     resolution:
       {
@@ -7809,6 +7865,10 @@ snapshots:
 
   "@floating-ui/utils@0.2.9": {}
 
+  "@hono/node-server@1.19.13(hono@4.12.12)":
+    dependencies:
+      hono: 4.12.12
+
   "@humanfs/core@0.19.1": {}
 
   "@humanfs/node@0.16.7":
@@ -10229,6 +10289,8 @@ snapshots:
   hermes-parser@0.25.1:
     dependencies:
       hermes-estree: 0.25.1
+
+  hono@4.12.12: {}
 
   html-to-text@9.0.5:
     dependencies:

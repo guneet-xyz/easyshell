@@ -40,6 +40,8 @@ jobs:
         working-directory: ./packages/problems
       - run: pnpm run cache:submission-manager
         working-directory: ./packages/problems
+      - run: pnpm run cache:cron
+        working-directory: ./packages/problems
       - run: pnpm run lint:tsc
         name: Check TypeScript types
       - run: pnpm run lint:next

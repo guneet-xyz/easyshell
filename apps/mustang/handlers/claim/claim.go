@@ -130,5 +130,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response{Claimed: true})
+	if json.NewEncoder(w).Encode(response{Claimed: true}) != nil {
+		fmt.Println("Failed to encode claim response")
+	}
 }

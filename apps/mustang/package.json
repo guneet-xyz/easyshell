@@ -8,11 +8,14 @@
   },
   "scripts": {
     "build": "pnpm exec esbuild index.ts --bundle --platform=node --outfile=mustang.cjs",
-    "dev": "tsx index.ts",
+    "cache": "pnpm --filter @easyshell/problems run cache:mustang",
+    "dev": "pnpm run cache && tsx index.ts",
     "start": "node mustang.cjs"
   },
   "dependencies": {
     "@easyshell/db": "workspace:*",
+    "@easyshell/problems": "workspace:*",
+    "@easyshell/utils": "workspace:*",
     "@hono/node-server": "^1.14.1",
     "@t3-oss/env-core": "^0.12.0",
     "drizzle-orm": "^0.45.2",

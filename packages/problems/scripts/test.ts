@@ -478,7 +478,6 @@ async function _runSubmissionTest(
     problemSlug: slug,
     testcaseId: testcase,
     input,
-    workingDir: `${env.WORKING_DIR}/submission-manager`,
   })
   console.log(
     `[test] submission result: slug=${slug} testcase=${testcase} passed=${passed} exit_code=${output.exit_code} stdout=${JSON.stringify(output.stdout.slice(0, 200))}`,
@@ -509,7 +508,6 @@ async function _runLiveEnvironmentTest(
     problemSlug: slug,
     testcaseId: 1, // sentinel testcaseId for live-environment
     input,
-    workingDir: `${env.WORKING_DIR}/submission-manager`,
   })
   console.log(
     `[test] live-env result: slug=${slug} passed=${passed} stdout=${JSON.stringify(output.stdout.slice(0, 300))}`,

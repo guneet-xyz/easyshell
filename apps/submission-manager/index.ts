@@ -19,8 +19,6 @@ const mustangClient = createMustangClient({
   token: env.MUSTANG_TOKEN,
 })
 
-const WORKING_DIR = `${env.WORKING_DIR}/submission-manager`
-
 async function markQueueItemFinished(submissionId: number, testcaseId: number) {
   const maxAttempts = 2
   let lastError: unknown
@@ -129,7 +127,6 @@ async function processQueueItem(
         problemSlug,
         testcaseId: item.testcaseId,
         input: item.input,
-        workingDir: WORKING_DIR,
       })
 
     try {

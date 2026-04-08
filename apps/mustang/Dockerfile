@@ -13,6 +13,7 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --offline --froze
 
 WORKDIR /src/apps/mustang
 
+RUN pnpm --filter @easyshell/problems run cache:mustang
 RUN pnpm exec esbuild index.ts --bundle --platform=node --outfile=mustang.cjs
 
 FROM node:22-alpine

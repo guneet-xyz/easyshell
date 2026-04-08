@@ -6,7 +6,7 @@ import { terminalSessions } from "@easyshell/db/schema"
 
 import { db } from "@/db"
 import { auth } from "@/lib/server/auth"
-import { insertTerminalSessionLog, submitCommand } from "@/lib/server/mustang"
+import { submitCommand } from "@/lib/server/mustang"
 
 import type { getTerminalSession } from "./get-terminal-session"
 
@@ -43,6 +43,7 @@ export async function submitTerminalSessionCommand({
   const user = (await auth())?.user
   if (!user) return { status: "error", type: "not-authenticated" }
 
+  // Ownership check: verify the session belongs to this user
   const terminalSession = await db
     .select()
     .from(terminalSessions)
@@ -78,7 +79,7 @@ export async function submitTerminalSessionCommand({
   return {
     status: "success",
     log: {
-      id: result.logId!,
+      id: result.logId,
       stdin: command,
       stdout: result.stdout,
       stderr: result.stderr,

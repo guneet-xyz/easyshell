@@ -10,6 +10,7 @@
   "scripts": {
     "build": "tsx ./scripts/build.ts",
     "cache:cron": "tsx ./scripts/cache-cron.ts",
+    "cache:mustang": "tsx ./scripts/cache-mustang.ts",
     "cache:submission-manager": "tsx ./scripts/cache-submission-manager.ts",
     "cache:website": "tsx ./scripts/cache-website.ts",
     "generate-workflows": "tsx ./scripts/generate-workflows.ts",

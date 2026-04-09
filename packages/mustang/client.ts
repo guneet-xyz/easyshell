@@ -16,6 +16,35 @@ const DEFAULT_EXEC_TIMEOUT_MS = 5_000
 /** Extra headroom (ms) on the HTTP abort signal to account for container checks, chmod, and DB write. */
 const SUBMIT_COMMAND_OVERHEAD_MS = 10_000
 
+// ================================ Helpers ====================================
+
+/**
+ * Safely extract JSON from a response and validate it against a Zod schema.
+ * Throws on invalid JSON or schema mismatch — use only in endpoints that
+ * propagate errors via throw (not structured error returns).
+ */
+async function safeParseJsonResponse<T>(
+  resp: Response,
+  schema: z.ZodType<T>,
+  endpoint: string,
+): Promise<T> {
+  let json: unknown
+  try {
+    json = await resp.json()
+  } catch {
+    logError(`${endpoint} -> failed to parse response JSON`)
+    throw new Error(`Failed to parse ${endpoint} response: invalid JSON`)
+  }
+  const parsed = schema.safeParse(json)
+  if (!parsed.success) {
+    logError(`${endpoint} -> response parse error: ${parsed.error.message}`)
+    throw new Error(
+      `Failed to parse ${endpoint} response: ${parsed.error.message}`,
+    )
+  }
+  return parsed.data
+}
+
 // ================================ Schemas ====================================
 
 const CreateSessionRequestSchema = z.object({
@@ -319,7 +348,11 @@ export function createMustangClient(config: {
         logError(`POST /session/create failed: ${resp.status} ${text}`)
         throw new Error(`Failed to create session: ${resp.status} ${text}`)
       }
-      const result = CreateSessionResponseSchema.parse(await resp.json())
+      const result = await safeParseJsonResponse(
+        resp,
+        CreateSessionResponseSchema,
+        "POST /session/create",
+      )
       log(`POST /session/create -> container_name=${result.container_name}`)
       return result
     },
@@ -338,14 +371,22 @@ export function createMustangClient(config: {
         logError(`GET /session/ready failed: ${resp.status} ${text}`)
         throw new Error(`Failed to check ready: ${resp.status} ${text}`)
       }
-      const result = SessionReadyResponseSchema.parse(await resp.json())
+      const result = await safeParseJsonResponse(
+        resp,
+        SessionReadyResponseSchema,
+        "GET /session/ready",
+      )
       log(
         `GET /session/ready -> exists=${result.exists} running=${result.running} ready=${result.ready}${result.error ? ` error=${result.error}` : ""}`,
       )
       return result
     },
 
-    async execSession({ containerName, command, timeoutMs = 5000 }) {
+    async execSession({
+      containerName,
+      command,
+      timeoutMs = DEFAULT_EXEC_TIMEOUT_MS,
+    }) {
       log(
         `POST /session/exec (name=${containerName}, command=${JSON.stringify(command.slice(0, 100))}, timeout=${timeoutMs}ms)`,
       )
@@ -490,7 +531,11 @@ export function createMustangClient(config: {
         throw new Error(`Check failed: ${text}`)
       }
 
-      const result = CheckSessionResponseSchema.parse(await resp.json())
+      const result = await safeParseJsonResponse(
+        resp,
+        CheckSessionResponseSchema,
+        "POST /session/check",
+      )
       log(
         `POST /session/check -> score=${result.score}/${result.total} passed=${result.passed}`,
       )
@@ -512,7 +557,11 @@ export function createMustangClient(config: {
         logError(`POST /submission/create failed: ${resp.status} ${text}`)
         throw new Error(`Failed to create submission: ${resp.status} ${text}`)
       }
-      const result = CreateSubmissionResponseSchema.parse(await resp.json())
+      const result = await safeParseJsonResponse(
+        resp,
+        CreateSubmissionResponseSchema,
+        "POST /submission/create",
+      )
       log(`POST /submission/create -> container_name=${result.container_name}`)
       return result
     },
@@ -534,7 +583,11 @@ export function createMustangClient(config: {
         logError(`POST /submission/poll failed: ${resp.status} ${text}`)
         throw new Error(`Failed to poll submission: ${resp.status} ${text}`)
       }
-      const result = PollSubmissionResponseSchema.parse(await resp.json())
+      const result = await safeParseJsonResponse(
+        resp,
+        PollSubmissionResponseSchema,
+        "POST /submission/poll",
+      )
       if (result.status === "running") {
         log(`POST /submission/poll -> status=running`)
       } else {
@@ -566,7 +619,11 @@ export function createMustangClient(config: {
         logError(`GET /containers/list failed: ${resp.status} ${text}`)
         throw new Error(`Failed to list containers: ${resp.status} ${text}`)
       }
-      const result = ListContainersResponseSchema.parse(await resp.json())
+      const result = await safeParseJsonResponse(
+        resp,
+        ListContainersResponseSchema,
+        "GET /containers/list",
+      )
       log(`GET /containers/list -> ${result.containers.length} containers`)
       return result
     },
@@ -583,7 +640,11 @@ export function createMustangClient(config: {
         logError(`POST /session/claim failed: ${resp.status} ${text}`)
         throw new Error(`Failed to claim session: ${resp.status} ${text}`)
       }
-      const result = ClaimSessionResponseSchema.parse(await resp.json())
+      const result = await safeParseJsonResponse(
+        resp,
+        ClaimSessionResponseSchema,
+        "POST /session/claim",
+      )
       log(
         `POST /session/claim -> claimed=${result.claimed}${result.error ? ` error=${result.error}` : ""}`,
       )
@@ -618,27 +679,11 @@ export function createMustangClient(config: {
           `Failed to get or create terminal session: ${resp.status} ${text}`,
         )
       }
-      let json: unknown
-      try {
-        json = await resp.json()
-      } catch {
-        logError(
-          `POST /terminal-session/get-or-create -> failed to parse response JSON`,
-        )
-        throw new Error(
-          `Failed to parse terminal session response: invalid JSON`,
-        )
-      }
-      const parsed = GetOrCreateTerminalSessionResponseSchema.safeParse(json)
-      if (!parsed.success) {
-        logError(
-          `POST /terminal-session/get-or-create -> response parse error: ${parsed.error.message}`,
-        )
-        throw new Error(
-          `Failed to parse terminal session response: ${parsed.error.message}`,
-        )
-      }
-      const result = parsed.data
+      const result = await safeParseJsonResponse(
+        resp,
+        GetOrCreateTerminalSessionResponseSchema,
+        "POST /terminal-session/get-or-create",
+      )
       log(
         `POST /terminal-session/get-or-create -> id=${result.id} container=${result.container_name} ready=${result.ready}`,
       )
@@ -665,25 +710,11 @@ export function createMustangClient(config: {
           `Failed to kill terminal sessions: ${resp.status} ${text}`,
         )
       }
-      let json: unknown
-      try {
-        json = await resp.json()
-      } catch {
-        logError(`POST /terminal-session/kill -> failed to parse response JSON`)
-        throw new Error(
-          `Failed to parse kill terminal sessions response: invalid JSON`,
-        )
-      }
-      const parsed = KillTerminalSessionsResponseSchema.safeParse(json)
-      if (!parsed.success) {
-        logError(
-          `POST /terminal-session/kill -> response parse error: ${parsed.error.message}`,
-        )
-        throw new Error(
-          `Failed to parse kill terminal sessions response: ${parsed.error.message}`,
-        )
-      }
-      const result = parsed.data
+      const result = await safeParseJsonResponse(
+        resp,
+        KillTerminalSessionsResponseSchema,
+        "POST /terminal-session/kill",
+      )
       log(
         `POST /terminal-session/kill -> deleted_sessions=${result.deleted_sessions}`,
       )
@@ -797,7 +828,11 @@ export function createMustangClient(config: {
           `Failed to cleanup expired sessions: ${resp.status} ${text}`,
         )
       }
-      const result = CleanupResponseSchema.parse(await resp.json())
+      const result = await safeParseJsonResponse(
+        resp,
+        CleanupResponseSchema,
+        "POST /sessions/cleanup",
+      )
       log(`POST /sessions/cleanup -> cleaned=${result.cleaned}`)
       return result
     },
@@ -822,7 +857,11 @@ export function createMustangClient(config: {
         logError(`POST /submission/run failed: ${resp.status} ${text}`)
         throw new Error(`Failed to run submission: ${resp.status} ${text}`)
       }
-      const result = RunSubmissionResponseSchema.parse(await resp.json())
+      const result = await safeParseJsonResponse(
+        resp,
+        RunSubmissionResponseSchema,
+        "POST /submission/run",
+      )
       log(
         `POST /submission/run -> passed=${result.passed} exit_code=${result.output.exit_code}`,
       )

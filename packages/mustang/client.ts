@@ -9,6 +9,13 @@ import { z } from "zod"
 const log = (...args: unknown[]) => console.log("[mustang]", ...args)
 const logError = (...args: unknown[]) => console.error("[mustang]", ...args)
 
+// ================================ Constants ==================================
+
+/** Default exec timeout (ms) when none is provided by the caller. */
+const DEFAULT_EXEC_TIMEOUT_MS = 5_000
+/** Extra headroom (ms) on the HTTP abort signal to account for container checks, chmod, and DB write. */
+const SUBMIT_COMMAND_OVERHEAD_MS = 10_000
+
 // ================================ Schemas ====================================
 
 const CreateSessionRequestSchema = z.object({
@@ -611,9 +618,18 @@ export function createMustangClient(config: {
           `Failed to get or create terminal session: ${resp.status} ${text}`,
         )
       }
-      const parsed = GetOrCreateTerminalSessionResponseSchema.safeParse(
-        await resp.json(),
-      )
+      let json: unknown
+      try {
+        json = await resp.json()
+      } catch {
+        logError(
+          `POST /terminal-session/get-or-create -> failed to parse response JSON`,
+        )
+        throw new Error(
+          `Failed to parse terminal session response: invalid JSON`,
+        )
+      }
+      const parsed = GetOrCreateTerminalSessionResponseSchema.safeParse(json)
       if (!parsed.success) {
         logError(
           `POST /terminal-session/get-or-create -> response parse error: ${parsed.error.message}`,
@@ -649,7 +665,25 @@ export function createMustangClient(config: {
           `Failed to kill terminal sessions: ${resp.status} ${text}`,
         )
       }
-      const result = KillTerminalSessionsResponseSchema.parse(await resp.json())
+      let json: unknown
+      try {
+        json = await resp.json()
+      } catch {
+        logError(`POST /terminal-session/kill -> failed to parse response JSON`)
+        throw new Error(
+          `Failed to parse kill terminal sessions response: invalid JSON`,
+        )
+      }
+      const parsed = KillTerminalSessionsResponseSchema.safeParse(json)
+      if (!parsed.success) {
+        logError(
+          `POST /terminal-session/kill -> response parse error: ${parsed.error.message}`,
+        )
+        throw new Error(
+          `Failed to parse kill terminal sessions response: ${parsed.error.message}`,
+        )
+      }
+      const result = parsed.data
       log(
         `POST /terminal-session/kill -> deleted_sessions=${result.deleted_sessions}`,
       )
@@ -671,8 +705,10 @@ export function createMustangClient(config: {
             command: opts.command,
             timeout_ms: opts.timeoutMs,
           }),
-          // Allow extra time beyond the exec timeout for container checks, chmod, and DB write
-          signal: AbortSignal.timeout((opts.timeoutMs ?? 5000) + 10_000),
+          signal: AbortSignal.timeout(
+            (opts.timeoutMs ?? DEFAULT_EXEC_TIMEOUT_MS) +
+              SUBMIT_COMMAND_OVERHEAD_MS,
+          ),
         })
       } catch (e) {
         if (e instanceof Error && e.name === "TimeoutError") {
@@ -711,7 +747,20 @@ export function createMustangClient(config: {
           message: `Failed to submit command: ${resp.status} ${text}`,
         }
       }
-      const parsed = SubmitCommandResponseSchema.safeParse(await resp.json())
+      let json: unknown
+      try {
+        json = await resp.json()
+      } catch {
+        logError(
+          `POST /terminal-session/submit-command -> failed to parse response JSON`,
+        )
+        return {
+          status: "error" as const,
+          type: "critical_server_error" as const,
+          message: "Failed to parse response from mustang service",
+        }
+      }
+      const parsed = SubmitCommandResponseSchema.safeParse(json)
       if (!parsed.success) {
         logError(
           `POST /terminal-session/submit-command -> response parse error: ${parsed.error.message}`,

@@ -42,7 +42,7 @@ jobs:
         run: |
           pnpm run cache
           pnpm run build
-          DATABASE_URL=fake MUSTANG_TOKEN=token nohup node mustang.cjs &
+          DATABASE_URL=postgresql://fake:fake@localhost:5432/fake MUSTANG_TOKEN=token nohup node mustang.cjs &
           sleep 2
         working-directory: ./apps/mustang
       - run: pnpm run build combine-json

@@ -38,7 +38,6 @@ name: test problem (${problemSlug})
 on:
   pull_request:
     paths:
-      - "${workflowPath}"
       - "packages/problems/data/problems/${problemSlug}/**"
       - "packages/problems/env.ts"
       - "packages/utils/**"

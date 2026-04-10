@@ -46,6 +46,22 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest${timeout}
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: easyshell_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/easyshell_test
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v5
@@ -55,11 +71,13 @@ jobs:
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
         name: Install dependencies
+      - run: pnpm exec drizzle-kit migrate
+        name: Run database migrations
       - name: Build and start mustang
         run: |
           pnpm run cache
           pnpm run build
-          DATABASE_URL=postgresql://fake:fake@localhost:5432/fake MUSTANG_TOKEN=token nohup node mustang.cjs &
+          MUSTANG_TOKEN=token nohup node mustang.cjs &
           sleep 2
         working-directory: ./apps/mustang
       - run: pnpm run build ${problemSlug}
@@ -100,6 +118,22 @@ jobs:
   push:
     environment: registry-push
     runs-on: ubuntu-latest${timeout}
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: easyshell_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/easyshell_test
     steps:
       - name: tailscale
         uses: tailscale/github-action@v3
@@ -120,11 +154,13 @@ jobs:
           node-version: 22.14.0
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
+      - run: pnpm exec drizzle-kit migrate
+        name: Run database migrations
       - name: Build and start mustang
         run: |
           pnpm run cache
           pnpm run build
-          DATABASE_URL=postgresql://fake:fake@localhost:5432/fake MUSTANG_TOKEN=token nohup node mustang.cjs &
+          MUSTANG_TOKEN=token nohup node mustang.cjs &
           sleep 2
         working-directory: ./apps/mustang
       - run: pnpm run build ${problemSlug}

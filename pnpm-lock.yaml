@@ -82,6 +82,12 @@ importers:
       "@easyshell/db":
         specifier: workspace:*
         version: link:../../packages/db
+      "@easyshell/problems":
+        specifier: workspace:*
+        version: link:../../packages/problems
+      "@easyshell/utils":
+        specifier: workspace:*
+        version: link:../../packages/utils
       "@hono/node-server":
         specifier: ^1.14.1
         version: 1.19.13(hono@4.12.12)
@@ -392,22 +398,10 @@ importers:
 
   packages/mustang:
     dependencies:
-      "@easyshell/db":
-        specifier: workspace:*
-        version: link:../db
-      "@easyshell/utils":
-        specifier: workspace:*
-        version: link:../utils
-      drizzle-orm:
-        specifier: ^0.45.2
-        version: 0.45.2(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(pg@8.15.6)(postgres@3.4.8)
       zod:
         specifier: ^3.24.2
         version: 3.25.76
     devDependencies:
-      "@easyshell/problems":
-        specifier: workspace:*
-        version: link:../problems
       "@types/node":
         specifier: ^20.17.16
         version: 20.19.39

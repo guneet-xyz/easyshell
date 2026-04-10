@@ -14,21 +14,10 @@ export {
   type PollSubmissionResponse,
   type ExecResult,
   type ExecError,
-} from "./client"
-
-export {
-  runTerminalSession,
-  getTerminalSession,
-  createTerminalSession,
-  getActiveTerminalSession,
-  getSessionReadiness,
-  killTerminalSessions,
-  submitCommand,
-  checkSession,
-  insertTerminalSession,
-  getTerminalSessionLogs,
-  insertTerminalSessionLog,
+  type GetOrCreateTerminalSessionResponse,
+  type KillTerminalSessionsResponse,
+  type SubmitCommandResponse,
+  type CleanupResponse,
+  type RunSubmissionResponse,
   type TerminalSessionLog,
-} from "./sessions"
-
-export { runSubmissionAndGetOutput } from "./submissions"
+} from "./client"

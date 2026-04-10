@@ -9,6 +9,42 @@ import { z } from "zod"
 const log = (...args: unknown[]) => console.log("[mustang]", ...args)
 const logError = (...args: unknown[]) => console.error("[mustang]", ...args)
 
+// ================================ Constants ==================================
+
+/** Default exec timeout (ms) when none is provided by the caller. */
+const DEFAULT_EXEC_TIMEOUT_MS = 5_000
+/** Extra headroom (ms) on the HTTP abort signal to account for container checks, chmod, and DB write. */
+const SUBMIT_COMMAND_OVERHEAD_MS = 10_000
+
+// ================================ Helpers ====================================
+
+/**
+ * Safely extract JSON from a response and validate it against a Zod schema.
+ * Throws on invalid JSON or schema mismatch — use only in endpoints that
+ * propagate errors via throw (not structured error returns).
+ */
+async function safeParseJsonResponse<T>(
+  resp: Response,
+  schema: z.ZodType<T>,
+  endpoint: string,
+): Promise<T> {
+  let json: unknown
+  try {
+    json = await resp.json()
+  } catch {
+    logError(`${endpoint} -> failed to parse response JSON`)
+    throw new Error(`Failed to parse ${endpoint} response: invalid JSON`)
+  }
+  const parsed = schema.safeParse(json)
+  if (!parsed.success) {
+    logError(`${endpoint} -> response parse error: ${parsed.error.message}`)
+    throw new Error(
+      `Failed to parse ${endpoint} response: ${parsed.error.message}`,
+    )
+  }
+  return parsed.data
+}
+
 // ================================ Schemas ====================================
 
 const CreateSessionRequestSchema = z.object({
@@ -112,6 +148,64 @@ const ClaimSessionResponseSchema = z.object({
   error: z.string().optional(),
 })
 
+// =================== Higher-Level Endpoint Schemas ===========================
+
+const TerminalSessionLogSchema = z.object({
+  id: z.number(),
+  stdin: z.string(),
+  stdout: z.string(),
+  stderr: z.string(),
+  started_at: z.string(),
+  finished_at: z.string(),
+})
+
+const GetOrCreateTerminalSessionResponseSchema = z.object({
+  id: z.number(),
+  container_name: z.string().nullable(),
+  created_at: z.string(),
+  expires_at: z.string(),
+  ready: z.boolean(),
+  logs: z.array(TerminalSessionLogSchema),
+})
+
+const KillTerminalSessionsResponseSchema = z.object({
+  deleted_sessions: z.number(),
+})
+
+const SubmitCommandSuccessSchema = z.object({
+  status: z.literal("success"),
+  stdout: z.string(),
+  stderr: z.string(),
+  log_id: z.number(),
+})
+
+const SubmitCommandErrorSchema = z.object({
+  status: z.literal("error"),
+  type: z.enum([
+    "took_too_long",
+    "session_not_running",
+    "session_error",
+    "critical_server_error",
+  ]),
+  message: z.string(),
+})
+
+const SubmitCommandResponseSchema = z.discriminatedUnion("status", [
+  SubmitCommandSuccessSchema,
+  SubmitCommandErrorSchema,
+])
+
+const CleanupResponseSchema = z.object({
+  cleaned: z.number(),
+})
+
+const RunSubmissionResponseSchema = z.object({
+  started_at: z.string(),
+  finished_at: z.string(),
+  output: StandardOutputSchema,
+  passed: z.boolean(),
+})
+
 // =============================== Types =======================================
 
 export type CreateSessionRequest = z.input<typeof CreateSessionRequestSchema>
@@ -162,6 +256,18 @@ export type ExecResult =
     }
   | ExecError
 
+// Higher-level endpoint types
+export type TerminalSessionLog = z.infer<typeof TerminalSessionLogSchema>
+export type GetOrCreateTerminalSessionResponse = z.infer<
+  typeof GetOrCreateTerminalSessionResponseSchema
+>
+export type KillTerminalSessionsResponse = z.infer<
+  typeof KillTerminalSessionsResponseSchema
+>
+export type SubmitCommandResponse = z.infer<typeof SubmitCommandResponseSchema>
+export type CleanupResponse = z.infer<typeof CleanupResponseSchema>
+export type RunSubmissionResponse = z.infer<typeof RunSubmissionResponseSchema>
+
 // ============================== Client =======================================
 
 export interface MustangClient {
@@ -185,6 +291,32 @@ export interface MustangClient {
     filters?: ListContainersFilters,
   ): Promise<ListContainersResponse>
   claimSession(containerName: string): Promise<ClaimSessionResponse>
+
+  // Higher-level endpoints (absorb business logic from sessions.ts / submissions.ts)
+  getOrCreateTerminalSession(opts: {
+    userId: string
+    problemId: number
+    testcaseId: number
+    problemSlug: string
+    problemType: "standard" | "k3s"
+  }): Promise<GetOrCreateTerminalSessionResponse>
+  killTerminalSessions(opts: {
+    userId: string
+    problemId: number
+    testcaseId: number
+  }): Promise<KillTerminalSessionsResponse>
+  submitTerminalCommand(opts: {
+    sessionId: number
+    containerName: string
+    command: string
+    timeoutMs?: number
+  }): Promise<SubmitCommandResponse>
+  cleanupExpiredSessions(): Promise<CleanupResponse>
+  runSubmission(opts: {
+    problemSlug: string
+    testcaseId: number
+    input: string
+  }): Promise<RunSubmissionResponse>
 }
 
 export function createMustangClient(config: {
@@ -216,7 +348,11 @@ export function createMustangClient(config: {
         logError(`POST /session/create failed: ${resp.status} ${text}`)
         throw new Error(`Failed to create session: ${resp.status} ${text}`)
       }
-      const result = CreateSessionResponseSchema.parse(await resp.json())
+      const result = await safeParseJsonResponse(
+        resp,
+        CreateSessionResponseSchema,
+        "POST /session/create",
+      )
       log(`POST /session/create -> container_name=${result.container_name}`)
       return result
     },
@@ -235,14 +371,22 @@ export function createMustangClient(config: {
         logError(`GET /session/ready failed: ${resp.status} ${text}`)
         throw new Error(`Failed to check ready: ${resp.status} ${text}`)
       }
-      const result = SessionReadyResponseSchema.parse(await resp.json())
+      const result = await safeParseJsonResponse(
+        resp,
+        SessionReadyResponseSchema,
+        "GET /session/ready",
+      )
       log(
         `GET /session/ready -> exists=${result.exists} running=${result.running} ready=${result.ready}${result.error ? ` error=${result.error}` : ""}`,
       )
       return result
     },
 
-    async execSession({ containerName, command, timeoutMs = 5000 }) {
+    async execSession({
+      containerName,
+      command,
+      timeoutMs = DEFAULT_EXEC_TIMEOUT_MS,
+    }) {
       log(
         `POST /session/exec (name=${containerName}, command=${JSON.stringify(command.slice(0, 100))}, timeout=${timeoutMs}ms)`,
       )
@@ -387,7 +531,11 @@ export function createMustangClient(config: {
         throw new Error(`Check failed: ${text}`)
       }
 
-      const result = CheckSessionResponseSchema.parse(await resp.json())
+      const result = await safeParseJsonResponse(
+        resp,
+        CheckSessionResponseSchema,
+        "POST /session/check",
+      )
       log(
         `POST /session/check -> score=${result.score}/${result.total} passed=${result.passed}`,
       )
@@ -409,7 +557,11 @@ export function createMustangClient(config: {
         logError(`POST /submission/create failed: ${resp.status} ${text}`)
         throw new Error(`Failed to create submission: ${resp.status} ${text}`)
       }
-      const result = CreateSubmissionResponseSchema.parse(await resp.json())
+      const result = await safeParseJsonResponse(
+        resp,
+        CreateSubmissionResponseSchema,
+        "POST /submission/create",
+      )
       log(`POST /submission/create -> container_name=${result.container_name}`)
       return result
     },
@@ -431,7 +583,11 @@ export function createMustangClient(config: {
         logError(`POST /submission/poll failed: ${resp.status} ${text}`)
         throw new Error(`Failed to poll submission: ${resp.status} ${text}`)
       }
-      const result = PollSubmissionResponseSchema.parse(await resp.json())
+      const result = await safeParseJsonResponse(
+        resp,
+        PollSubmissionResponseSchema,
+        "POST /submission/poll",
+      )
       if (result.status === "running") {
         log(`POST /submission/poll -> status=running`)
       } else {
@@ -463,7 +619,11 @@ export function createMustangClient(config: {
         logError(`GET /containers/list failed: ${resp.status} ${text}`)
         throw new Error(`Failed to list containers: ${resp.status} ${text}`)
       }
-      const result = ListContainersResponseSchema.parse(await resp.json())
+      const result = await safeParseJsonResponse(
+        resp,
+        ListContainersResponseSchema,
+        "GET /containers/list",
+      )
       log(`GET /containers/list -> ${result.containers.length} containers`)
       return result
     },
@@ -480,9 +640,230 @@ export function createMustangClient(config: {
         logError(`POST /session/claim failed: ${resp.status} ${text}`)
         throw new Error(`Failed to claim session: ${resp.status} ${text}`)
       }
-      const result = ClaimSessionResponseSchema.parse(await resp.json())
+      const result = await safeParseJsonResponse(
+        resp,
+        ClaimSessionResponseSchema,
+        "POST /session/claim",
+      )
       log(
         `POST /session/claim -> claimed=${result.claimed}${result.error ? ` error=${result.error}` : ""}`,
+      )
+      return result
+    },
+
+    // =========================================================================
+    // Higher-level endpoints
+    // =========================================================================
+
+    async getOrCreateTerminalSession(opts) {
+      log(
+        `POST /terminal-session/get-or-create (user=${opts.userId}, problem=${opts.problemId}, testcase=${opts.testcaseId})`,
+      )
+      const resp = await fetch(`${baseUrl}/terminal-session/get-or-create`, {
+        method: "POST",
+        headers: headers(),
+        body: JSON.stringify({
+          user_id: opts.userId,
+          problem_id: opts.problemId,
+          testcase_id: opts.testcaseId,
+          problem_slug: opts.problemSlug,
+          problem_type: opts.problemType,
+        }),
+      })
+      if (!resp.ok) {
+        const text = await resp.text()
+        logError(
+          `POST /terminal-session/get-or-create failed: ${resp.status} ${text}`,
+        )
+        throw new Error(
+          `Failed to get or create terminal session: ${resp.status} ${text}`,
+        )
+      }
+      const result = await safeParseJsonResponse(
+        resp,
+        GetOrCreateTerminalSessionResponseSchema,
+        "POST /terminal-session/get-or-create",
+      )
+      log(
+        `POST /terminal-session/get-or-create -> id=${result.id} container=${result.container_name} ready=${result.ready}`,
+      )
+      return result
+    },
+
+    async killTerminalSessions(opts) {
+      log(
+        `POST /terminal-session/kill (user=${opts.userId}, problem=${opts.problemId}, testcase=${opts.testcaseId})`,
+      )
+      const resp = await fetch(`${baseUrl}/terminal-session/kill`, {
+        method: "POST",
+        headers: headers(),
+        body: JSON.stringify({
+          user_id: opts.userId,
+          problem_id: opts.problemId,
+          testcase_id: opts.testcaseId,
+        }),
+      })
+      if (!resp.ok) {
+        const text = await resp.text()
+        logError(`POST /terminal-session/kill failed: ${resp.status} ${text}`)
+        throw new Error(
+          `Failed to kill terminal sessions: ${resp.status} ${text}`,
+        )
+      }
+      const result = await safeParseJsonResponse(
+        resp,
+        KillTerminalSessionsResponseSchema,
+        "POST /terminal-session/kill",
+      )
+      log(
+        `POST /terminal-session/kill -> deleted_sessions=${result.deleted_sessions}`,
+      )
+      return result
+    },
+
+    async submitTerminalCommand(opts) {
+      log(
+        `POST /terminal-session/submit-command (session=${opts.sessionId}, container=${opts.containerName})`,
+      )
+      let resp: Response
+      try {
+        resp = await fetch(`${baseUrl}/terminal-session/submit-command`, {
+          method: "POST",
+          headers: headers(),
+          body: JSON.stringify({
+            session_id: opts.sessionId,
+            container_name: opts.containerName,
+            command: opts.command,
+            timeout_ms: opts.timeoutMs,
+          }),
+          signal: AbortSignal.timeout(
+            (opts.timeoutMs ?? DEFAULT_EXEC_TIMEOUT_MS) +
+              SUBMIT_COMMAND_OVERHEAD_MS,
+          ),
+        })
+      } catch (e) {
+        if (e instanceof Error && e.name === "TimeoutError") {
+          logError(`POST /terminal-session/submit-command -> timeout`)
+          return {
+            status: "error" as const,
+            type: "took_too_long" as const,
+            message: "The command took too long to execute",
+          }
+        }
+        if (e instanceof Error && e.name === "TypeError") {
+          logError(
+            `POST /terminal-session/submit-command -> fetch TypeError (service down?)`,
+          )
+          return {
+            status: "error" as const,
+            type: "critical_server_error" as const,
+            message: "Request Failed (mustang service might be down)",
+          }
+        }
+        logError(`POST /terminal-session/submit-command -> unknown error: ${e}`)
+        return {
+          status: "error" as const,
+          type: "critical_server_error" as const,
+          message: "Request Failed",
+        }
+      }
+      if (!resp.ok) {
+        const text = await resp.text()
+        logError(
+          `POST /terminal-session/submit-command failed: ${resp.status} ${text}`,
+        )
+        return {
+          status: "error" as const,
+          type: "critical_server_error" as const,
+          message: `Failed to submit command: ${resp.status} ${text}`,
+        }
+      }
+      let json: unknown
+      try {
+        json = await resp.json()
+      } catch {
+        logError(
+          `POST /terminal-session/submit-command -> failed to parse response JSON`,
+        )
+        return {
+          status: "error" as const,
+          type: "critical_server_error" as const,
+          message: "Failed to parse response from mustang service",
+        }
+      }
+      const parsed = SubmitCommandResponseSchema.safeParse(json)
+      if (!parsed.success) {
+        logError(
+          `POST /terminal-session/submit-command -> response parse error: ${parsed.error.message}`,
+        )
+        return {
+          status: "error" as const,
+          type: "critical_server_error" as const,
+          message: "Failed to parse response from mustang service",
+        }
+      }
+      const result = parsed.data
+      if (result.status === "success") {
+        log(
+          `POST /terminal-session/submit-command -> success (log_id=${result.log_id})`,
+        )
+      } else {
+        logError(
+          `POST /terminal-session/submit-command -> error: ${result.type}`,
+        )
+      }
+      return result
+    },
+
+    async cleanupExpiredSessions() {
+      log(`POST /sessions/cleanup`)
+      const resp = await fetch(`${baseUrl}/sessions/cleanup`, {
+        method: "POST",
+        headers: headers(),
+      })
+      if (!resp.ok) {
+        const text = await resp.text()
+        logError(`POST /sessions/cleanup failed: ${resp.status} ${text}`)
+        throw new Error(
+          `Failed to cleanup expired sessions: ${resp.status} ${text}`,
+        )
+      }
+      const result = await safeParseJsonResponse(
+        resp,
+        CleanupResponseSchema,
+        "POST /sessions/cleanup",
+      )
+      log(`POST /sessions/cleanup -> cleaned=${result.cleaned}`)
+      return result
+    },
+
+    async runSubmission(opts) {
+      log(
+        `POST /submission/run (problem=${opts.problemSlug}, testcase=${opts.testcaseId})`,
+      )
+      const resp = await fetch(`${baseUrl}/submission/run`, {
+        method: "POST",
+        headers: headers(),
+        body: JSON.stringify({
+          problem_slug: opts.problemSlug,
+          testcase_id: opts.testcaseId,
+          input: opts.input,
+        }),
+        // Long timeout: standard up to 2min, k3s up to 4min
+        signal: AbortSignal.timeout(300_000),
+      })
+      if (!resp.ok) {
+        const text = await resp.text()
+        logError(`POST /submission/run failed: ${resp.status} ${text}`)
+        throw new Error(`Failed to run submission: ${resp.status} ${text}`)
+      }
+      const result = await safeParseJsonResponse(
+        resp,
+        RunSubmissionResponseSchema,
+        "POST /submission/run",
+      )
+      log(
+        `POST /submission/run -> passed=${result.passed} exit_code=${result.output.exit_code}`,
       )
       return result
     },

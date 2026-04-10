@@ -131,6 +131,11 @@ export function getSessionsDir(): string {
   return join(env.WORKING_DIR, "sessions")
 }
 
+/** Get the submissions directory path. */
+export function getSubmissionsDir(): string {
+  return join(env.WORKING_DIR, "submissions")
+}
+
 /** Get the container-specific directory path. */
 export function getContainerDir(containerName: string): string {
   return join(getSessionsDir(), containerName)
@@ -143,4 +148,7 @@ export async function initWorkingDirs(): Promise<void> {
   }
   await mkdirp(env.WORKING_DIR)
   await mkdirp(getSessionsDir())
+  await mkdirp(getSubmissionsDir())
+  await mkdirp(join(getSubmissionsDir(), "inputs"))
+  await mkdirp(join(getSubmissionsDir(), "outputs"))
 }

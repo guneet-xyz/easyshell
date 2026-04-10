@@ -1,4 +1,4 @@
-import { and, eq, isNull, lt } from "drizzle-orm"
+import { isNull } from "drizzle-orm"
 
 import { terminalSessions } from "@easyshell/db/schema"
 import type { MustangClient } from "@easyshell/mustang/client"
@@ -13,8 +13,7 @@ const logError = (...args: unknown[]) =>
 /**
  * Clean up expired and orphaned containers.
  *
- * 1. Expired sessions: sessions past their `expiresAt` that haven't been soft-deleted.
- *    Soft-delete them in DB and kill their Docker containers.
+ * 1. Expired sessions: handled by the mustang service via POST /sessions/cleanup.
  *
  * 2. Orphaned containers: Docker containers matching `easyshell-*` that have no
  *    corresponding active DB session or running submission. Kill them unless they
@@ -31,7 +30,15 @@ export async function runCleanup({
 }) {
   log("starting cleanup job")
 
-  const expiredCount = await cleanupExpiredSessions({ db, client })
+  // Expired session cleanup via mustang service
+  let expiredCount = 0
+  try {
+    const result = await client.cleanupExpiredSessions()
+    expiredCount = result.cleaned
+  } catch (error) {
+    logError("expired session cleanup failed:", error)
+  }
+
   const orphanCount = await cleanupOrphanedContainers({
     db,
     client,
@@ -41,82 +48,6 @@ export async function runCleanup({
   log(
     `cleanup complete: ${expiredCount} expired sessions, ${orphanCount} orphaned containers`,
   )
-}
-
-// =============================================================================
-// Expired Session Cleanup
-// =============================================================================
-
-async function cleanupExpiredSessions({
-  db,
-  client,
-}: {
-  db: Db
-  client: MustangClient
-}): Promise<number> {
-  const now = new Date()
-
-  // Find expired, non-deleted sessions
-  const expiredSessions = await db
-    .select({
-      id: terminalSessions.id,
-      containerName: terminalSessions.containerName,
-      expiresAt: terminalSessions.expiresAt,
-    })
-    .from(terminalSessions)
-    .where(
-      and(
-        lt(terminalSessions.expiresAt, now),
-        isNull(terminalSessions.deletedAt),
-      ),
-    )
-
-  if (expiredSessions.length === 0) {
-    return 0
-  }
-
-  log(`found ${expiredSessions.length} expired sessions`)
-
-  let cleanedCount = 0
-  for (const session of expiredSessions) {
-    try {
-      // Soft-delete the session in DB
-      await db
-        .update(terminalSessions)
-        .set({ deletedAt: now })
-        .where(
-          and(
-            eq(terminalSessions.id, session.id),
-            isNull(terminalSessions.deletedAt),
-          ),
-        )
-
-      // Kill the Docker container if it exists
-      if (session.containerName) {
-        try {
-          await client.killSession(session.containerName)
-          log(
-            `killed expired session ${session.id} (container=${session.containerName}, expired=${session.expiresAt.toISOString()})`,
-          )
-        } catch {
-          // Container may already be gone — that's fine
-          log(
-            `session ${session.id} container already gone (container=${session.containerName})`,
-          )
-        }
-      } else {
-        log(
-          `soft-deleted expired session ${session.id} (no container name, expired=${session.expiresAt.toISOString()})`,
-        )
-      }
-
-      cleanedCount++
-    } catch (error) {
-      logError(`failed to clean up expired session ${session.id}:`, error)
-    }
-  }
-
-  return cleanedCount
 }
 
 // =============================================================================
@@ -164,7 +95,7 @@ async function cleanupOrphanedContainers({
   const now = new Date()
   const graceThreshold = new Date(now.getTime() - orphanGraceSeconds * 1000)
 
-  // Get all active (non-deleted) sessions' container names
+  // Get all active (non-deleted) sessions' container names (read-only DB query)
   const activeSessions: Array<{ containerName: string | null }> = await db
     .select({ containerName: terminalSessions.containerName })
     .from(terminalSessions)

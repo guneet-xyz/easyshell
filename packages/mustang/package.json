@@ -5,18 +5,12 @@
   "type": "module",
   "exports": {
     ".": "./index.ts",
-    "./client": "./client.ts",
-    "./sessions": "./sessions.ts",
-    "./submissions": "./submissions.ts"
+    "./client": "./client.ts"
   },
   "dependencies": {
-    "@easyshell/db": "workspace:*",
-    "@easyshell/utils": "workspace:*",
-    "drizzle-orm": "^0.45.2",
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@easyshell/problems": "workspace:*",
     "@types/node": "^20.17.16"
   }
 }

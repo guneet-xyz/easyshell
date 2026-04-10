@@ -5,6 +5,8 @@ on:
       - ".github/workflows/test-mustang.yml"
       - "apps/mustang/**"
       - "packages/db/**"
+      - "packages/mustang/**"
+      - "packages/problems/**"
 jobs:
   test-mustang:
     runs-on: ubuntu-latest
@@ -17,6 +19,9 @@ jobs:
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
         name: Install dependencies
+      - run: pnpm run cache
+        name: Cache problem data
+        working-directory: ./apps/mustang
       - run: pnpm exec tsc --noEmit
         name: Type check
         working-directory: ./apps/mustang

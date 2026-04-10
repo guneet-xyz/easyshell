@@ -37,14 +37,12 @@ jobs:
         with:
           node-version: 22.14.0
           cache: "pnpm"
-      - uses: actions/setup-go@v5
-        with:
-          go-version: 1.23.6
       - run: pnpm install --frozen-lockfile
       - name: Build and start mustang
         run: |
-          go build -o /tmp/mustang-bin .
-          TOKEN=token nohup /tmp/mustang-bin &
+          pnpm run cache
+          pnpm run build
+          DATABASE_URL=fake MUSTANG_TOKEN=token nohup node mustang.cjs &
           sleep 2
         working-directory: ./apps/mustang
       - run: pnpm run build count-files

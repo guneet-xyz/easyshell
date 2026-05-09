@@ -204,6 +204,8 @@ Builds all problem Docker images locally. Three phases:
 
 Docker's own layer cache makes no-op runs take ~5s. Use `pnpm problems:build:force` to wipe the cache and rebuild from scratch.
 
+By default, build artifacts live under `~/.cache/easyshell/{build-output,build-cache}`. Set `WORKING_DIR` to override.
+
 #### `problems:cache:website`
 
 Calls [`problems:cache`](./apps/website/README.md#problemscache) in [website](./apps/website/README.md) app.

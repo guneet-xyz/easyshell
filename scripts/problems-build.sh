@@ -35,7 +35,7 @@ Flags:
   --help     Show this help.
 
 Environment:
-  WORKING_DIR     Default /tmp/easyshell.
+  WORKING_DIR     Default $XDG_CACHE_HOME/easyshell (typically ~/.cache/easyshell).
   PARALLEL_LIMIT  Default 8 (was 5 in build.ts).
 EOF
 }
@@ -76,7 +76,7 @@ fi
 
 cd "$(git rev-parse --show-toplevel)"
 
-WORKING_DIR="${WORKING_DIR:-/tmp/easyshell}"
+WORKING_DIR="${WORKING_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/easyshell}"
 export WORKING_DIR
 if [ -n "$JOBS" ]; then
   export PARALLEL_LIMIT="$JOBS"

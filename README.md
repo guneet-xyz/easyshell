@@ -148,7 +148,7 @@ Also see [Next.js Scripts](apps/website/README.md#scripts), [Queue Processor Scr
 - [`problems:lint`](#problemslint)
 - [`problems:build`](#problemsbuild)
 - [`problems:build-pkg`](#problemsbuild-pkg)
-- [`deploy:local`](#deploylocal)
+- [`compose:up`](#composeup)
 
 #### `lint:tsc`
 
@@ -216,7 +216,7 @@ Calls [`problems:cache`](./apps/submission-manager/README.md#problemscache) in [
 
 Calls both [`problems:cache:website`](#problemscachewebsite) and [`problems:cache:submission-manager`](#problemscachesubmission-manager).
 
-#### `deploy:local`
+#### `compose:up`
 
 Brings the full stack up locally via Docker Compose:
 
@@ -225,7 +225,7 @@ Brings the full stack up locally via Docker Compose:
 3. Runs Drizzle migrations to completion.
 4. Starts `website`, `mustang`, `submission-manager`, and `cron`.
 
-Use `pnpm deploy:local:down` to stop the stack (data preserved), or `pnpm deploy:local:clean -- --yes` to also wipe the Postgres volume.
+Use `pnpm compose:logs` to tail logs from all services in follow mode, `pnpm compose:down` to stop the stack (data preserved), or `pnpm compose:clean -- --yes` to also wipe the Postgres volume.
 
 Secrets are loaded via `infisical run --env=dev` (override with `INFISICAL_ENV`). You must have the Infisical CLI installed and be logged in (`infisical login`) — same as `pnpm docker:up`.
 

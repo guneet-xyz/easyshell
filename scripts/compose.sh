@@ -11,16 +11,17 @@ else
   C_RESET=""; C_BLUE=""; C_GREEN=""; C_YELLOW=""; C_RED=""
 fi
 
-info() { printf "%s[deploy-local]%s %s\n" "$C_BLUE"   "$C_RESET" "$*"; }
-ok()   { printf "%s[deploy-local]%s %s\n" "$C_GREEN"  "$C_RESET" "$*"; }
-warn() { printf "%s[deploy-local]%s %s\n" "$C_YELLOW" "$C_RESET" "$*" >&2; }
-err()  { printf "%s[deploy-local]%s %s\n" "$C_RED"    "$C_RESET" "$*" >&2; }
+info() { printf "%s[compose]%s %s\n" "$C_BLUE"   "$C_RESET" "$*"; }
+ok()   { printf "%s[compose]%s %s\n" "$C_GREEN"  "$C_RESET" "$*"; }
+warn() { printf "%s[compose]%s %s\n" "$C_YELLOW" "$C_RESET" "$*" >&2; }
+err()  { printf "%s[compose]%s %s\n" "$C_RED"    "$C_RESET" "$*" >&2; }
 
 usage() {
   cat <<'EOF'
-Usage: bash scripts/deploy-local.sh [flags]
+Usage: bash scripts/compose.sh [flags]
 
-Brings the easyshell stack up locally via Docker Compose. By default:
+Manages the easyshell stack via Docker Compose. With no flags, brings the
+stack up:
   1. Stops anything currently running (preserves data).
   2. Starts Postgres and waits for it to be healthy.
   3. Runs Drizzle migrations to completion.
@@ -28,6 +29,7 @@ Brings the easyshell stack up locally via Docker Compose. By default:
 
 Flags:
   --down       Stop the stack and exit (preserves Postgres volume).
+  --logs       Tail logs from all services in follow mode (Ctrl-C to exit).
   --clean      Stop the stack AND wipe the Postgres volume. Asks for
                confirmation unless --yes is also passed.
   --no-build   Skip --build on migrate and app `up` commands.
@@ -43,6 +45,7 @@ ASSUME_YES=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --down)     MODE="down";  shift ;;
+    --logs)     MODE="logs";  shift ;;
     --clean)    MODE="clean"; shift ;;
     --no-build) NO_BUILD=1;   shift ;;
     --yes|-y)   ASSUME_YES=1; shift ;;
@@ -103,6 +106,10 @@ case "$MODE" in
     "${COMPOSE[@]}" down --remove-orphans
     ok "stopped."
     exit 0
+    ;;
+  logs)
+    info "tailing logs from all services (Ctrl-C to exit)"
+    exec "${COMPOSE[@]}" logs -f
     ;;
   clean)
     if [ "$ASSUME_YES" -ne 1 ]; then
@@ -167,5 +174,5 @@ printf "  Website:  http://localhost:3000\n"
 printf "  Mustang:  http://localhost:4000\n"
 printf "  Postgres: localhost:5432  (user/db/pw: easyshell)\n"
 printf "\n"
-printf "Tail logs:  %s logs -f\n" "${COMPOSE[*]}"
-printf "Stop:       bash scripts/deploy-local.sh --down\n"
+printf "Tail logs:  bash scripts/compose.sh --logs\n"
+printf "Stop:       bash scripts/compose.sh --down\n"

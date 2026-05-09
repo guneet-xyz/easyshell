@@ -2,6 +2,7 @@ node_modules
 .next
 .env
 .easyshell
+.sisyphus
 tsconfig.tsbuildinfo
 bun.lock
 package-lock.json

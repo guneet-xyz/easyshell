@@ -1,7 +1,40 @@
 networks:
   easyshell:
     external: true
+volumes:
+  easyshell-pgdata:
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: easyshell-dev-postgres
+    networks:
+      - easyshell
+    environment:
+      POSTGRES_USER: easyshell
+      POSTGRES_PASSWORD: easyshell
+      POSTGRES_DB: easyshell
+    volumes:
+      - easyshell-pgdata:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U easyshell -d easyshell"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  migrate:
+    build:
+      context: .
+      dockerfile: ./apps/migrate/Dockerfile
+    container_name: easyshell-dev-migrate
+    networks:
+      - easyshell
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgres://easyshell:easyshell@postgres:5432/easyshell}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
   submission-manager:
     user: 1000:1000
     build:
@@ -15,9 +48,17 @@ services:
     networks:
       - easyshell
     environment:
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: ${DATABASE_URL:-postgres://easyshell:easyshell@postgres:5432/easyshell}
       SESSION_MANAGER_URL: http://host.docker.internal:4000
       SESSION_MANAGER_TOKEN: token
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      mustang:
+        condition: service_started
+    restart: unless-stopped
   cron:
     build:
       context: .
@@ -26,16 +67,24 @@ services:
     networks:
       - easyshell
     environment:
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: ${DATABASE_URL:-postgres://easyshell:easyshell@postgres:5432/easyshell}
       MUSTANG_URL: http://mustang:4000
       MUSTANG_TOKEN: token
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      mustang:
+        condition: service_started
+    restart: unless-stopped
   mustang:
     build:
       context: .
       dockerfile: ./apps/mustang/Dockerfile
     container_name: easyshell-dev-mustang
     environment:
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: ${DATABASE_URL:-postgres://easyshell:easyshell@postgres:5432/easyshell}
       MUSTANG_TOKEN: token
     networks:
       - easyshell
@@ -44,6 +93,12 @@ services:
     volumes:
       - /tmp/easyshell:/tmp/easyshell
       - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
   website:
     build:
       context: .
@@ -55,7 +110,7 @@ services:
     environment:
       POSTHOG_HOST: ${POSTHOG_HOST}
       AUTH_TRUST_HOST: true
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: ${DATABASE_URL:-postgres://easyshell:easyshell@postgres:5432/easyshell}
       NEXTAUTH_SECRET: secret
       NEXTAUTH_URL: http://localhost:3000
       DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
@@ -79,3 +134,11 @@ services:
       interval: 1s
       timeout: 500ms
       retries: 3
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      mustang:
+        condition: service_started
+    restart: unless-stopped

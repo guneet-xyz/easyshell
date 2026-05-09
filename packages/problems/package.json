@@ -13,6 +13,7 @@
     "cache:mustang": "tsx ./scripts/cache-mustang.ts",
     "cache:submission-manager": "tsx ./scripts/cache-submission-manager.ts",
     "cache:website": "tsx ./scripts/cache-website.ts",
+    "generate-contexts": "tsx ./scripts/generate-contexts.ts",
     "generate-workflows": "tsx ./scripts/generate-workflows.ts",
     "new": "tsx ./scripts/new.ts",
     "push": "tsx ./scripts/push.ts",

@@ -147,6 +147,7 @@ Also see [Next.js Scripts](apps/website/README.md#scripts), [Queue Processor Scr
 - [`problems:new`](#problemsnew)
 - [`problems:lint`](#problemslint)
 - [`problems:build`](#problemsbuild)
+- [`problems:build:force`](#problemsbuildforce)
 - [`problems:build-pkg`](#problemsbuild-pkg)
 - [`compose:up`](#composeup)
 
@@ -195,14 +196,13 @@ Might require the following environment variables.
 
 #### `problems:build`
 
-Build (and push) the problem images.
+Builds all problem Docker images locally. Three phases:
 
-Might require the following environment variables.
+1. **Generate** fresh build contexts under `$WORKING_DIR/build-output/`.
+2. **Sync** into `$WORKING_DIR/build-cache/` with `rsync -ac --delete`, preserving mtimes on unchanged files.
+3. **Build** every image with `docker build`, in parallel up to `PARALLEL_LIMIT` (default 8).
 
-- `APP` - This is required and should be set to `script`. Already set in [package.json](package.json).
-- `PROJECT_ROOT` - required if the script is not run from within the git repository.
-- `DOCKER_REGISTRY` - required if the images need to be pushed to a registry.
-- `WORKING_DIR` - optional, defaults to `/tmp/easyshell`.
+Docker's own layer cache makes no-op runs take ~5s. Use `pnpm problems:build:force` to wipe the cache and rebuild from scratch.
 
 #### `problems:cache:website`
 

@@ -25,7 +25,7 @@ const TagsSchema = z.array(TagSchema).default([])
 
 const DifficultySchema = z.enum(["easy", "medium", "hard"])
 
-const RuntimeSchema = z.enum(["container", "shared-k8s", "dedicated-k8s"])
+export const RuntimeSchema = z.enum(["container", "shared-k8s", "dedicated-k8s"])
 export type Runtime = z.infer<typeof RuntimeSchema>
 
 const TestcaseSchema = z.object({

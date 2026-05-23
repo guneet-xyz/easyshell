@@ -33,6 +33,7 @@ async function testcaseConfig({
 
 const config: ProblemConfigInput = {
   id: 3,
+  runtime: "container",
   slug: SLUG,
   title: "Find That File",
   description: `Hunt down a specific file and reveal its full path—no more guessing where it’s hiding! 🔍`,

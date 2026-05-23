@@ -41,6 +41,7 @@ RUN go build -C /src/daemon -o /daemon
 
 const config: ProblemConfigInput = {
   id: 12,
+  runtime: "container",
   slug: "post-with-token",
   title: "Make a POST Request using an Auth Token",
   difficulty: "medium",

@@ -31,6 +31,7 @@ async function testcaseConfig({
 
 const config: ProblemConfigInput = {
   id: 14,
+  runtime: "container",
   slug: SLUG,
   title: "Bye Bye MDX, Hello MD!",
   description: `Rename all .mdx files to .md because your plugin can't handle the fancy stuff.`,

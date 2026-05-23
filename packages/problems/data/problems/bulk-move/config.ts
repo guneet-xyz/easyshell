@@ -30,6 +30,7 @@ async function testcaseConfig({
 
 const config: ProblemConfigInput = {
   id: 6,
+  runtime: "container",
   slug: SLUG,
   title: "Bulk Move",
   description: `A scattered mess of log files? Gather them all into one place while leaving everything else untouched! 📂`,

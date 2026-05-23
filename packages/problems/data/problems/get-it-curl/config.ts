@@ -41,6 +41,7 @@ RUN go build -C /src/daemon -o /daemon
 
 const config: ProblemConfigInput = {
   id: 10,
+  runtime: "container",
   slug: SLUG,
   title: "Get it Curl",
   description: `Dig up the freshest hot take.`,

@@ -37,6 +37,7 @@ async function testcaseConfig({
 
 const config: ProblemConfigInput = {
   id: 13,
+  runtime: "container",
   slug: SLUG,
   title: "Extract All the E-mails",
   description: `Your boss needs email addresses from a file to "gently encourage" potential investors and clients.`,

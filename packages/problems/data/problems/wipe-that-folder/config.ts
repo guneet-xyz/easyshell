@@ -27,6 +27,7 @@ async function testcaseConfig({
 
 const config: ProblemConfigInput = {
   id: 8,
+  runtime: "container",
   slug: SLUG,
   title: "Wipe That Folder",
   description: `A whole folder needs to be erased. Make sure it’s gone—completely! 🚮`,

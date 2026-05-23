@@ -3,6 +3,7 @@ import type { LiveEnvironmentProblemConfigInput } from "@easyshell/problems/sche
 const config: LiveEnvironmentProblemConfigInput = {
   type: "live-environment",
   id: 26,
+  runtime: "shared-k8s",
   slug: "scale-deployment",
   title: "Scale a Deployment",
   description:

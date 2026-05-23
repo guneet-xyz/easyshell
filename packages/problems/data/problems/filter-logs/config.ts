@@ -30,6 +30,7 @@ async function testcaseConfig({
 
 const config: ProblemConfigInput = {
   id: 18,
+  runtime: "container",
   slug: SLUG,
   title: "Filter JSON Logs",
   description: `Extract authentication failures from JSON logs.`,

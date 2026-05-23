@@ -23,6 +23,7 @@ async function testcaseConfig({
 
 const config: ProblemConfigInput = {
   id: 2,
+  runtime: "container",
   slug: SLUG,
   title: "Read a File",
   description: `Bring the contents of any file right into your terminal view. No GUIs allowed! 🖥️`,

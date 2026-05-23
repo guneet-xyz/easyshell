@@ -36,6 +36,7 @@ async function testcaseConfig({
 
 const config: ProblemConfigInput = {
   id: 16,
+  runtime: "container",
   slug: SLUG,
   title: "Grep Version 2",
   description: "Extract version number from your project",

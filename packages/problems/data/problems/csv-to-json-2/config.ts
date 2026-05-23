@@ -35,6 +35,7 @@ async function testcaseConfig({
 
 const config: ProblemConfigInput = {
   id: 24,
+  runtime: "container",
   slug: SLUG,
   title: "CSV to JSON 2",
   description: `Convert each row of a CSV file into a JSON object and output a JSON list.`,

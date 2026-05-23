@@ -39,6 +39,7 @@ RUN go build -C /src/daemon -o /daemon
 
 const config: ProblemConfigInput = {
   id: 11,
+  runtime: "container",
   slug: "post-it",
   title: "Make a Post Request",
   description: `Good job on fetching the most recent post! Now, let's make a post of our own.`,

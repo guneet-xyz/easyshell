@@ -35,6 +35,7 @@ async function testcaseConfig({
 
 const config: ProblemConfigInput = {
   id: 15,
+  runtime: "container",
   slug: SLUG,
   title: "Grep Version",
   description: `Print the version of your python package.`,

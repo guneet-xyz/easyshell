@@ -31,6 +31,7 @@ async function testcaseConfig({
 
 const config: ProblemConfigInput = {
   id: 17,
+  runtime: "container",
   slug: SLUG,
   title: "Combine multiple JSON files",
   description: `Combine a pie of product JSONs.`,

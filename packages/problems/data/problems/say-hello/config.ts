@@ -2,6 +2,7 @@ import type { ProblemConfigInput } from "@easyshell/problems/schema"
 
 const config: ProblemConfigInput = {
   id: 1,
+  runtime: "container",
   slug: "say-hello",
   title: "Say Hello to the Shell",
   description: `Print "Hello, World!"—your first step into the world of shell commands.`,

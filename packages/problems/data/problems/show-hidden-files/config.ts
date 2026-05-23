@@ -23,6 +23,7 @@ async function testcaseConfig({
 
 const config: ProblemConfigInput = {
   id: 23,
+  runtime: "container",
   slug: SLUG,
   title: "Show Hidden Files",
   description: `Reveal all the sneaky hidden files and folders in your current directory.`,

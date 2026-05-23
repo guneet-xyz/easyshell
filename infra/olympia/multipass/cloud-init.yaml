@@ -1,0 +1,45 @@
+#cloud-config
+# Multipass cloud-init for Olympia k3s smoke testing
+# Prepares Ubuntu VM with kernel modules and sysctls required for k3s
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - curl
+  - gnupg
+  - apt-transport-https
+  - ca-certificates
+  - python3
+  - jq
+
+bootcmd:
+  # Disable swap immediately
+  - swapoff -a
+
+runcmd:
+  # Mask swap.target to prevent re-enabling on reboot
+  - systemctl mask swap.target
+
+  # Load required kernel modules
+  - modprobe br_netfilter
+  - modprobe overlay
+
+  # Persist kernel modules
+  - |
+    cat > /etc/modules-load.d/k3s.conf <<EOF
+    br_netfilter
+    overlay
+    EOF
+
+  # Apply required sysctls for k3s
+  - sysctl -w net.bridge.bridge-nf-call-iptables=1
+  - sysctl -w net.ipv4.ip_forward=1
+
+  # Persist sysctls
+  - |
+    cat > /etc/sysctl.d/99-k3s.conf <<EOF
+    net.bridge.bridge-nf-call-iptables=1
+    net.ipv4.ip_forward=1
+    EOF
+  - sysctl -p /etc/sysctl.d/99-k3s.conf

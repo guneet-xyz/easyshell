@@ -25,6 +25,9 @@ const TagsSchema = z.array(TagSchema).default([])
 
 const DifficultySchema = z.enum(["easy", "medium", "hard"])
 
+const RuntimeSchema = z.enum(["container", "shared-k8s", "dedicated-k8s"])
+export type Runtime = z.infer<typeof RuntimeSchema>
+
 const TestcaseSchema = z.object({
   id: z.number().positive(),
   public: z.boolean().default(false),
@@ -81,6 +84,7 @@ const StandardProblemConfigSchema = z
     title: TitleSchema,
     description: z.string().nonempty(),
     difficulty: DifficultySchema,
+    runtime: RuntimeSchema.default("container"),
     tags: TagsSchema,
     testcases: z.array(TestcaseSchema),
     tests: z.array(TestSchema).optional(),
@@ -95,6 +99,7 @@ const LiveEnvironmentProblemConfigSchema = z
     title: TitleSchema,
     description: z.string().nonempty(),
     difficulty: DifficultySchema,
+    runtime: RuntimeSchema.default("shared-k8s"),
     tags: TagsSchema,
     check: CheckConfigSchema,
     /** Number of warm container instances to keep ready for this problem. Defaults to 0. */
@@ -130,10 +135,11 @@ export type ProblemConfig = z.infer<typeof ProblemConfigSchema>
  */
 export type StandardProblemConfigInput = Omit<
   StandardProblemConfig,
-  "type" | "tags"
+  "type" | "tags" | "runtime"
 > & {
   type?: "standard"
   tags?: string[]
+  runtime?: Runtime
 }
 
 /**
@@ -141,10 +147,11 @@ export type StandardProblemConfigInput = Omit<
  */
 export type LiveEnvironmentProblemConfigInput = Omit<
   LiveEnvironmentProblemConfig,
-  "tags" | "tests"
+  "tags" | "tests" | "runtime"
 > & {
   tags?: string[]
   tests?: LiveEnvironmentProblemConfig["tests"]
+  runtime?: Runtime
 }
 
 /**
@@ -177,6 +184,7 @@ const StandardProblemInfoSchema = z.object({
   title: TitleSchema,
   description: z.string().nonempty(),
   difficulty: DifficultySchema,
+  runtime: RuntimeSchema,
   tags: TagsSchema,
   testcases: z.array(TestcaseInfoSchema),
 })
@@ -188,6 +196,7 @@ const LiveEnvironmentProblemInfoSchema = z.object({
   title: TitleSchema,
   description: z.string().nonempty(),
   difficulty: DifficultySchema,
+  runtime: RuntimeSchema,
   tags: TagsSchema,
   check: CheckConfigSchema,
   /** Number of warm container instances to keep ready for this problem. Defaults to 0. */

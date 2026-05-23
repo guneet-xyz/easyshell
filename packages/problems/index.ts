@@ -61,6 +61,7 @@ export async function getProblemInfo(problem: string): Promise<ProblemInfo> {
       title: config.title,
       description: config.description,
       difficulty: config.difficulty,
+      runtime: config.runtime,
       tags: config.tags,
       check: config.check,
       warmInstances: config.warmInstances,
@@ -73,6 +74,7 @@ export async function getProblemInfo(problem: string): Promise<ProblemInfo> {
     title: config.title,
     description: config.description,
     difficulty: config.difficulty,
+    runtime: config.runtime,
     tags: config.tags,
     testcases: config.testcases.map((tc) => ({
       id: tc.id,

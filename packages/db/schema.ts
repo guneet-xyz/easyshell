@@ -136,6 +136,9 @@ export const terminalSessions = createTable(
     problemId: integer("problem_id").notNull(),
     testcaseId: integer("testcase_id").notNull(),
     containerName: varchar("container_name", { length: 255 }),
+    podName: varchar("pod_name", { length: 255 }),
+    namespace: varchar("namespace", { length: 255 }),
+    runtime: varchar("runtime", { length: 32 }),
     createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -185,6 +188,9 @@ export const submissions = createTable("submissions", {
   submittedAt: timestamp("submitted_at", { mode: "date", withTimezone: true })
     .notNull()
     .defaultNow(),
+  runtime: varchar("runtime", { length: 32 }),
+  namespace: varchar("namespace", { length: 255 }),
+  jobName: varchar("job_name", { length: 255 }),
 })
 
 export const submissionTestcases = createTable(

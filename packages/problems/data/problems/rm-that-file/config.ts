@@ -1,4 +1,4 @@
-import type { FsType, ProblemConfigInput } from "@easyshell/problems/schema"
+import type { FsType, ProblemConfig } from "@easyshell/problems/schema"
 import { PROBLEMS_DIR, getFs } from "@easyshell/utils/build"
 
 const SLUG = "rm-that-file"
@@ -25,9 +25,8 @@ async function testcaseConfig({
   }
 }
 
-const config: ProblemConfigInput = {
+const config: ProblemConfig = {
   id: 7,
-  runtime: "container",
   slug: SLUG,
   title: "Remove That File",
   description: `A single file is standing in the way—time to delete it and clear the clutter! 🗑️`,

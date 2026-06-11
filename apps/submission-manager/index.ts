@@ -6,7 +6,6 @@ import {
   submissionTestcaseQueue,
   submissionTestcases,
 } from "@easyshell/db/schema"
-import { createMustangClient } from "@easyshell/mustang/client"
 import { sleep } from "@easyshell/utils"
 
 import { env } from "./env"
@@ -14,42 +13,8 @@ import { getProblemSlugFromId } from "./problems"
 import { runSubmissionAndGetOutput } from "./utils"
 
 const db = createDb(env.DATABASE_URL)
-const mustangClient = createMustangClient({
-  baseUrl: env.MUSTANG_URL,
-  token: env.MUSTANG_TOKEN,
-})
 
-async function markQueueItemFinished(submissionId: number, testcaseId: number) {
-  const maxAttempts = 2
-  let lastError: unknown
-
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      await db
-        .update(submissionTestcaseQueue)
-        .set({ status: "finished" })
-        .where(
-          and(
-            eq(submissionTestcaseQueue.submissionId, submissionId),
-            eq(submissionTestcaseQueue.testcaseId, testcaseId),
-          ),
-        )
-      return
-    } catch (error) {
-      lastError = error
-      console.error(
-        `Attempt ${attempt}/${maxAttempts} failed to mark queue item as finished (submission=${submissionId}, testcase=${testcaseId}):`,
-        error,
-      )
-      if (attempt < maxAttempts) await sleep(1000)
-    }
-  }
-
-  console.error(
-    `CRITICAL: Failed to mark queue item as finished after ${maxAttempts} attempts (submission=${submissionId}, testcase=${testcaseId}):`,
-    lastError,
-  )
-}
+const WORKING_DIR = `${env.WORKING_DIR}/submission-manager`
 
 async function getQueueItem() {
   const item = db.$with("item").as(
@@ -96,8 +61,7 @@ async function getQueueItem() {
       .limit(1)
   )[0]?.input
 
-  if (input === undefined || input === null)
-    throw new Error("Submission not found")
+  if (!input) throw new Error("Submission not found")
 
   return {
     ...updated_item,
@@ -109,69 +73,48 @@ async function processQueueItem(
   item: NonNullable<Awaited<ReturnType<typeof getQueueItem>>>,
 ) {
   console.log("Processing queue item", item)
-  try {
-    const problemId = (
-      await db
-        .select({ problemId: submissions.problemId })
-        .from(submissions)
-        .where(eq(submissions.id, item.submissionId))
-        .limit(1)
-    )[0]?.problemId
-    if (!problemId) throw new Error("Submission not found")
+  const problemId = (
+    await db
+      .select({ problemId: submissions.problemId })
+      .from(submissions)
+      .where(eq(submissions.id, item.submissionId))
+      .limit(1)
+  )[0]?.problemId
+  if (!problemId) throw new Error("Submission not found")
 
-    const problemSlug = await getProblemSlugFromId(problemId)
+  const problemSlug = await getProblemSlugFromId(problemId)
 
-    const { startedAt, finishedAt, output, passed } =
-      await runSubmissionAndGetOutput({
-        client: mustangClient,
-        problemSlug,
-        testcaseId: item.testcaseId,
-        input: item.input,
-      })
+  const { startedAt, finishedAt, output, passed } =
+    await runSubmissionAndGetOutput({
+      problemSlug,
+      testcaseId: item.testcaseId,
+      input: item.input,
+      suffix: `submission-${item.submissionId}`,
+      workingDir: WORKING_DIR,
+      dockerRegistry: env.DOCKER_REGISTRY,
+    })
 
-    try {
-      await db.insert(submissionTestcases).values({
-        submissionId: item.submissionId,
-        testcaseId: item.testcaseId,
-        stdout: output.stdout,
-        stderr: output.stderr,
-        exitCode: output.exit_code,
-        fs: output.fs,
-        startedAt,
-        finishedAt,
-        passed,
-      })
-    } finally {
-      await markQueueItemFinished(item.submissionId, item.testcaseId)
-    }
-  } catch (error) {
-    console.error(
-      `Failed to process queue item (submission=${item.submissionId}, testcase=${item.testcaseId}):`,
-      error,
+  await db.insert(submissionTestcases).values({
+    submissionId: item.submissionId,
+    testcaseId: item.testcaseId,
+    stdout: output.stdout,
+    stderr: output.stderr,
+    exitCode: output.exit_code,
+    fs: output.fs,
+    startedAt,
+    finishedAt,
+    passed,
+  })
+
+  await db
+    .update(submissionTestcaseQueue)
+    .set({ status: "finished" })
+    .where(
+      and(
+        eq(submissionTestcaseQueue.submissionId, item.submissionId),
+        eq(submissionTestcaseQueue.testcaseId, item.testcaseId),
+      ),
     )
-
-    // Store the error as a failed result so the submission doesn't hang
-    const message = error instanceof Error ? error.message : String(error)
-    const now = new Date()
-
-    try {
-      await db.insert(submissionTestcases).values({
-        submissionId: item.submissionId,
-        testcaseId: item.testcaseId,
-        stdout: `Error: ${message}`,
-        stderr: "",
-        exitCode: 1,
-        fs: {},
-        startedAt: now,
-        finishedAt: now,
-        passed: false,
-      })
-    } catch {
-      // Testcase result may already exist if the error was after insert
-    }
-
-    await markQueueItemFinished(item.submissionId, item.testcaseId)
-  }
 }
 
 async function loop() {
@@ -181,7 +124,7 @@ async function loop() {
       await sleep(1000)
       continue
     }
-    await processQueueItem(item)
+    processQueueItem(item)
   }
 }
 

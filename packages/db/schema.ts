@@ -135,10 +135,6 @@ export const terminalSessions = createTable(
       .references(() => users.id),
     problemId: integer("problem_id").notNull(),
     testcaseId: integer("testcase_id").notNull(),
-    containerName: varchar("container_name", { length: 255 }),
-    podName: varchar("pod_name", { length: 255 }),
-    namespace: varchar("namespace", { length: 255 }),
-    runtime: varchar("runtime", { length: 32 }),
     createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -188,9 +184,6 @@ export const submissions = createTable("submissions", {
   submittedAt: timestamp("submitted_at", { mode: "date", withTimezone: true })
     .notNull()
     .defaultNow(),
-  runtime: varchar("runtime", { length: 32 }),
-  namespace: varchar("namespace", { length: 255 }),
-  jobName: varchar("job_name", { length: 255 }),
 })
 
 export const submissionTestcases = createTable(
@@ -242,37 +235,6 @@ export const submissionTestcaseQueue = createTable(
       columns: [item.submissionId],
       foreignColumns: [submissions.id],
     }),
-  ],
-)
-
-export const containers = createTable(
-  "container",
-  {
-    id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
-    name: varchar("name", { length: 255 }).notNull().unique(),
-    image: varchar("image", { length: 512 }).notNull(),
-    problem: varchar("problem", { length: 255 }).notNull(),
-    testcase: integer("testcase").notNull().default(0),
-    mode: varchar("mode", { length: 20 }).notNull(), // "session" | "submission" | "warm"
-    type: varchar("type", { length: 20 }).notNull(), // "standard" | "k3s"
-    status: varchar("status", { length: 20 }).notNull().default("created"), // "created" | "running" | "claimed" | "stopped"
-    memory: varchar("memory", { length: 20 }).default("10m"),
-    cpu: varchar("cpu", { length: 20 }).default("0.1"),
-    createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
-      .notNull()
-      .defaultNow(),
-    claimedAt: timestamp("claimed_at", { mode: "date", withTimezone: true }),
-    deletedAt: timestamp("deleted_at", { mode: "date", withTimezone: true }),
-  },
-  (t) => [
-    uniqueIndex("container_name_idx").on(t.name),
-    index("container_mode_problem_testcase_idx").on(
-      t.mode,
-      t.problem,
-      t.testcase,
-      t.deletedAt,
-    ),
-    index("container_status_idx").on(t.status),
   ],
 )
 

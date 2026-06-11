@@ -1,4 +1,4 @@
-import type { ProblemConfigInput } from "@easyshell/problems/schema"
+import type { ProblemConfig } from "@easyshell/problems/schema"
 import { PROBLEMS_DIR } from "@easyshell/utils/build"
 
 import { readFile } from "fs/promises"
@@ -23,9 +23,8 @@ async function testcaseConfig({
   }
 }
 
-const config: ProblemConfigInput = {
+const config: ProblemConfig = {
   id: 5,
-  runtime: "container",
   slug: SLUG,
   title: "Move And Rename",
   description: `Sometimes, files end up in the wrong place with the wrong name.`,

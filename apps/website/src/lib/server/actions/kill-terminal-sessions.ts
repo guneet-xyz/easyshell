@@ -1,7 +1,11 @@
 "use server"
 
+import { and, eq, isNull } from "drizzle-orm"
+
+import { terminalSessions } from "@easyshell/db/schema"
+
+import { db } from "@/db"
 import { auth } from "@/lib/server/auth"
-import { killTerminalSessions as _killTerminalSessions } from "@/lib/server/mustang"
 
 export async function killTerminalSessions({
   problemId,
@@ -13,9 +17,22 @@ export async function killTerminalSessions({
   const user = (await auth())?.user
   if (!user) return null
 
-  return _killTerminalSessions({
-    userId: user.id,
-    problemId,
-    testcaseId,
-  })
+  const updated = await db
+    .update(terminalSessions)
+    .set({
+      deletedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(terminalSessions.userId, user.id),
+        eq(terminalSessions.problemId, problemId),
+        eq(terminalSessions.testcaseId, testcaseId),
+        isNull(terminalSessions.deletedAt),
+      ),
+    )
+    .returning({ id: terminalSessions.id })
+
+  return {
+    deletedSessions: updated.length,
+  }
 }

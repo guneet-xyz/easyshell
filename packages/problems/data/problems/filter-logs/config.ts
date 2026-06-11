@@ -1,4 +1,4 @@
-import type { ProblemConfigInput, StandardProblemConfig } from "@easyshell/problems/schema"
+import type { ProblemConfig } from "@easyshell/problems/schema"
 import { testcaseDir } from "@easyshell/utils/build"
 
 import { execa } from "execa"
@@ -11,7 +11,7 @@ async function testcaseConfig({
 }: {
   id: number
   isPublic: boolean
-}): Promise<StandardProblemConfig["testcases"][number]> {
+}): Promise<ProblemConfig["testcases"][number]> {
   const testcase_dir = testcaseDir(SLUG, id)
   const { stdout: output } = await execa(
     "bash",
@@ -28,9 +28,8 @@ async function testcaseConfig({
   }
 }
 
-const config: ProblemConfigInput = {
+const config: ProblemConfig = {
   id: 18,
-  runtime: "container",
   slug: SLUG,
   title: "Filter JSON Logs",
   description: `Extract authentication failures from JSON logs.`,

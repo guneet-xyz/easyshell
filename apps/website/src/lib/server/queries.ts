@@ -59,10 +59,7 @@ export async function getUserSubmissions({
         .where(eq(submissionTestcaseQueue.submissionId, submission.id))
 
       const running = testcases.some((testcase) => testcase.passed === null)
-      const passed =
-        testcases.length > 0 &&
-        !running &&
-        testcases.every((testcase) => testcase.passed)
+      const passed = !running && testcases.every((testcase) => testcase.passed)
 
       const resp = {
         ...submission,

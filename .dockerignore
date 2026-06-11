@@ -9,3 +9,5 @@ data
 .prettierignore
 prettier.config.js
 .github
+drizzle
+drizzle.config.ts

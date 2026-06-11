@@ -1,4 +1,4 @@
-import type { FsType, ProblemConfigInput } from "@easyshell/problems/schema"
+import type { FsType, ProblemConfig } from "@easyshell/problems/schema"
 import { PROBLEMS_DIR, getFs } from "@easyshell/utils/build"
 
 const SLUG = "wipe-that-folder"
@@ -25,9 +25,8 @@ async function testcaseConfig({
   }
 }
 
-const config: ProblemConfigInput = {
+const config: ProblemConfig = {
   id: 8,
-  runtime: "container",
   slug: SLUG,
   title: "Wipe That Folder",
   description: `A whole folder needs to be erased. Make sure it’s gone—completely! 🚮`,

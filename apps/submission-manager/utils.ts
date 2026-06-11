@@ -1,30 +1,124 @@
-import type { MustangClient } from "@easyshell/mustang/client"
+import { mkdir, readFile, writeFile } from "fs/promises"
+import { execa } from "execa"
+import { z } from "zod"
 
-/**
- * Run a submission via the mustang service and return results.
- * The service handles file I/O, container lifecycle, and evaluation internally.
- */
+import { getProblemInfo } from "./problems"
+
+const OutputJsonSchema = z.object({
+  stdout: z.string(),
+  stderr: z.string(),
+  exit_code: z.number(),
+  fs: z.record(z.string()),
+})
+
 export async function runSubmissionAndGetOutput({
-  client,
   problemSlug,
   testcaseId,
   input,
+  suffix,
+  workingDir,
+  dockerRegistry,
 }: {
-  client: MustangClient
   problemSlug: string
   testcaseId: number
   input: string
+  suffix: string
+  workingDir: string
+  dockerRegistry: string | undefined
 }) {
-  const result = await client.runSubmission({
-    problemSlug,
-    testcaseId,
-    input,
-  })
+  const problem = await getProblemInfo(problemSlug)
+
+  await mkdir(`${workingDir}/inputs`, { recursive: true })
+  await mkdir(`${workingDir}/outputs`, { recursive: true })
+
+  const containerName = `easyshell-${problemSlug}-${testcaseId}-${suffix}`
+
+  const inputFileName = `${containerName}.sh`
+  const outputFileName = `${containerName}.json`
+
+  const inputFilePath = `${workingDir}/inputs/${containerName}.sh`
+  const outputFilePath = `${workingDir}/outputs/${containerName}.json`
+
+  const image = `easyshell-${problemSlug}-${testcaseId}`
+
+  await writeFile(inputFilePath, input)
+  await writeFile(outputFilePath, "")
+
+  const startedAt = new Date()
+
+  const inputFilePathForDocker = `${workingDir}/inputs/${inputFileName}`
+  const outputFilePathForDocker = `${workingDir}/outputs/${outputFileName}`
+  const pullPolicy = !dockerRegistry ? undefined : "--pull=always"
+
+  const imageTag = !dockerRegistry
+    ? image
+    : `${dockerRegistry}/easyshell/${image}`
+
+  await execa("docker", [
+    "run",
+    "-q",
+    "--rm",
+    "--name",
+    containerName,
+    "-v",
+    `${inputFilePathForDocker}:/input.sh`,
+    "-v",
+    `${outputFilePathForDocker}:/output.json`,
+    "-m",
+    "10m",
+    "--cpus",
+    "0.1",
+    ...[pullPolicy].filter((x) => x !== undefined),
+    imageTag,
+    "-mode",
+    "submission",
+  ])
+  const finishedAt = new Date()
+
+  const output = OutputJsonSchema.parse(
+    JSON.parse(await readFile(outputFilePath, { encoding: "utf-8" })),
+  )
+
+  const fs = output.fs
+
+  const testcase = problem.testcases.find((t) => t.id === testcaseId)
+  if (!testcase) throw new Error("Testcase not found")
+
+  let passed = true
+  if (passed && testcase.expected_stdout !== undefined)
+    passed =
+      output.stdout === testcase.expected_stdout ||
+      output.stdout + "\n" === testcase.expected_stdout ||
+      output.stdout === testcase.expected_stdout + "\n"
+
+  if (passed && testcase.expected_stderr !== undefined)
+    passed = passed && output.stderr === testcase.expected_stderr
+
+  if (passed && testcase.expected_exit_code !== undefined)
+    passed = output.exit_code === testcase.expected_exit_code
+
+  if (passed && testcase.expected_fs !== undefined) {
+    if (fs === undefined) {
+      passed = false
+    } else {
+      if (Object.keys(fs).length !== Object.keys(testcase.expected_fs).length) {
+        passed = false
+      } else {
+        for (const [path, expected] of Object.entries(testcase.expected_fs)) {
+          const actual = fs[path]
+          if (actual !== expected) {
+            passed = false
+            break
+          }
+        }
+      }
+    }
+  }
 
   return {
-    startedAt: new Date(result.started_at),
-    finishedAt: new Date(result.finished_at),
-    output: result.output,
-    passed: result.passed,
+    startedAt,
+    finishedAt,
+    output,
+    passed,
   }
 }

@@ -1,4 +1,4 @@
-import type { FsType, ProblemConfigInput } from "@easyshell/problems/schema"
+import type { FsType, ProblemConfig } from "@easyshell/problems/schema"
 import { PROBLEMS_DIR, getFs } from "@easyshell/utils/build"
 
 const SLUG = "nuke-all-matches"
@@ -25,9 +25,8 @@ async function testcaseConfig({
   }
 }
 
-const config: ProblemConfigInput = {
+const config: ProblemConfig = {
   id: 9,
-  runtime: "container",
   slug: SLUG,
   title: "Nuke All Matches",
   description: `Some files are just junk, and they’re everywhere! Find them all and wipe them out. 💥`,

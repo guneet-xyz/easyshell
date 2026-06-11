@@ -1,4 +1,4 @@
-import type { ProblemConfigInput, StandardProblemConfig } from "@easyshell/problems/schema"
+import type { ProblemConfig } from "@easyshell/problems/schema"
 import { testcaseDir } from "@easyshell/utils/build"
 
 import { execa } from "execa"
@@ -11,7 +11,7 @@ async function testcaseConfig({
 }: {
   id: number
   isPublic: boolean
-}): Promise<StandardProblemConfig["testcases"][number]> {
+}): Promise<ProblemConfig["testcases"][number]> {
   const testcase_dir = testcaseDir(SLUG, id)
   const expected_output = (
     await execa("sh", ["-c", `find . -path '*/.*' | LC_ALL=C sort`], {
@@ -21,9 +21,8 @@ async function testcaseConfig({
   return { id: id, public: isPublic, expected_stdout: expected_output }
 }
 
-const config: ProblemConfigInput = {
+const config: ProblemConfig = {
   id: 23,
-  runtime: "container",
   slug: SLUG,
   title: "Show Hidden Files",
   description: `Reveal all the sneaky hidden files and folders in your current directory.`,

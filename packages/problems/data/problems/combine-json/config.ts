@@ -1,4 +1,4 @@
-import type { ProblemConfigInput, StandardProblemConfig } from "@easyshell/problems/schema"
+import type { ProblemConfig } from "@easyshell/problems/schema"
 import { getFs, testcaseDir } from "@easyshell/utils/build"
 
 import { execa } from "execa"
@@ -11,7 +11,7 @@ async function testcaseConfig({
 }: {
   id: number
   isPublic: boolean
-}): Promise<StandardProblemConfig["testcases"][number]> {
+}): Promise<ProblemConfig["testcases"][number]> {
   const testcase_dir = testcaseDir(SLUG, id)
   const { stdout: output } = await execa(
     "bash",
@@ -29,9 +29,8 @@ async function testcaseConfig({
   }
 }
 
-const config: ProblemConfigInput = {
+const config: ProblemConfig = {
   id: 17,
-  runtime: "container",
   slug: SLUG,
   title: "Combine multiple JSON files",
   description: `Combine a pie of product JSONs.`,

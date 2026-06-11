@@ -1,4 +1,4 @@
-import type { ProblemConfigInput, StandardProblemConfig } from "@easyshell/problems/schema"
+import type { ProblemConfig } from "@easyshell/problems/schema"
 import { getFs, testcaseDir } from "@easyshell/utils/build"
 
 const SLUG = "count-files"
@@ -9,7 +9,7 @@ async function testcaseConfig({
 }: {
   id: number
   isPublic: boolean
-}): Promise<StandardProblemConfig["testcases"][number]> {
+}): Promise<ProblemConfig["testcases"][number]> {
   const testcase_dir = testcaseDir(SLUG, id)
   const files = Object.keys(await getFs(testcase_dir)).length
 
@@ -20,9 +20,8 @@ async function testcaseConfig({
   }
 }
 
-const config: ProblemConfigInput = {
+const config: ProblemConfig = {
   id: 19,
-  runtime: "container",
   slug: SLUG,
   title: "Count Files",
   description: `Count every file (including hidden ones) in the current directory and below.`,

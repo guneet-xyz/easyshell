@@ -1,4 +1,4 @@
-import type { ProblemConfigInput } from "@easyshell/problems/schema"
+import type { ProblemConfig } from "@easyshell/problems/schema"
 import { PROBLEMS_DIR } from "@easyshell/utils/build"
 
 import { readFile } from "fs/promises"
@@ -21,9 +21,8 @@ async function testcaseConfig({
   }
 }
 
-const config: ProblemConfigInput = {
+const config: ProblemConfig = {
   id: 2,
-  runtime: "container",
   slug: SLUG,
   title: "Read a File",
   description: `Bring the contents of any file right into your terminal view. No GUIs allowed! 🖥️`,

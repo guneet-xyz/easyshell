@@ -147,9 +147,7 @@ Also see [Next.js Scripts](apps/website/README.md#scripts), [Queue Processor Scr
 - [`problems:new`](#problemsnew)
 - [`problems:lint`](#problemslint)
 - [`problems:build`](#problemsbuild)
-- [`problems:build:force`](#problemsbuildforce)
 - [`problems:build-pkg`](#problemsbuild-pkg)
-- [`compose:up`](#composeup)
 
 #### `lint:tsc`
 
@@ -196,15 +194,14 @@ Might require the following environment variables.
 
 #### `problems:build`
 
-Builds all problem Docker images locally. Three phases:
+Build (and push) the problem images.
 
-1. **Generate** fresh build contexts under `$WORKING_DIR/build-output/`.
-2. **Sync** into `$WORKING_DIR/build-cache/` with `rsync -ac --delete`, preserving mtimes on unchanged files.
-3. **Build** every image with `docker build`, in parallel up to `PARALLEL_LIMIT` (default 8).
+Might require the following environment variables.
 
-Docker's own layer cache makes no-op runs take ~5s. Use `pnpm problems:build:force` to wipe the cache and rebuild from scratch.
-
-By default, build artifacts live under `~/.cache/easyshell/{build-output,build-cache}`. Set `WORKING_DIR` to override.
+- `APP` - This is required and should be set to `script`. Already set in [package.json](package.json).
+- `PROJECT_ROOT` - required if the script is not run from within the git repository.
+- `DOCKER_REGISTRY` - required if the images need to be pushed to a registry.
+- `WORKING_DIR` - optional, defaults to `/tmp/easyshell`.
 
 #### `problems:cache:website`
 
@@ -217,19 +214,6 @@ Calls [`problems:cache`](./apps/submission-manager/README.md#problemscache) in [
 #### `problems:cache`
 
 Calls both [`problems:cache:website`](#problemscachewebsite) and [`problems:cache:submission-manager`](#problemscachesubmission-manager).
-
-#### `compose:up`
-
-Brings the full stack up locally via Docker Compose:
-
-1. Stops anything currently running.
-2. Starts Postgres and waits for it to be healthy.
-3. Runs Drizzle migrations to completion.
-4. Starts `website`, `mustang`, `submission-manager`, and `cron`.
-
-Use `pnpm compose:logs` to tail logs from all services in follow mode, `pnpm compose:down` to stop the stack (data preserved), or `pnpm compose:clean -- --yes` to also wipe the Postgres volume.
-
-Secrets are loaded via `infisical run --env=dev` (override with `INFISICAL_ENV`). You must have the Infisical CLI installed and be logged in (`infisical login`) — same as `pnpm docker:up`.
 
 ### Problems
 

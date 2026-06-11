@@ -1,7 +1,6 @@
 FROM node:22-alpine AS build
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-ENV CI=true
 RUN corepack enable
 RUN apk add --no-cache bash jq
 
@@ -11,7 +10,7 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm fetch
 
 COPY . .
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --offline --frozen-lockfile
 
 WORKDIR /src/apps/submission-manager
 
@@ -20,6 +19,7 @@ RUN pnpm run cache
 RUN pnpm exec esbuild index.ts --bundle --platform=node --outfile=submission-manager.cjs
 
 FROM node:22-alpine
+RUN apk add --no-cache docker
 
 WORKDIR /app
 

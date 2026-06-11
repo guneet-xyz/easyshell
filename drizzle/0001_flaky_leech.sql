@@ -1,1 +1,0 @@
-ALTER TABLE "easyshell_terminal_session" ADD COLUMN "container_name" varchar(255);

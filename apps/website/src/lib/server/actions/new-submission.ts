@@ -1,16 +1,10 @@
 "use server"
 
 import { submissions, submissionTestcaseQueue } from "@easyshell/db/schema"
-import {
-  isLiveEnvironmentProblem,
-  isStandardProblem,
-} from "@easyshell/problems/schema"
 
 import { db } from "@/db"
 import { auth } from "@/lib/server/auth"
 import { getProblemInfo, getProblemSlugFromId } from "@/lib/server/problems"
-
-const SENTINEL_TESTCASE_ID = 1
 
 export async function newSubmission({
   problemId,
@@ -23,9 +17,7 @@ export async function newSubmission({
   if (!user) return null
 
   const problemSlug = await getProblemSlugFromId(problemId)
-  const problem = await getProblemInfo(problemSlug)
 
-  // Create the submission record
   const submissionId = (
     await db
       .insert(submissions)
@@ -41,26 +33,14 @@ export async function newSubmission({
     throw new Error("Failed to create submission")
   }
 
-  if (isLiveEnvironmentProblem(problem)) {
-    // Live-environment: single queue entry with sentinel testcaseId=1.
-    // The submission-manager will start a fresh k3s container, run the
-    // input commands, execute check.sh, and store the result.
+  const problem = await getProblemInfo(problemSlug)
+  // TODO: parallelize this
+  for (const testcase of problem.testcases) {
     await db.insert(submissionTestcaseQueue).values({
       submissionId: submissionId,
-      testcaseId: SENTINEL_TESTCASE_ID,
+      testcaseId: testcase.id,
       status: "pending",
     })
-  } else if (isStandardProblem(problem)) {
-    // Standard: one queue entry per testcase
-    for (const testcase of problem.testcases) {
-      await db.insert(submissionTestcaseQueue).values({
-        submissionId: submissionId,
-        testcaseId: testcase.id,
-        status: "pending",
-      })
-    }
-  } else {
-    throw new Error("Unknown problem type")
   }
 
   return {

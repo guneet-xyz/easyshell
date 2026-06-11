@@ -1,12 +1,7 @@
-import { Suspense } from "react"
-
-import { isLiveEnvironmentProblem } from "@easyshell/problems/schema"
-
 import { auth } from "@/lib/server/auth"
-import { getProblemInfo, getPublicTestcaseInfo } from "@/lib/server/problems"
+import { getPublicTestcaseInfo } from "@/lib/server/problems"
 import { getUserSubmissions } from "@/lib/server/queries"
 
-import { LiveEnvironmentTerminal } from "./live-environment/terminal"
 import { LoginToProceed } from "./login-to-proceed"
 import { Problem } from "./problem"
 import { Submissions } from "./submissions"
@@ -22,60 +17,9 @@ export async function MobileView({
 }) {
   const session = await auth()
   const user = session?.user
-  const problemInfo = await getProblemInfo(problemSlug)
-  const isLiveEnv = isLiveEnvironmentProblem(problemInfo)
 
-  if (isLiveEnv) {
-    const submissions = user
-      ? await getUserSubmissions({ problemId, userId: user.id })
-      : null
-
-    return (
-      <div className="h-full p-2">
-        <ProblemPageTabs
-          tabs={[
-            {
-              title: "Problem",
-              value: "problem",
-              content: <Problem slug={problemSlug} />,
-            },
-            {
-              title: "Terminal",
-              value: "terminal",
-              content: user ? (
-                <Suspense fallback={<div>Loading</div>}>
-                  <LiveEnvironmentTerminal
-                    problemId={problemId}
-                    problemSlug={problemSlug}
-                  />
-                </Suspense>
-              ) : (
-                <LoginToProceed />
-              ),
-            },
-            {
-              title: "Submissions",
-              value: "submissions",
-              content: submissions ? (
-                <Submissions
-                  problemId={problemId}
-                  problemSlug={problemSlug}
-                  pastSubmissions={submissions}
-                />
-              ) : (
-                <LoginToProceed />
-              ),
-            },
-          ]}
-          defaultValue="problem"
-        />
-      </div>
-    )
-  }
-
-  // Standard problem view
   const testcases = await getPublicTestcaseInfo(problemSlug)
-  const testcaseIds = testcases.map((testcase: { id: number }) => testcase.id)
+  const testcaseIds = testcases.map((testcase) => testcase.id)
   const submissions = user
     ? await getUserSubmissions({ problemId, userId: user.id })
     : null

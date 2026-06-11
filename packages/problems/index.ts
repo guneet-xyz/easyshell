@@ -3,15 +3,11 @@
 // TODO: remove unused functions
 // =====================================================
 import { readdir, readFile, stat } from "fs/promises"
+import { z } from "zod"
 
 import { PROBLEMS_DIR } from "@easyshell/utils/build"
 
-import {
-  isStandardProblem,
-  ProblemConfigSchema,
-  type ProblemConfig,
-  type ProblemInfo,
-} from "./schema"
+import { ProblemConfigSchema } from "./schema"
 
 const PROBLEMS_IMPORT_DIR = "./data/problems"
 
@@ -40,52 +36,15 @@ async function _problemConfig(problem: string) {
   return config
 }
 
-/**
- * Get the full problem config including build-only fields (tests, daemonSetup).
- * Only use this in build/test scripts, not at runtime.
- */
-export async function getProblemConfig(
-  problem: string,
-): Promise<ProblemConfig> {
-  return await _problemConfig(problem)
-}
+const ProblemInfoSchema = z.object({
+  ...ProblemConfigSchema.shape,
+})
 
-export async function getProblemInfo(problem: string): Promise<ProblemInfo> {
+export async function getProblemInfo(
+  problem: string,
+): Promise<z.infer<typeof ProblemInfoSchema>> {
   const config = await _problemConfig(problem)
-  // Strip build-only fields (tests, daemonSetup) to produce ProblemInfo
-  if (config.type === "live-environment") {
-    return {
-      type: config.type,
-      id: config.id,
-      slug: config.slug,
-      title: config.title,
-      description: config.description,
-      difficulty: config.difficulty,
-      runtime: config.runtime,
-      tags: config.tags,
-      check: config.check,
-      warmInstances: config.warmInstances,
-    }
-  }
-  return {
-    type: config.type,
-    id: config.id,
-    slug: config.slug,
-    title: config.title,
-    description: config.description,
-    difficulty: config.difficulty,
-    runtime: config.runtime,
-    tags: config.tags,
-    testcases: config.testcases.map((tc) => ({
-      id: tc.id,
-      public: tc.public,
-      expected_stdout: tc.expected_stdout,
-      expected_stderr: tc.expected_stderr,
-      expected_exit_code: tc.expected_exit_code,
-      expected_fs: tc.expected_fs,
-      warmInstances: tc.warmInstances,
-    })),
-  }
+  return ProblemInfoSchema.parse({ ...config })
 }
 
 export async function getProblems() {
@@ -117,9 +76,6 @@ export async function getPublicProblemInfo(slug: string) {
 
 export async function getPublicTestcaseInfo(slug: string) {
   const info = await getProblemInfo(slug)
-  if (!isStandardProblem(info)) {
-    return []
-  }
   return info.testcases
     .filter((tc) => tc.public)
     .map((tc) => ({

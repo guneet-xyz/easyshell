@@ -1,91 +1,25 @@
 networks:
   easyshell:
     external: true
-volumes:
-  easyshell-pgdata:
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: easyshell-dev-postgres
-    networks:
-      - easyshell
-    environment:
-      POSTGRES_USER: easyshell
-      POSTGRES_PASSWORD: easyshell
-      POSTGRES_DB: easyshell
-    volumes:
-      - easyshell-pgdata:/var/lib/postgresql/data
-    ports:
-      - 5432:5432
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U easyshell -d easyshell"]
-      interval: 2s
-      timeout: 3s
-      retries: 30
-  migrate:
-    build:
-      context: .
-      dockerfile: ./apps/migrate/Dockerfile
-    container_name: easyshell-dev-migrate
-    networks:
-      - easyshell
-    environment:
-      DATABASE_URL: ${DATABASE_URL:-postgres://easyshell:easyshell@postgres:5432/easyshell}
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: "no"
   submission-manager:
-    user: 1000:1000
     build:
       context: .
       dockerfile: ./apps/submission-manager/Dockerfile
     container_name: easyshell-dev-submission-manager
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     volumes:
       - /tmp/easyshell:/tmp/easyshell
+      - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - easyshell
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgres://easyshell:easyshell@postgres:5432/easyshell}
-      SESSION_MANAGER_URL: http://host.docker.internal:4000
-      SESSION_MANAGER_TOKEN: token
-    depends_on:
-      postgres:
-        condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
-      mustang:
-        condition: service_started
-    restart: unless-stopped
-  cron:
+      DATABASE_URL: ${DATABASE_URL}
+  session-manager:
     build:
-      context: .
-      dockerfile: ./apps/cron/Dockerfile
-    container_name: easyshell-dev-cron
-    networks:
-      - easyshell
+      context: ./apps/session-manager
+    container_name: easyshell-dev-session-manager
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgres://easyshell:easyshell@postgres:5432/easyshell}
-      MUSTANG_URL: http://mustang:4000
-      MUSTANG_TOKEN: token
-    depends_on:
-      postgres:
-        condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
-      mustang:
-        condition: service_started
-    restart: unless-stopped
-  mustang:
-    build:
-      context: .
-      dockerfile: ./apps/mustang/Dockerfile
-    container_name: easyshell-dev-mustang
-    environment:
-      DATABASE_URL: ${DATABASE_URL:-postgres://easyshell:easyshell@postgres:5432/easyshell}
-      MUSTANG_TOKEN: token
+      TOKEN: token
     networks:
       - easyshell
     ports:
@@ -93,12 +27,6 @@ services:
     volumes:
       - /tmp/easyshell:/tmp/easyshell
       - /var/run/docker.sock:/var/run/docker.sock
-    depends_on:
-      postgres:
-        condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
-    restart: unless-stopped
   website:
     build:
       context: .
@@ -108,9 +36,8 @@ services:
         POSTHOG_HOST: ${POSTHOG_HOST}
     container_name: easyshell-dev-website
     environment:
-      POSTHOG_HOST: ${POSTHOG_HOST}
       AUTH_TRUST_HOST: true
-      DATABASE_URL: ${DATABASE_URL:-postgres://easyshell:easyshell@postgres:5432/easyshell}
+      DATABASE_URL: ${DATABASE_URL}
       NEXTAUTH_SECRET: secret
       NEXTAUTH_URL: http://localhost:3000
       DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
@@ -119,12 +46,8 @@ services:
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-      SESSION_MANAGER_URL: http://mustang:4000
+      SESSION_MANAGER_URL: http://session-manager:4000
       SESSION_MANAGER_TOKEN: token
-      SMTP_HOST: ${SMTP_HOST}
-      SMTP_USERNAME: ${SMTP_USERNAME}
-      SMTP_PASSWORD: ${SMTP_PASSWORD}
-      SMTP_MAIL_FROM: ${SMTP_MAIL_FROM}
     networks:
       - easyshell
     ports:
@@ -134,11 +57,3 @@ services:
       interval: 1s
       timeout: 500ms
       retries: 3
-    depends_on:
-      postgres:
-        condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
-      mustang:
-        condition: service_started
-    restart: unless-stopped

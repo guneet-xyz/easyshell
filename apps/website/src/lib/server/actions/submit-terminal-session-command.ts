@@ -6,7 +6,11 @@ import { terminalSessions } from "@easyshell/db/schema"
 
 import { db } from "@/db"
 import { auth } from "@/lib/server/auth"
-import { submitCommand } from "@/lib/server/mustang"
+import { getProblemSlugFromId } from "@/lib/server/problems"
+import {
+  insertTerminalSessionLog,
+  sessionManagerExec,
+} from "@/lib/server/session-manager"
 
 import type { getTerminalSession } from "./get-terminal-session"
 
@@ -27,14 +31,7 @@ export async function submitTerminalSessionCommand({
   | ({
       status: "error"
     } & (
-      | {
-          type:
-            | "took_too_long"
-            | "session_not_running"
-            | "session_error"
-            | "critical_server_error"
-          message: string
-        }
+      | Awaited<ReturnType<typeof sessionManagerExec>>
       | {
           type: "not-authenticated"
         }
@@ -43,7 +40,6 @@ export async function submitTerminalSessionCommand({
   const user = (await auth())?.user
   if (!user) return { status: "error", type: "not-authenticated" }
 
-  // Ownership check: verify the session belongs to this user
   const terminalSession = await db
     .select()
     .from(terminalSessions)
@@ -59,32 +55,34 @@ export async function submitTerminalSessionCommand({
     throw new Error("Session not found")
   }
 
-  const containerName = terminalSession[0].containerName
-  if (!containerName) {
-    throw new Error("Session has no container name (legacy session)")
-  }
+  const problemSlug = await getProblemSlugFromId(terminalSession[0].problemId)
+
+  const container_name = `easyshell-${problemSlug}-${terminalSession[0].testcaseId}-session-${sessionId}`
 
   const startedAt = new Date()
-  const result = await submitCommand({
-    sessionId,
-    containerName,
+  const execResponse = await sessionManagerExec({
+    containerName: container_name,
     command,
   })
   const finishedAt = new Date()
 
-  if (result.status === "error") {
-    return result
+  if (execResponse.status === "error") {
+    return execResponse
   }
+
+  const { stdout, stderr } = execResponse
+
+  const logId = await insertTerminalSessionLog({
+    sessionId,
+    stdin: command,
+    stdout,
+    stderr,
+    startedAt,
+    finishedAt,
+  })
 
   return {
     status: "success",
-    log: {
-      id: result.logId,
-      stdin: command,
-      stdout: result.stdout,
-      stderr: result.stderr,
-      startedAt,
-      finishedAt,
-    },
+    log: { id: logId, stdin: command, stdout, stderr, startedAt, finishedAt },
   }
 }

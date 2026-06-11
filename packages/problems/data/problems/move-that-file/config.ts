@@ -1,4 +1,4 @@
-import type { FsType, ProblemConfigInput } from "@easyshell/problems/schema"
+import type { FsType, ProblemConfig } from "@easyshell/problems/schema"
 import { PROBLEMS_DIR, getFs } from "@easyshell/utils/build"
 
 const SLUG = "move-that-file"
@@ -27,9 +27,8 @@ async function testcaseConfig({
   }
 }
 
-const config: ProblemConfigInput = {
+const config: ProblemConfig = {
   id: 4,
-  runtime: "container",
   slug: "move-that-file",
   title: "Move That File",
   description: `Move a file from one location to another—because sometimes, things just need to be somewhere else. 🚀`,

@@ -60,14 +60,7 @@ function Problem({
       </div>
       <div className="flex grow flex-col overflow-hidden">
         <div className="flex items-center justify-between">
-          <div className="flex min-w-0 flex-1 items-center gap-2 truncate">
-            {info.title}
-            {info.type === "live-environment" && (
-              <Badge className="bg-violet-100 px-1.5 py-0 text-[10px] text-violet-700 dark:bg-violet-900 dark:text-violet-300">
-                CKAD
-              </Badge>
-            )}
-          </div>
+          <div className="min-w-0 flex-1 truncate">{info.title}</div>
           <ProblemDifficulty difficulty={info.difficulty} />
         </div>
         {showTags && (

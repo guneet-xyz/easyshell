@@ -8,27 +8,6 @@
       "when": 1771140999218,
       "tag": "0000_init",
       "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1775308694112,
-      "tag": "0001_flaky_leech",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1775656144635,
-      "tag": "0002_dear_vision",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1779539135807,
-      "tag": "0003_awesome_johnny_blaze",
-      "breakpoints": true
     }
   ]
 }

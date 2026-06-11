@@ -1,4 +1,4 @@
-import type { FsType, ProblemConfigInput, StandardProblemConfig } from "@easyshell/problems/schema"
+import type { FsType, ProblemConfig } from "@easyshell/problems/schema"
 import { getFs, testcaseDir } from "@easyshell/utils/build"
 
 const SLUG = "mdx-no-more"
@@ -9,7 +9,7 @@ async function testcaseConfig({
 }: {
   id: number
   isPublic: boolean
-}): Promise<StandardProblemConfig["testcases"][number]> {
+}): Promise<ProblemConfig["testcases"][number]> {
   const newFs: FsType = {}
   const fs = await getFs(testcaseDir(SLUG, id))
   for (const file in fs) {
@@ -29,9 +29,8 @@ async function testcaseConfig({
   }
 }
 
-const config: ProblemConfigInput = {
+const config: ProblemConfig = {
   id: 14,
-  runtime: "container",
   slug: SLUG,
   title: "Bye Bye MDX, Hello MD!",
   description: `Rename all .mdx files to .md because your plugin can't handle the fancy stuff.`,

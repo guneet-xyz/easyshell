@@ -124,7 +124,22 @@ async function loop() {
       await sleep(1000)
       continue
     }
-    processQueueItem(item)
+    processQueueItem(item).catch(async (err: unknown) => {
+      console.error("processQueueItem failed; requeueing item", {
+        submissionId: item.submissionId,
+        testcaseId: item.testcaseId,
+        error: err instanceof Error ? err.message : String(err),
+      })
+      await db
+        .update(submissionTestcaseQueue)
+        .set({ status: "pending" })
+        .where(
+          and(
+            eq(submissionTestcaseQueue.submissionId, item.submissionId),
+            eq(submissionTestcaseQueue.testcaseId, item.testcaseId),
+          ),
+        )
+    })
   }
 }
 

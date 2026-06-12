@@ -5,8 +5,8 @@ import { z } from "zod"
 export const env = createEnv({
   server: {
     DATABASE_URL: z.string(),
-    DOCKER_REGISTRY: z.string().optional(),
-    WORKING_DIR: z.string().default("/tmp/easyshell"),
+    SESSION_MANAGER_URL: z.string().url(),
+    SESSION_MANAGER_TOKEN: z.string().min(1),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,

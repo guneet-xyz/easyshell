@@ -6,11 +6,8 @@ RUN apk add --no-cache bash jq
 
 WORKDIR /src
 
-COPY pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm fetch
-
 COPY . .
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store CI=true pnpm install --offline --frozen-lockfile
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store CI=true pnpm install --frozen-lockfile
 
 WORKDIR /src/apps/website
 

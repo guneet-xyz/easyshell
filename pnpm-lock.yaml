@@ -86,6 +86,9 @@ importers:
       '@easyshell/problems':
         specifier: workspace:*
         version: link:../../packages/problems
+      '@easyshell/session-manager-client':
+        specifier: workspace:*
+        version: link:../../packages/session-manager-client
       '@mdx-js/loader':
         specifier: ^3.1.0
         version: 3.1.0(acorn@8.15.0)

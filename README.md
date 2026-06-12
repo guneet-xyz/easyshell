@@ -30,11 +30,11 @@ There are a few microservices that work together to make the platform work.
 
 - #### Session Manager
 
-  Manages the terminal sessions. See [Session Manager](apps/session-manager/README.md) for more information.
+  Manages containers for both interactive terminal sessions (for the website) and submission grading (for the submission manager). See [Session Manager](apps/session-manager/README.md) for more information.
 
 - #### Queue Processor
 
-  Processes the submissions. See [Queue Processor](apps/submission-manager/README.md) for more information.
+  Processes the submissions. It no longer runs containers itself; it delegates execution to the Session Manager. See [Queue Processor](apps/submission-manager/README.md) for more information.
 
 - #### Entrypoint
 
@@ -67,6 +67,7 @@ The following environment variables might be required
 - [`DOCKER_REGISTRY`](#docker_registry)
 - [`DATABASE_URL`](#database_url)
 - [`SESSION_MANAGER_URL`](#session_manager_url)
+- [`SESSION_MANAGER_TOKEN`](#session_manager_token)
 - [`NEXTAUTH_URL`](#nextauth_url)
 - [`NEXTAUTH_SECRET`](#nextauth_secret)
 - [`DISCORD_CLIENT_ID`](#discord_client_id)
@@ -109,11 +110,11 @@ Token for the drizzle proxy.
 
 #### `SESSION_MANAGER_URL`
 
-URL of the session manager. For cloudflare deployment, this cannot be a fixed IP address.
+URL of the session manager. Used by both the website (for interactive terminal sessions) and the submission-manager (for delegating submission grading). For cloudflare deployment, this cannot be a fixed IP address.
 
 #### `SESSION_MANAGER_TOKEN`
 
-Token for the session manager. This is required for the website to communicate with the session manager.
+Bearer token for the session manager. Required for both the website and the submission-manager to authenticate with the session manager.
 
 #### `NEXTAUTH_URL`
 

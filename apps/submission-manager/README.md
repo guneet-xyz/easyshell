@@ -4,6 +4,8 @@
 
 This is a typescript application that processes the submissions. It does not communicate directly with the [website](../website/README.md), but instead checks the submission queue in the database.
 
+It does not run containers itself; instead it delegates execution to the Session Manager via the `/run-submission` API.
+
 Also see [entrypoint](../entrypoint/README.md) for more information about the problem containers themselves.
 
 Running the submission-manager requires the following environment variables. See [Environment Variables](../../README.md#environment-variables) for more information.
@@ -11,9 +13,10 @@ Running the submission-manager requires the following environment variables. See
 - `APP` - It should be set to `submission-manager`.
 - `DRIZZLE_PROXY_URL`
 - `DRIZZLE_PROXY_TOKEN`
-- `DOCKER_REGISTRY` - If not provided, the local images will be used.
+- `DATABASE_URL` - Database connection string.
+- `SESSION_MANAGER_URL` - URL of the Session Manager service (e.g. `http://session-manager:4000`).
+- `SESSION_MANAGER_TOKEN` - Bearer token for authenticating with Session Manager.
 - `PROJECT_ROOT` - The root directory of the project. It is required if you are running the submission-manager outside of the git context.
-- `WORKING_DIR` - If not provided, `/tmp/easyshell` is used.
 
 ## Scripts
 

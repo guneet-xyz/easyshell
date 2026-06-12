@@ -1,6 +1,13 @@
-name: Test Problems
+name: test problems
 on:
   workflow_dispatch:
+    inputs:
+      problem:
+        description: "Problem to test"
+        required: true
+        default: "all"
+        type: string
+  workflow_call:
     inputs:
       problem:
         description: "Problem to test"
@@ -12,14 +19,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        name: checkout
+
       - uses: pnpm/action-setup@v5
+        name: setup pnpm
+
       - uses: actions/setup-node@v4
+        name: setup node
         with:
           node-version: 22.14.0
           cache: "pnpm"
+
       - run: pnpm install --frozen-lockfile
-        name: Install dependencies
+        name: install dependencies
+
       - run: pnpm run build ${{ inputs.problem }}
+        name: build
         working-directory: ./packages/problems
+
       - run: pnpm run test ${{ inputs.problem }}
+        name: test
         working-directory: ./packages/problems

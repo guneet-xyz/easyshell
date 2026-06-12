@@ -1,4 +1,4 @@
-name: Test TypeScript Files
+name: test tsc
 on:
   push:
     branches:
@@ -24,23 +24,36 @@ on:
       - "**/*.ejs"
       - "**/*.mjs"
       - "**/*.json"
+  workflow_call:
 jobs:
   test-tsc:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        name: checkout
+
       - uses: pnpm/action-setup@v5
+        name: setup pnpm
+
       - uses: actions/setup-node@v4
+        name: setup node
         with:
           node-version: 22.14.0
           cache: "pnpm"
+
       - run: pnpm install --frozen-lockfile
-        name: Install dependencies
+        name: install dependencies
+
       - run: pnpm run cache:website
+        name: cache website
         working-directory: ./packages/problems
+
       - run: pnpm run cache:submission-manager
+        name: cache submission-manager
         working-directory: ./packages/problems
+
       - run: pnpm run lint:tsc
-        name: Check TypeScript types
+        name: check types
+
       - run: pnpm run lint:next
-        name: Lint Next.js files
+        name: lint next

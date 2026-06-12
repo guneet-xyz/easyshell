@@ -4,14 +4,19 @@ on:
     paths:
       - ".github/workflows/test-entrypoint.yml"
       - "apps/entrypoint/**"
+  workflow_call:
 jobs:
   test-entrypoint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        name: checkout
+
       - uses: actions/setup-go@v5
+        name: setup go
         with:
           go-version: 1.23.6
+
       - name: check linting
         uses: golangci/golangci-lint-action@v6
         with:

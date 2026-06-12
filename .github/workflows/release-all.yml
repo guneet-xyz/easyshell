@@ -1,0 +1,15 @@
+name: release all
+on:
+  workflow_dispatch:
+jobs:
+  release-website:
+    uses: ./.github/workflows/release-website.yml
+    secrets: inherit
+
+  release-session-manager:
+    uses: ./.github/workflows/release-session-manager.yml
+    secrets: inherit
+
+  release-submission-manager:
+    uses: ./.github/workflows/release-submission-manager.yml
+    secrets: inherit

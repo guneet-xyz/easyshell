@@ -14,8 +14,6 @@ import { runSubmissionAndGetOutput } from "./utils"
 
 const db = createDb(env.DATABASE_URL)
 
-const WORKING_DIR = `${env.WORKING_DIR}/submission-manager`
-
 async function getQueueItem() {
   const item = db.$with("item").as(
     db
@@ -90,8 +88,6 @@ async function processQueueItem(
       testcaseId: item.testcaseId,
       input: item.input,
       suffix: `submission-${item.submissionId}`,
-      workingDir: WORKING_DIR,
-      dockerRegistry: env.DOCKER_REGISTRY,
     })
 
   await db.insert(submissionTestcases).values({

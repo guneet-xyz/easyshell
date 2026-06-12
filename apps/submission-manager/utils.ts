@@ -1,14 +1,11 @@
-import { mkdir, readFile, writeFile } from "fs/promises"
-import { execa } from "execa"
-import { z } from "zod"
+import { createSessionManagerClient } from "@easyshell/session-manager-client"
 
+import { env } from "./env"
 import { getProblemInfo } from "./problems"
 
-const OutputJsonSchema = z.object({
-  stdout: z.string(),
-  stderr: z.string(),
-  exit_code: z.number(),
-  fs: z.record(z.string()),
+const smClient = createSessionManagerClient({
+  url: env.SESSION_MANAGER_URL,
+  token: env.SESSION_MANAGER_TOKEN,
 })
 
 export async function runSubmissionAndGetOutput({
@@ -16,68 +13,36 @@ export async function runSubmissionAndGetOutput({
   testcaseId,
   input,
   suffix,
-  workingDir,
-  dockerRegistry,
 }: {
   problemSlug: string
   testcaseId: number
   input: string
   suffix: string
-  workingDir: string
-  dockerRegistry: string | undefined
 }) {
   const problem = await getProblemInfo(problemSlug)
 
-  await mkdir(`${workingDir}/inputs`, { recursive: true })
-  await mkdir(`${workingDir}/outputs`, { recursive: true })
+  const result = await smClient.runSubmissionAndWait({
+    image: `easyshell-${problemSlug}-${testcaseId}`,
+    input,
+    metadata: {
+      submission_id: parseInt(suffix.replace("submission-", ""), 10),
+      testcase_id: testcaseId,
+      problem_slug: problemSlug,
+    },
+  })
 
-  const containerName = `easyshell-${problemSlug}-${testcaseId}-${suffix}`
+  if (result.status === "error") {
+    throw new Error(`session-manager run failed: ${result.error}`)
+  }
 
-  const inputFileName = `${containerName}.sh`
-  const outputFileName = `${containerName}.json`
-
-  const inputFilePath = `${workingDir}/inputs/${containerName}.sh`
-  const outputFilePath = `${workingDir}/outputs/${containerName}.json`
-
-  const image = `easyshell-${problemSlug}-${testcaseId}`
-
-  await writeFile(inputFilePath, input)
-  await writeFile(outputFilePath, "")
-
-  const startedAt = new Date()
-
-  const inputFilePathForDocker = `${workingDir}/inputs/${inputFileName}`
-  const outputFilePathForDocker = `${workingDir}/outputs/${outputFileName}`
-  const pullPolicy = !dockerRegistry ? undefined : "--pull=always"
-
-  const imageTag = !dockerRegistry
-    ? image
-    : `${dockerRegistry}/easyshell/${image}`
-
-  await execa("docker", [
-    "run",
-    "-q",
-    "--rm",
-    "--name",
-    containerName,
-    "-v",
-    `${inputFilePathForDocker}:/input.sh`,
-    "-v",
-    `${outputFilePathForDocker}:/output.json`,
-    "-m",
-    "10m",
-    "--cpus",
-    "0.1",
-    ...[pullPolicy].filter((x) => x !== undefined),
-    imageTag,
-    "-mode",
-    "submission",
-  ])
-  const finishedAt = new Date()
-
-  const output = OutputJsonSchema.parse(
-    JSON.parse(await readFile(outputFilePath, { encoding: "utf-8" })),
-  )
+  const startedAt = new Date(result.started_at)
+  const finishedAt = new Date(result.finished_at)
+  const output = {
+    stdout: result.stdout,
+    stderr: result.stderr,
+    exit_code: result.exit_code,
+    fs: result.fs ?? {},
+  }
 
   const fs = output.fs
 

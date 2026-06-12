@@ -6,12 +6,14 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strconv"
 )
 
 var (
-	DockerRegistry string
-	WorkingDir     string
-	Token          string
+	DockerRegistry           string
+	WorkingDir               string
+	Token                    string
+	SubmissionMaxConcurrency int
 )
 
 func Init() {
@@ -31,6 +33,17 @@ func Init() {
 	Token = os.Getenv("TOKEN")
 	if len(Token) == 0 {
 		panic("TOKEN must be set")
+	}
+
+	submissionMaxConcurrencyStr := os.Getenv("SUBMISSION_MAX_CONCURRENCY")
+	if submissionMaxConcurrencyStr == "" {
+		SubmissionMaxConcurrency = 4
+	} else {
+		val, err := strconv.Atoi(submissionMaxConcurrencyStr)
+		if err != nil || val <= 0 {
+			panic("SUBMISSION_MAX_CONCURRENCY must be a positive integer, got: " + submissionMaxConcurrencyStr)
+		}
+		SubmissionMaxConcurrency = val
 	}
 }
 

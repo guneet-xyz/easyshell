@@ -11,3 +11,6 @@ prettier.config.js
 .github
 drizzle
 drizzle.config.ts
+!drizzle
+!drizzle/**
+!drizzle.config.ts

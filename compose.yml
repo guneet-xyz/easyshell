@@ -2,6 +2,16 @@ networks:
   easyshell:
     external: true
 services:
+  migrator:
+    build:
+      context: .
+      dockerfile: ./apps/migrator/Dockerfile
+    container_name: easyshell-dev-migrator
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    networks:
+      - easyshell
+    restart: "no"
   submission-manager:
     build:
       context: .
@@ -10,7 +20,10 @@ services:
     networks:
       - easyshell
     depends_on:
-      - session-manager
+      migrator:
+        condition: service_completed_successfully
+      session-manager:
+        condition: service_started
     environment:
       DATABASE_URL: ${DATABASE_URL}
       SESSION_MANAGER_URL: http://session-manager:4000
@@ -36,6 +49,11 @@ services:
         NEXT_PUBLIC_POSTHOG_KEY: ${NEXT_PUBLIC_POSTHOG_KEY}
         POSTHOG_HOST: ${POSTHOG_HOST}
     container_name: easyshell-dev-website
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+      session-manager:
+        condition: service_started
     environment:
       AUTH_TRUST_HOST: true
       DATABASE_URL: ${DATABASE_URL}
@@ -49,6 +67,11 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       SESSION_MANAGER_URL: http://session-manager:4000
       SESSION_MANAGER_TOKEN: token
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_MAIL_FROM: ${SMTP_MAIL_FROM}
+      POSTHOG_HOST: ${POSTHOG_HOST}
     networks:
       - easyshell
     ports:

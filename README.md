@@ -12,6 +12,7 @@
     - [Entrypoint](apps/entrypoint/README.md)
 - [Development Guide](#development-guide)
   - [Pre-Requisites](#pre-requisites)
+  - [Local Docker setup](#local-docker-setup)
   - [Environment Variables](#environment-variables)
   - [Scripts](#scripts)
   - [Problems](#problems)
@@ -56,6 +57,56 @@ In this section,
 - Node (v22.14.0) and NPM (10.9.2) (can be installed using `nvm install 22`. see [nvm](https://github.com/nvm-sh/nvm))
 - Go (1.23.6)
 - Docker
+
+### Local Docker setup
+
+The quickest way to run the application stack locally is through Docker Compose.
+
+1. Install dependencies.
+
+   ```sh
+   corepack enable
+   pnpm install
+   ```
+
+2. Create the external network used by the app and the session containers.
+
+   ```sh
+   docker network create easyshell
+   ```
+
+   If the network already exists, Docker will report that and you can continue.
+
+3. Make sure your dev secrets are available through Infisical. At minimum, the Compose stack needs `DATABASE_URL`; the website also needs the auth, SMTP and PostHog variables listed below.
+
+4. Build and run the stack.
+
+   ```sh
+   pnpm run docker:build
+   pnpm run docker:up
+   ```
+
+The Compose stack starts these services:
+
+- `migrator` - runs `drizzle-kit migrate` and exits. Both application services wait for it to finish successfully.
+- `session-manager` - serves the session and submission container API on <http://localhost:4000>.
+- `submission-manager` - consumes queued submissions from the database.
+- `website` - serves the Next.js app on <http://localhost:3000>.
+
+Run migrations without starting the full stack with:
+
+```sh
+pnpm run docker:migrate
+```
+
+For non-Docker development, run migrations directly before starting the app processes:
+
+```sh
+pnpm run db:migrate
+pnpm run dev:session-manager
+pnpm run dev:submission-manager
+pnpm run dev:website
+```
 
 ### Environment Variables
 
@@ -143,6 +194,10 @@ Also see [Next.js Scripts](apps/website/README.md#scripts), [Queue Processor Scr
 
 - [`lint:tsc`](#linttsc)
 - [`lint:next`](#lintnext)
+- [`db:migrate`](#dbmigrate)
+- [`docker:build`](#dockerbuild)
+- [`docker:migrate`](#dockermigrate)
+- [`docker:up`](#dockerup)
 - [`format:check`](#formatcheck)
 - [`format:write`](#formatwrite)
 - [`problems:new`](#problemsnew)
@@ -157,6 +212,22 @@ Lint the entire TS/JS codebase using `tsc`.
 #### `lint:next`
 
 Lint the Next.js codebase using `next lint`.
+
+#### `db:migrate`
+
+Runs the Drizzle migrations in [`drizzle`](./drizzle) against `DATABASE_URL` using Infisical's `dev` environment.
+
+#### `docker:build`
+
+Builds the Docker Compose services for local development.
+
+#### `docker:migrate`
+
+Runs the `migrator` Compose service once and removes the container after it exits. Use this when you only need to apply database migrations.
+
+#### `docker:up`
+
+Starts the local Docker Compose stack in the background. The `migrator` service runs first; `website` and `submission-manager` start only after migrations complete successfully.
 
 #### `format:check`
 

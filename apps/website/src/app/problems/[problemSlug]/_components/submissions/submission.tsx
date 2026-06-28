@@ -3,12 +3,16 @@
 import moment from "moment"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
+import { RotateCcw } from "lucide-react"
 import { PiCopySimple, PiCopySimpleDuotone } from "react-icons/pi"
 import { toast } from "sonner"
 
 import { Back } from "@/components/back"
+import { Button } from "@/components/ui/button"
 import { getSubmissionInfo } from "@/lib/server/actions/get-submission-info"
 import { getTestcaseInfo } from "@/lib/server/actions/get-testcase-info"
+import { retryAllFailedTestcases } from "@/lib/server/actions/retry-all-failed-testcases"
+import { retryFailedTestcase } from "@/lib/server/actions/retry-failed-testcase"
 import { cn, sleep } from "@/lib/utils"
 
 import { FsDiff } from "./fs-diff"
@@ -33,6 +37,44 @@ export function Submission({ submissionId }: { submissionId: number }) {
   const [info, setInfo] = useState<Awaited<
     ReturnType<typeof getSubmissionInfo>
   > | null>(null)
+  const [pollingRun, setPollingRun] = useState(0)
+
+  function refetchSubmissionInfo() {
+    setInfo(null)
+    setPollingRun((run) => run + 1)
+  }
+
+  async function handleRetryTestcase(testcaseId: number) {
+    try {
+      await retryFailedTestcase({ submissionId, testcaseId })
+      toast.success("Testcase requeued for re-run")
+      refetchSubmissionInfo()
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error("Failed to retry testcase", {
+          description: error.message,
+        })
+        return
+      }
+      toast.error("Failed to retry testcase")
+    }
+  }
+
+  async function handleRetryAllFailedTestcases() {
+    try {
+      await retryAllFailedTestcases({ submissionId })
+      toast.success("Failed testcases requeued for re-run")
+      refetchSubmissionInfo()
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error("Failed to retry testcases", {
+          description: error.message,
+        })
+        return
+      }
+      toast.error("Failed to retry testcases")
+    }
+  }
 
   useEffect(() => {
     void (async () => {
@@ -41,7 +83,11 @@ export function Submission({ submissionId }: { submissionId: number }) {
         setInfo(newInfo)
         let fetchAgain = false
         for (const testcase of newInfo.testcases) {
-          if (testcase.status === "pending" || testcase.status === "running") {
+          if (
+            testcase.status !== "finished" &&
+            testcase.status !== "failed" &&
+            testcase.status !== "cancelled"
+          ) {
             fetchAgain = true
             break
           }
@@ -50,7 +96,7 @@ export function Submission({ submissionId }: { submissionId: number }) {
         await sleep(1000)
       }
     })()
-  }, [submissionId])
+  }, [submissionId, pollingRun])
 
   if (selectedTestcaseId)
     return (
@@ -61,6 +107,10 @@ export function Submission({ submissionId }: { submissionId: number }) {
     )
 
   if (!info) return <SubmissionSkeleton />
+
+  const hasFailedTestcase = info.testcases.some(
+    (testcase) => testcase.status === "failed",
+  )
 
   return (
     <div>
@@ -93,7 +143,21 @@ export function Submission({ submissionId }: { submissionId: number }) {
           </div>
         </div>
         <div className="flex flex-col gap-2 rounded-xl border p-8 shadow dark:bg-neutral-900">
-          <div className="text-xl font-semibold">Testcases</div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="text-xl font-semibold">Testcases</div>
+            {hasFailedTestcase ? (
+              <Button
+                data-testid="retry-all-failed-btn"
+                variant="outline"
+                size="sm"
+                className="gap-2 border-orange-300 text-orange-600 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-950/30"
+                onClick={() => void handleRetryAllFailedTestcases()}
+              >
+                <RotateCcw className="h-4 w-4" />
+                Retry failed testcases
+              </Button>
+            ) : null}
+          </div>
           <div className="flex flex-wrap justify-center gap-4 px-8">
             {info.testcases.map((testcase) => (
               <div
@@ -105,30 +169,54 @@ export function Submission({ submissionId }: { submissionId: number }) {
                       testcase.status === "finished" && testcase.passed,
                     "border-red-300 bg-red-300/30 hover:bg-red-300/50 dark:border-red-700 dark:bg-red-700/30 dark:hover:bg-red-700/50":
                       testcase.status === "finished" && !testcase.passed,
+                    "border-orange-300 bg-orange-300/30 hover:bg-orange-300/50 dark:border-orange-700 dark:bg-orange-700/30 dark:hover:bg-orange-700/50":
+                      testcase.status === "failed",
                   },
                 )}
                 onClick={() => setSelectedTestcaseId(testcase.id)}
               >
                 <p className="text-md font-semibold">Testcase #{testcase.id}</p>
-                <p
-                  className={cn("text-sm opacity-80", {
-                    "text-neutral-400":
-                      testcase.status === "pending" ||
-                      testcase.status === "running",
-                    "text-red-500":
-                      testcase.status === "finished" && !testcase.passed,
-                    "text-green-500":
-                      testcase.status === "finished" && testcase.passed,
-                  })}
-                >
-                  {testcase.status === "pending"
-                    ? "Pending"
-                    : testcase.status === "running"
-                      ? "Running"
-                      : testcase.passed
-                        ? "Passed"
-                        : "Failed"}
-                </p>
+                <div className="mt-1 flex items-center justify-between gap-3">
+                  <p
+                    className={cn("text-sm opacity-80", {
+                      "text-neutral-400":
+                        testcase.status === "pending" ||
+                        testcase.status === "running",
+                      "text-red-500":
+                        testcase.status === "finished" && !testcase.passed,
+                      "text-green-500":
+                        testcase.status === "finished" && testcase.passed,
+                      "text-orange-500": testcase.status === "failed",
+                    })}
+                  >
+                    {testcase.status === "pending"
+                      ? "Pending"
+                      : testcase.status === "running"
+                        ? "Running"
+                        : testcase.status === "failed"
+                          ? "Failed to execute"
+                          : testcase.status === "cancelled"
+                            ? "Cancelled"
+                            : testcase.passed
+                              ? "Passed"
+                              : "Wrong answer"}
+                  </p>
+                  {testcase.status === "failed" ? (
+                    <Button
+                      data-testid={`retry-testcase-btn-${testcase.id}`}
+                      variant="outline"
+                      size="sm"
+                      className="h-7 gap-1 border-orange-300 px-2 text-xs text-orange-600 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-950/30"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        void handleRetryTestcase(testcase.id)
+                      }}
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                      Retry
+                    </Button>
+                  ) : null}
+                </div>
               </div>
             ))}
           </div>

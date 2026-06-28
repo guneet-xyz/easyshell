@@ -74,3 +74,12 @@ Preview the Next.js application for Cloudflare Pages using wrangler.
 ### `deploy`
 
 Deploy the Next.js application to Cloudflare Pages using wrangler.
+
+## Testing
+
+See [TESTING.md](../../TESTING.md) for full testing documentation and conventions.
+
+```bash
+pnpm --filter @easyshell/website test  # unit tests (server actions + coordinator client)
+```
+

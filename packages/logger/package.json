@@ -6,12 +6,16 @@
   "exports": {
     ".": "./index.ts"
   },
+  "scripts": {
+    "test": "vitest run"
+  },
   "dependencies": {
     "pino": "^9.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.17.16",
     "pino-pretty": "^11.0.0",
-    "tsx": "^4.19.3"
+    "tsx": "^4.19.3",
+    "vitest": "^3.0.0"
   }
 }

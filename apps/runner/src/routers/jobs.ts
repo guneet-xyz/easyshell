@@ -13,9 +13,11 @@
 //   cancel → docker kill + mark the SQLite row cancelled. Reports back
 //            whether the container was actually running.
 //
-// In-memory submission concurrency tracking is intentionally LOCAL to this
-// module — T22 will replace it with the dedicated capacity service.
-// Until then, `env.SUBMISSION_MAX_CONCURRENCY` is consulted directly here.
+// Capacity is owned by services/capacity.ts — the in-memory counter
+// shared with the heartbeat loop and the health.capacity tRPC procedure.
+// The accept gate increments BEFORE spawning so two parallel accepts
+// cannot both squeak past the limit; the background runner's finally
+// block decrements exactly once after the docker lifecycle ends.
 // ==========================================
 
 import fs from "node:fs"
@@ -38,6 +40,11 @@ import {
   GetJobInputSchema,
   GetJobOutputSchema,
 } from "../schemas"
+import {
+  decrementSubmission,
+  getCapacity,
+  incrementSubmission,
+} from "../services/capacity"
 
 const log = createLogger("runner:jobs")
 
@@ -52,14 +59,6 @@ const coordinatorProcedure = t.procedure.use(({ ctx, next }) => {
   }
   return next({ ctx })
 })
-
-// ─── In-memory capacity counter (T22 replaces with services/capacity.ts) ─────
-
-let submissionConcurrencyUsed = 0
-
-export function getSubmissionConcurrencyUsed(): number {
-  return submissionConcurrencyUsed
-}
 
 // ─── SQLite row shapes (for narrowing better-sqlite3's `any` returns) ────────
 
@@ -182,7 +181,7 @@ function runSubmissionJob(params: {
       log.error({ job_id: jobId, error: message }, "job.submission.error")
     } finally {
       // Decrement exactly once, after the docker run lifecycle is fully done.
-      submissionConcurrencyUsed = Math.max(0, submissionConcurrencyUsed - 1)
+      decrementSubmission()
       // Enqueue cleanup for the cleanup worker (T22) to GC the directory and
       // sweep any leftover container artifacts.
       db.prepare(
@@ -225,14 +224,15 @@ export const jobsRouter = router({
 
         // 2. Capacity gate — only submission mode is implemented in T19.
         //    Session mode (T20) will get its own counter.
+        const submissionUsed = getCapacity().submission_used
         if (
           input.mode === "submission" &&
-          submissionConcurrencyUsed >= env.SUBMISSION_MAX_CONCURRENCY
+          submissionUsed >= env.SUBMISSION_MAX_CONCURRENCY
         ) {
           log.warn(
             {
               job_id: input.job_id,
-              used: submissionConcurrencyUsed,
+              used: submissionUsed,
               max: env.SUBMISSION_MAX_CONCURRENCY,
             },
             "job.accept.at-capacity",
@@ -272,7 +272,7 @@ export const jobsRouter = router({
         // 4. Spawn the background runner. Increment BEFORE spawning so two
         //    parallel accepts can't both pass the capacity gate.
         if (input.mode === "submission") {
-          submissionConcurrencyUsed++
+          incrementSubmission()
           runSubmissionJob({
             jobId: input.job_id,
             containerName: input.container_name,

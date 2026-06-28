@@ -82,7 +82,7 @@ vi.mock("../../src/db", () => {
       selectWhereSpy(cond)
       return selectChain
     },
-    limit: (n: number) => selectLimitSpy(n),
+    limit: (n: unknown) => selectLimitSpy(n),
     then: (onResolve, onReject) =>
       (selectWhereThenSpy() as Promise<unknown>).then(onResolve, onReject),
   }

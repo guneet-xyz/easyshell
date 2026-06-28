@@ -12,37 +12,6 @@ services:
     networks:
       - easyshell
     restart: "no"
-  submission-manager:
-    build:
-      context: .
-      dockerfile: ./apps/submission-manager/Dockerfile
-    container_name: easyshell-dev-submission-manager
-    profiles: ["legacy"]
-    networks:
-      - easyshell
-    depends_on:
-      migrator:
-        condition: service_completed_successfully
-      session-manager:
-        condition: service_started
-    environment:
-      DATABASE_URL: ${DATABASE_URL}
-      SESSION_MANAGER_URL: http://session-manager:4000
-      SESSION_MANAGER_TOKEN: token
-  session-manager:
-    build:
-      context: ./apps/session-manager
-    container_name: easyshell-dev-session-manager
-    profiles: ["legacy"]
-    environment:
-      TOKEN: token
-    networks:
-      - easyshell
-    ports:
-      - 4000:4000
-    volumes:
-      - /tmp/easyshell:/tmp/easyshell
-      - /var/run/docker.sock:/var/run/docker.sock
   coordinator:
     build:
       context: .

@@ -1,8 +1,6 @@
-import { randomBytes } from "crypto"
 import { readFile } from "fs/promises"
 
 import { getProblemInfo, getProblems } from "@easyshell/problems"
-import { runSubmissionAndGetOutput } from "@easyshell/submission-manager/utils"
 import { neverThrow } from "@easyshell/utils"
 import { PROBLEMS_DIR, PROJECT_ROOT, WIKI_DIR } from "@easyshell/utils/build"
 
@@ -347,47 +345,6 @@ async function construct_tests(slug: string): Promise<Array<Test>> {
             },
           })
 
-          if (!process.env.SKIP_SUBMISSION_TESTS) {
-            const problemInfo = await getProblemInfo(slug)
-
-            if (!problemInfo.tests) problemInfo.tests = []
-            problemInfo.tests.push({ testcase: "all", pass: false, input: "" })
-
-            for (const {
-              testcase,
-              input,
-              pass,
-              index,
-            } of problemInfo.tests.map((t, i) => ({
-              ...t,
-              index: i,
-            }))) {
-              if (testcase === "all") {
-                for (const { id: testcaseId } of problemInfo.testcases) {
-                  tests.push({
-                    name: `(${slug}) test-${index}-testcase-${testcaseId}`,
-                    callable: () =>
-                      _runSubmissionTest(slug, testcaseId, input, pass),
-                  })
-                }
-              } else if (testcase instanceof Array) {
-                for (const testcaseId of testcase) {
-                  tests.push({
-                    name: `(${slug}) test-${index}-testcase-${testcaseId}`,
-                    callable: () =>
-                      _runSubmissionTest(slug, testcaseId, input, pass),
-                  })
-                }
-              } else {
-                tests.push({
-                  name: `(${slug}) test-${index}-testcase-${testcase}`,
-                  callable: () =>
-                    _runSubmissionTest(slug, testcase, input, pass),
-                })
-              }
-            }
-          }
-
           return tests
         })(),
       },
@@ -395,29 +352,6 @@ async function construct_tests(slug: string): Promise<Array<Test>> {
   }
 
   return TestTreeToTests(tree)
-}
-
-async function _runSubmissionTest(
-  slug: string,
-  testcase: number,
-  input: string,
-  pass: boolean,
-): Promise<string | undefined> {
-  const { passed, output } = await runSubmissionAndGetOutput({
-    problemSlug: slug,
-    testcaseId: testcase,
-    input,
-    suffix: `test-${randomBytes(8).toString("hex")}`,
-  })
-  if (passed !== pass) {
-    if (process.env.DEBUG_STDOUT)
-      console.debug(`output (${slug}-${testcase} stdout): ${output.stdout}`)
-    if (process.env.DEBUG_FS)
-      console.debug(
-        `output (${slug}-${testcase} fs): ${JSON.stringify(output.fs)}`,
-      )
-    return `expected to ${pass ? "pass" : "fail"} with input: ${input}`
-  }
 }
 
 await main()

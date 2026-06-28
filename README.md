@@ -7,8 +7,8 @@
 - [Overview](#easyshell---overview)
   - [Architecture and Features](#architecture-and-features)
     - [Website](apps/website/README.md)
-    - [Queue Processor](apps/submission-manager/README.md)
-    - [Session Manager](apps/session-manager/README.md)
+    - [Coordinator](apps/coordinator/README.md)
+    - [Runner](apps/runner/README.md)
     - [Entrypoint](apps/entrypoint/README.md)
 - [Development Guide](#development-guide)
   - [Pre-Requisites](#pre-requisites)
@@ -29,13 +29,13 @@ There are a few microservices that work together to make the platform work.
 
   Frontend for [easyshell.sh](https://easyshell.sh). See [Website](apps/website/README.md) for more information.
 
-- #### Session Manager
+- #### Coordinator
 
-  Manages containers for both interactive terminal sessions (for the website) and submission grading (for the submission manager). See [Session Manager](apps/session-manager/README.md) for more information.
+  Central control plane. Accepts work from the website (interactive terminal sessions, submission grading), polls the queued submissions table, and dispatches jobs to registered runners. See [Coordinator](apps/coordinator/README.md) for more information.
 
-- #### Queue Processor
+- #### Runner
 
-  Processes the submissions. It no longer runs containers itself; it delegates execution to the Session Manager. See [Queue Processor](apps/submission-manager/README.md) for more information.
+  Executes the dispatched jobs. Owns the Docker socket on its host, launches the problem containers, streams output back through the coordinator, and reports capacity. See [Runner](apps/runner/README.md) for more information.
 
 - #### Entrypoint
 
@@ -88,9 +88,9 @@ The quickest way to run the application stack locally is through Docker Compose.
 
 The Compose stack starts these services:
 
-- `migrator` - runs `drizzle-kit migrate` and exits. Both application services wait for it to finish successfully.
-- `session-manager` - serves the session and submission container API on <http://localhost:4000>.
-- `submission-manager` - consumes queued submissions from the database.
+- `migrator` - runs `drizzle-kit migrate` and exits. Application services wait for it to finish successfully.
+- `coordinator` - HTTP control plane on <http://localhost:4100>. Accepts session/submission requests from the website and polls the submission queue.
+- `runner` - exposes the per-runner HTTP API on <http://localhost:4200>. Registers with the coordinator on boot and owns the Docker socket for launching problem containers.
 - `website` - serves the Next.js app on <http://localhost:3000>.
 
 Run migrations without starting the full stack with:
@@ -103,10 +103,10 @@ For non-Docker development, run migrations directly before starting the app proc
 
 ```sh
 pnpm run db:migrate
-pnpm run dev:session-manager
-pnpm run dev:submission-manager
 pnpm run dev:website
 ```
+
+Run the coordinator and runner directly via Go / pnpm in their respective `apps/coordinator` and `apps/runner` directories (see each app's README for the exact commands).
 
 ### Environment Variables
 
@@ -117,8 +117,8 @@ The following environment variables might be required
 - [`WORKING_DIR`](#working_dir)
 - [`DOCKER_REGISTRY`](#docker_registry)
 - [`DATABASE_URL`](#database_url)
-- [`SESSION_MANAGER_URL`](#session_manager_url)
-- [`SESSION_MANAGER_TOKEN`](#session_manager_token)
+- [`COORDINATOR_URL`](#coordinator_url)
+- [`COORDINATOR_TOKEN`](#coordinator_token)
 - [`NEXTAUTH_URL`](#nextauth_url)
 - [`NEXTAUTH_SECRET`](#nextauth_secret)
 - [`DISCORD_CLIENT_ID`](#discord_client_id)
@@ -131,7 +131,7 @@ The following environment variables might be required
 #### `APP`
 
 This is a helper variable that is used to determine which environment variables to load and verify.
-Possible values are - `submission-manager`, `website` and `script`.
+Possible values are - `website` and `script`.
 
 #### `PROJECT_ROOT`
 
@@ -159,13 +159,13 @@ URL of the drizzle proxy.
 
 Token for the drizzle proxy.
 
-#### `SESSION_MANAGER_URL`
+#### `COORDINATOR_URL`
 
-URL of the session manager. Used by both the website (for interactive terminal sessions) and the submission-manager (for delegating submission grading). For cloudflare deployment, this cannot be a fixed IP address.
+URL of the coordinator HTTP API. Used by the website to request interactive terminal sessions and to dispatch submission grading. For cloudflare deployment, this cannot be a fixed IP address.
 
-#### `SESSION_MANAGER_TOKEN`
+#### `COORDINATOR_TOKEN`
 
-Bearer token for the session manager. Required for both the website and the submission-manager to authenticate with the session manager.
+Bearer token the website uses when calling the coordinator API.
 
 #### `NEXTAUTH_URL`
 
@@ -190,7 +190,7 @@ These are the [NextAuth](https://authjs.dev) configuration variables. These are 
 Many scripts have been defined in the [package.json](package.json).
 This section will go over these scripts and the additional steps or environment variables required for their execution.
 
-Also see [Next.js Scripts](apps/website/README.md#scripts), [Queue Processor Scripts](apps/submission-manager/README.md#scripts) and [Script Scripts](apps/script/README.md#scripts) for more information.
+Also see [Next.js Scripts](apps/website/README.md#scripts) and [Script Scripts](apps/script/README.md#scripts) for more information.
 
 - [`lint:tsc`](#linttsc)
 - [`lint:next`](#lintnext)
@@ -227,7 +227,7 @@ Runs the `migrator` Compose service once and removes the container after it exit
 
 #### `docker:up`
 
-Starts the local Docker Compose stack in the background. The `migrator` service runs first; `website` and `submission-manager` start only after migrations complete successfully.
+Starts the local Docker Compose stack in the background. The `migrator` service runs first; `coordinator`, `runner`, and `website` start only after migrations complete successfully.
 
 #### `format:check`
 
@@ -261,7 +261,6 @@ Test the problem images using tests defined in the problem configs.
 
 Might require the following environment variables.
 
-- `APP` - This is required and should be set to `submission-manager`. Already set in [package.json].
 - `PROJECT_ROOT` might need to be defined if the script is not run from within the git repository.
 
 #### `problems:build`
@@ -279,13 +278,9 @@ Might require the following environment variables.
 
 Calls [`problems:cache`](./apps/website/README.md#problemscache) in [website](./apps/website/README.md) app.
 
-#### `problems:cache:submission-manager`
-
-Calls [`problems:cache`](./apps/submission-manager/README.md#problemscache) in [submission-manager](./apps/submission-manager/README.md) app.
-
 #### `problems:cache`
 
-Calls both [`problems:cache:website`](#problemscachewebsite) and [`problems:cache:submission-manager`](#problemscachesubmission-manager).
+Alias for [`problems:cache:website`](#problemscachewebsite).
 
 ### Problems
 

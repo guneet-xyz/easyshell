@@ -34,7 +34,6 @@ on:
       - "packages/problems/data/problems/${problemSlug}/**"
       - "packages/problems/env.ts"
       - "packages/utils/**"
-      - "apps/submission-manager/utils.ts"
   workflow_call:
 
 jobs:
@@ -82,7 +81,6 @@ on:
       - "packages/problems/data/problems/${problemSlug}/**"
       - "packages/problems/env.ts"
       - "packages/utils/**"
-      - "apps/submission-manager/utils.ts"
   workflow_call:
   workflow_dispatch: {}
 

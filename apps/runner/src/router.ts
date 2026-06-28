@@ -10,6 +10,7 @@ import {
   HealthPingInputSchema,
   HealthPingOutputSchema,
 } from "./schemas"
+import { getCapacity } from "./services/capacity"
 
 const t = initTRPC.context<Context>().create()
 const router = t.router
@@ -34,19 +35,9 @@ export const appRouter = router({
           version: "0.1.0",
         }),
       ),
-    // Requires auth. T22 will replace these with live in-memory counters.
-    // For now, _used is always 0 and _max comes from env defaults (hardcoded here
-    // to keep the router free of env coupling; values mirror env.ts defaults).
     capacity: coordinatorProcedure
       .input(HealthCapacityInputSchema)
-      .query(
-        (): z.infer<typeof HealthCapacityOutputSchema> => ({
-          session_used: 0,
-          session_max: 64,
-          submission_used: 0,
-          submission_max: 4,
-        }),
-      ),
+      .query((): z.infer<typeof HealthCapacityOutputSchema> => getCapacity()),
   }),
 })
 

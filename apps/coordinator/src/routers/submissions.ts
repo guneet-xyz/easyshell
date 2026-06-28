@@ -1,7 +1,9 @@
 import { initTRPC, TRPCError } from "@trpc/server"
+import { and, eq } from "drizzle-orm"
 
 import {
   submissionTestcaseQueue,
+  submissionTestcases,
   submissions,
 } from "@easyshell/db/schema"
 import { createLogger } from "@easyshell/logger"
@@ -36,13 +38,6 @@ const websiteProcedure = procedure.use(({ ctx, next }) => {
   }
   return next({ ctx })
 })
-
-const notImplemented = (): never => {
-  throw new TRPCError({
-    code: "INTERNAL_SERVER_ERROR",
-    message: "not implemented",
-  })
-}
 
 export const submissionsRouter = router({
   /**
@@ -104,19 +99,151 @@ export const submissionsRouter = router({
       }
     }),
 
-  // ── T16 will implement the following procedures. ─────────────────────
   retryTestcase: websiteProcedure
     .input(RetryTestcaseInputSchema)
     .output(RetryTestcaseOutputSchema)
-    .mutation(() => notImplemented()),
+    .mutation(async ({ input }) => {
+      const submission = await db
+        .select({ userId: submissions.userId })
+        .from(submissions)
+        .where(eq(submissions.id, input.submission_id))
+        .limit(1)
+        .then((r) => r[0])
+
+      if (!submission) return { status: "not_found" }
+      if (submission.userId !== input.acting_user_id) {
+        return { status: "forbidden" }
+      }
+
+      const row = await db
+        .select({
+          status: submissionTestcaseQueue.status,
+          lastError: submissionTestcaseQueue.lastError,
+        })
+        .from(submissionTestcaseQueue)
+        .where(
+          and(
+            eq(submissionTestcaseQueue.submissionId, input.submission_id),
+            eq(submissionTestcaseQueue.testcaseId, input.testcase_id),
+          ),
+        )
+        .limit(1)
+        .then((r) => r[0])
+
+      if (!row) return { status: "not_found" }
+      if (row.status !== "failed") return { status: "not_failed" }
+
+      await db
+        .update(submissionTestcaseQueue)
+        .set({
+          status: "pending",
+          attempts: 0,
+          lastError: null,
+          claimedAt: null,
+          claimedBy: null,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(submissionTestcaseQueue.submissionId, input.submission_id),
+            eq(submissionTestcaseQueue.testcaseId, input.testcase_id),
+          ),
+        )
+
+      log.info(
+        {
+          submission_id: input.submission_id,
+          testcase_id: input.testcase_id,
+          acting_user_id: input.acting_user_id,
+          previous_last_error: row.lastError,
+        },
+        "submission.retry.triggered",
+      )
+
+      return { status: "queued" }
+    }),
 
   retryAllFailedForSubmission: websiteProcedure
     .input(RetryAllFailedInputSchema)
     .output(RetryAllFailedOutputSchema)
-    .mutation(() => notImplemented()),
+    .mutation(async ({ input }) => {
+      const submission = await db
+        .select({ userId: submissions.userId })
+        .from(submissions)
+        .where(eq(submissions.id, input.submission_id))
+        .limit(1)
+        .then((r) => r[0])
+
+      if (!submission) return { status: "not_found" }
+      if (submission.userId !== input.acting_user_id) {
+        return { status: "forbidden" }
+      }
+
+      const updated = await db
+        .update(submissionTestcaseQueue)
+        .set({
+          status: "pending",
+          attempts: 0,
+          lastError: null,
+          claimedAt: null,
+          claimedBy: null,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(submissionTestcaseQueue.submissionId, input.submission_id),
+            eq(submissionTestcaseQueue.status, "failed"),
+          ),
+        )
+        .returning({ testcaseId: submissionTestcaseQueue.testcaseId })
+
+      log.info(
+        {
+          submission_id: input.submission_id,
+          acting_user_id: input.acting_user_id,
+          requeued_count: updated.length,
+        },
+        "submission.retry-all.triggered",
+      )
+
+      return { status: "queued", requeued_count: updated.length }
+    }),
 
   getStatus: websiteProcedure
     .input(GetStatusInputSchema)
     .output(GetStatusOutputSchema)
-    .query(() => notImplemented()),
+    .query(async ({ input }) => {
+      const rows = await db
+        .select({
+          testcaseId: submissionTestcaseQueue.testcaseId,
+          status: submissionTestcaseQueue.status,
+          attempts: submissionTestcaseQueue.attempts,
+          lastError: submissionTestcaseQueue.lastError,
+        })
+        .from(submissionTestcaseQueue)
+        .where(eq(submissionTestcaseQueue.submissionId, input.submission_id))
+
+      const testcaseResults = await db
+        .select({
+          testcaseId: submissionTestcases.testcaseId,
+          passed: submissionTestcases.passed,
+        })
+        .from(submissionTestcases)
+        .where(eq(submissionTestcases.submissionId, input.submission_id))
+
+      const passedMap = new Map(
+        testcaseResults.map((r) => [r.testcaseId, r.passed] as const),
+      )
+
+      return {
+        submission_id: input.submission_id,
+        testcases: rows.map((r) => ({
+          testcase_id: r.testcaseId,
+          status: r.status,
+          attempts: r.attempts,
+          last_error: r.lastError,
+          passed: passedMap.get(r.testcaseId) ?? null,
+        })),
+      }
+    }),
 })

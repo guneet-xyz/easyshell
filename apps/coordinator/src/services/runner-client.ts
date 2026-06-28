@@ -54,6 +54,32 @@ export type GetJobOutput =
   | { status: "failed"; error: string }
   | { status: "cancelled" }
 
+// Mirrors apps/runner/src/schemas.ts for terminalSessions.*. The runner's
+// exec error union includes `container_locked` which the coordinator must
+// map onto its own `session_error` discriminant before returning to the
+// website (the coordinator schema intentionally omits it).
+export type CreateSessionInput = { container_name: string; image: string }
+export type CreateSessionOutput = { ok: true }
+
+export type ExecSessionInput = { container_name: string; command: string }
+export type ExecSessionOutput =
+  | { status: "success"; stdout: string; stderr: string }
+  | {
+      status: "error"
+      type:
+        | "took_too_long"
+        | "session_not_running"
+        | "session_error"
+        | "container_locked"
+      message: string
+    }
+
+export type IsRunningInput = { container_name: string }
+export type IsRunningOutput = { is_running: boolean }
+
+export type KillSessionInput = { container_name: string }
+export type KillSessionOutput = { ok: true }
+
 export type RunnerJobsClient = {
   jobs: {
     accept: { mutate: (input: AcceptJobInput) => Promise<AcceptJobOutput> }
@@ -63,6 +89,14 @@ export type RunnerJobsClient = {
         job_id: string
       }) => Promise<{ ok: true; was_running: boolean }>
     }
+  }
+  terminalSessions: {
+    create: {
+      mutate: (input: CreateSessionInput) => Promise<CreateSessionOutput>
+    }
+    exec: { mutate: (input: ExecSessionInput) => Promise<ExecSessionOutput> }
+    isRunning: { query: (input: IsRunningInput) => Promise<IsRunningOutput> }
+    kill: { mutate: (input: KillSessionInput) => Promise<KillSessionOutput> }
   }
 }
 

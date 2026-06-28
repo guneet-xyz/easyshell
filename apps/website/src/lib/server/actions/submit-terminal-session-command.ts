@@ -6,11 +6,10 @@ import { terminalSessions } from "@easyshell/db/schema"
 
 import { db } from "@/db"
 import { auth } from "@/lib/server/auth"
-import { getProblemSlugFromId } from "@/lib/server/problems"
 import {
+  coordinatorExec,
   insertTerminalSessionLog,
-  sessionManagerExec,
-} from "@/lib/server/session-manager"
+} from "@/lib/server/coordinator"
 
 import type { getTerminalSession } from "./get-terminal-session"
 
@@ -31,7 +30,7 @@ export async function submitTerminalSessionCommand({
   | ({
       status: "error"
     } & (
-      | Awaited<ReturnType<typeof sessionManagerExec>>
+      | Awaited<ReturnType<typeof coordinatorExec>>
       | {
           type: "not-authenticated"
         }
@@ -55,13 +54,9 @@ export async function submitTerminalSessionCommand({
     throw new Error("Session not found")
   }
 
-  const problemSlug = await getProblemSlugFromId(terminalSession[0].problemId)
-
-  const container_name = `easyshell-${problemSlug}-${terminalSession[0].testcaseId}-session-${sessionId}`
-
   const startedAt = new Date()
-  const execResponse = await sessionManagerExec({
-    containerName: container_name,
+  const execResponse = await coordinatorExec({
+    sessionId: terminalSession[0].id,
     command,
   })
   const finishedAt = new Date()

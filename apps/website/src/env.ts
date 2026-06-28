@@ -18,8 +18,8 @@ export const env = createEnv({
     GOOGLE_CLIENT_ID: z.string(),
     GOOGLE_CLIENT_SECRET: z.string(),
 
-    SESSION_MANAGER_URL: z.string().url(),
-    SESSION_MANAGER_TOKEN: z.string(),
+    COORDINATOR_URL: z.string().url(),
+    COORDINATOR_TOKEN: z.string(),
 
     SMTP_HOST: z.string(),
     SMTP_USERNAME: z.string(),

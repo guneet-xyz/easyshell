@@ -12,9 +12,9 @@
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.7.4",
+    "@easyshell/coordinator": "workspace:*",
     "@easyshell/db": "workspace:*",
     "@easyshell/problems": "workspace:*",
-    "@easyshell/session-manager-client": "workspace:*",
     "@mdx-js/loader": "^3.1.0",
     "@mdx-js/react": "^3.1.0",
     "@next/mdx": "16.1.6",

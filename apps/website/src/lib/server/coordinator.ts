@@ -1,19 +1,78 @@
 // ================================================================
-// Internal Functions to interact with the terminal session manager
+// Internal Functions to interact with the coordinator
 // ================================================================
+import crypto from "node:crypto"
+
 import { and, asc, eq, isNull } from "drizzle-orm"
 
+import { createCoordinatorClient } from "@easyshell/coordinator/client"
 import { terminalSessionLogs, terminalSessions } from "@easyshell/db/schema"
-import { createSessionManagerClient } from "@easyshell/session-manager-client"
 
 import { db } from "@/db"
 import { env } from "@/env"
 import { getProblemSlugFromId } from "@/lib/server/problems"
 
-const _smClient = createSessionManagerClient({
-  url: env.SESSION_MANAGER_URL,
-  token: env.SESSION_MANAGER_TOKEN,
+const _cClient = createCoordinatorClient({
+  url: env.COORDINATOR_URL,
+  token: env.COORDINATOR_TOKEN,
+  correlationId: crypto.randomUUID(),
 })
+
+// ─── Coordinator proxy helpers ───────────────────────────────────────────────
+
+export type CoordinatorExecResult =
+  | {
+      status: "success"
+      stdout: string
+      stderr: string
+    }
+  | {
+      status: "error"
+      type:
+        | "took_too_long"
+        | "session_not_running"
+        | "session_error"
+        | "critical_server_error"
+        | "runner_unreachable"
+      message: string
+    }
+
+export async function coordinatorCreate(args: {
+  terminal_session_id: number
+  image: string
+}): Promise<void> {
+  await _cClient.terminalSessions.create.mutate(args)
+}
+
+export async function coordinatorExec({
+  sessionId,
+  command,
+}: {
+  sessionId: number
+  command: string
+}): Promise<CoordinatorExecResult> {
+  return _cClient.terminalSessions.exec.mutate({
+    terminal_session_id: sessionId,
+    command,
+  })
+}
+
+export async function coordinatorIsRunning(
+  sessionId: number,
+): Promise<boolean> {
+  const result = await _cClient.terminalSessions.isAlive.query({
+    terminal_session_id: sessionId,
+  })
+  return result.is_running
+}
+
+export async function coordinatorKill(sessionId: number): Promise<void> {
+  await _cClient.terminalSessions.kill.mutate({
+    terminal_session_id: sessionId,
+  })
+}
+
+// ─── Terminal session management ─────────────────────────────────────────────
 
 export async function runTerminalSession({
   problemId,
@@ -27,9 +86,9 @@ export async function runTerminalSession({
   const problemSlug = await getProblemSlugFromId(parseInt(problemId))
   if (!problemSlug) throw new Error("Problem not found")
 
-  await sessionManagerCreate({
+  await coordinatorCreate({
+    terminal_session_id: sessionId,
     image: `easyshell-${problemSlug}-${testcaseId}`,
-    container_name: `easyshell-${problemSlug}-${testcaseId}-session-${sessionId}`,
   })
 }
 
@@ -96,8 +155,6 @@ export async function getActiveTerminalSession({
   problemId: number
   testcaseId: number
 }) {
-  const problemSlug = await getProblemSlugFromId(problemId)
-
   const session = await db
     .select()
     .from(terminalSessions)
@@ -113,8 +170,7 @@ export async function getActiveTerminalSession({
 
   if (!session[0]) return null
 
-  const container_name = `easyshell-${problemSlug}-${testcaseId}-session-${session[0].id}`
-  const isRunning = await sessionManagerIsRunning(container_name)
+  const isRunning = await coordinatorIsRunning(session[0].id)
 
   if (isRunning) return session[0]
   await db
@@ -169,46 +225,6 @@ export async function insertTerminalSession({
     throw new Error("Failed to insert terminal session")
   }
   return inserted[0].id
-}
-
-export async function sessionManagerExec({
-  containerName,
-  command,
-}: {
-  containerName: string
-  command: string
-}): Promise<
-  | {
-      status: "success"
-      stdout: string
-      stderr: string
-    }
-  | {
-      status: "error"
-      type:
-        | "took_too_long"
-        | "session_not_running"
-        | "session_error"
-        | "critical_server_error"
-      message: string
-    }
-> {
-  return _smClient.exec({ containerName, command })
-}
-
-export async function sessionManagerIsRunning(containerName: string) {
-  return _smClient.isRunning(containerName)
-}
-
-export async function sessionManagerCreate(args: {
-  container_name: string
-  image: string
-}) {
-  return _smClient.create(args)
-}
-
-export async function sessionManagerKill(containerName: string) {
-  return _smClient.kill(containerName)
 }
 
 export async function insertTerminalSessionLog({

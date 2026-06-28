@@ -2,9 +2,11 @@
 
 import { and, eq, isNull } from "drizzle-orm"
 
+import { createCoordinatorClient } from "@easyshell/coordinator/client"
 import { terminalSessions } from "@easyshell/db/schema"
 
 import { db } from "@/db"
+import { env } from "@/env"
 import { auth } from "@/lib/server/auth"
 
 export async function killTerminalSessions({
@@ -31,6 +33,19 @@ export async function killTerminalSessions({
       ),
     )
     .returning({ id: terminalSessions.id })
+
+  // Kill the actual containers via Coordinator (non-blocking — DB cleanup is authoritative)
+  if (updated.length > 0) {
+    const client = createCoordinatorClient({
+      url: env.COORDINATOR_URL,
+      token: env.COORDINATOR_TOKEN,
+    })
+    await Promise.allSettled(
+      updated.map((s) =>
+        client.terminalSessions.kill.mutate({ terminal_session_id: s.id }),
+      ),
+    )
+  }
 
   return {
     deletedSessions: updated.length,

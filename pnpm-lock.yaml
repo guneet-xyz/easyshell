@@ -205,15 +205,15 @@ importers:
       '@auth/drizzle-adapter':
         specifier: ^1.7.4
         version: 1.8.0(nodemailer@9.0.1)
+      '@easyshell/coordinator':
+        specifier: workspace:*
+        version: link:../coordinator
       '@easyshell/db':
         specifier: workspace:*
         version: link:../../packages/db
       '@easyshell/problems':
         specifier: workspace:*
         version: link:../../packages/problems
-      '@easyshell/session-manager-client':
-        specifier: workspace:*
-        version: link:../../packages/session-manager-client
       '@mdx-js/loader':
         specifier: ^3.1.0
         version: 3.1.0(acorn@8.15.0)

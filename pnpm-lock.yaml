@@ -128,6 +128,9 @@ importers:
 
   apps/e2e:
     devDependencies:
+      '@easyshell/coordinator':
+        specifier: workspace:*
+        version: link:../coordinator
       '@testcontainers/postgresql':
         specifier: ^10.0.0
         version: 10.28.0
@@ -137,6 +140,9 @@ importers:
       '@types/node':
         specifier: ^20.17.16
         version: 20.17.30
+      postgres:
+        specifier: ^3.4.5
+        version: 3.4.8
       testcontainers:
         specifier: ^10.0.0
         version: 10.28.0

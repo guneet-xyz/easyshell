@@ -12,6 +12,7 @@ import { env } from "./env"
 import { appRouter } from "./router"
 import { bootstrap } from "./workers/bootstrap"
 import { heartbeatLoop } from "./workers/heartbeat"
+import { pushRetryLoop } from "./workers/push-retry"
 
 const log = createLogger("runner", { env: env.NODE_ENV })
 
@@ -41,6 +42,17 @@ async function main(): Promise<void> {
     log.error(
       { err: err instanceof Error ? err.message : String(err) },
       "heartbeat-loop crashed",
+    )
+  })
+
+  // 3. Start push-retry loop in the background — non-blocking. Replays terminal
+  //    job statuses (succeeded/failed/cancelled) to the coordinator via
+  //    jobs.reportResult until they are ack'd. Exits cleanly if RUNNER_ID or
+  //    RUNNER_SECRET are missing.
+  pushRetryLoop().catch((err: unknown) => {
+    log.error(
+      { err: err instanceof Error ? err.message : String(err) },
+      "push-retry-loop crashed",
     )
   })
 

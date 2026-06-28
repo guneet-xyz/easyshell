@@ -17,6 +17,7 @@ services:
       context: .
       dockerfile: ./apps/submission-manager/Dockerfile
     container_name: easyshell-dev-submission-manager
+    profiles: ["legacy"]
     networks:
       - easyshell
     depends_on:
@@ -32,6 +33,7 @@ services:
     build:
       context: ./apps/session-manager
     container_name: easyshell-dev-session-manager
+    profiles: ["legacy"]
     environment:
       TOKEN: token
     networks:
@@ -108,8 +110,8 @@ services:
     depends_on:
       migrator:
         condition: service_completed_successfully
-      session-manager:
-        condition: service_started
+      coordinator:
+        condition: service_healthy
     environment:
       AUTH_TRUST_HOST: true
       DATABASE_URL: ${DATABASE_URL}
@@ -121,8 +123,8 @@ services:
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-      SESSION_MANAGER_URL: http://session-manager:4000
-      SESSION_MANAGER_TOKEN: token
+      COORDINATOR_URL: http://coordinator:4100
+      COORDINATOR_TOKEN: token-coordinator
       SMTP_HOST: ${SMTP_HOST}
       SMTP_USERNAME: ${SMTP_USERNAME}
       SMTP_PASSWORD: ${SMTP_PASSWORD}

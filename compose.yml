@@ -97,6 +97,20 @@ services:
       timeout: 3s
       retries: 6
       start_period: 15s
+  session-manager:
+    image: alpine:3.21
+    container_name: easyshell-dev-session-manager
+    profiles: ["legacy"]
+    command: ["sh", "-c", "echo legacy-session-manager-placeholder && sleep infinity"]
+    networks:
+      - easyshell
+  submission-manager:
+    image: alpine:3.21
+    container_name: easyshell-dev-submission-manager
+    profiles: ["legacy"]
+    command: ["sh", "-c", "echo legacy-submission-manager-placeholder && sleep infinity"]
+    networks:
+      - easyshell
   website:
     build:
       context: .

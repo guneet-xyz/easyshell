@@ -3,19 +3,12 @@ import type { z } from "zod"
 
 import { type Context } from "./context"
 import { jobsRouter } from "./routers/jobs"
+import { terminalSessionsRouter } from "./routers/terminal-sessions"
 import {
-  CreateSessionInputSchema,
-  CreateSessionOutputSchema,
-  ExecSessionInputSchema,
-  ExecSessionOutputSchema,
   HealthCapacityInputSchema,
   HealthCapacityOutputSchema,
   HealthPingInputSchema,
   HealthPingOutputSchema,
-  IsRunningInputSchema,
-  IsRunningOutputSchema,
-  KillSessionInputSchema,
-  KillSessionOutputSchema,
 } from "./schemas"
 
 const t = initTRPC.context<Context>().create()
@@ -28,26 +21,9 @@ const coordinatorProcedure = t.procedure.use(({ ctx, next }) => {
   return next({ ctx })
 })
 
-const notImplemented = (): never => {
-  throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "not implemented" })
-}
-
 export const appRouter = router({
   jobs: jobsRouter,
-  terminalSessions: router({
-    create: coordinatorProcedure
-      .input(CreateSessionInputSchema)
-      .mutation((): z.infer<typeof CreateSessionOutputSchema> => notImplemented()),
-    exec: coordinatorProcedure
-      .input(ExecSessionInputSchema)
-      .mutation((): z.infer<typeof ExecSessionOutputSchema> => notImplemented()),
-    isRunning: coordinatorProcedure
-      .input(IsRunningInputSchema)
-      .query((): z.infer<typeof IsRunningOutputSchema> => notImplemented()),
-    kill: coordinatorProcedure
-      .input(KillSessionInputSchema)
-      .mutation((): z.infer<typeof KillSessionOutputSchema> => notImplemented()),
-  }),
+  terminalSessions: terminalSessionsRouter,
   health: router({
     // INTENTIONALLY unauth — this is the compose healthcheck endpoint.
     ping: publicProcedure

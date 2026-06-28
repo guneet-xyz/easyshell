@@ -220,6 +220,8 @@ export const queueItemStatus = pgEnum("queue_item_status", [
   "pending",
   "running",
   "finished",
+  "failed",
+  "cancelled",
 ])
 
 export const submissionTestcaseQueue = createTable(
@@ -228,6 +230,13 @@ export const submissionTestcaseQueue = createTable(
     submissionId: integer("submission_id").notNull(),
     testcaseId: integer("testcase_id").notNull(),
     status: queueItemStatus("status").notNull(),
+    attempts: integer("attempts").notNull().default(0),
+    lastError: text("last_error"),
+    claimedAt: timestamp("claimed_at", { mode: "date", withTimezone: true }),
+    claimedBy: varchar("claimed_by", { length: 64 }),
+    updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true })
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
   },
   (item) => [
     foreignKey({
@@ -235,6 +244,7 @@ export const submissionTestcaseQueue = createTable(
       columns: [item.submissionId],
       foreignColumns: [submissions.id],
     }),
+    primaryKey({ columns: [item.submissionId, item.testcaseId] }),
   ],
 )
 
@@ -265,3 +275,184 @@ export const images = createTable("images", {
     .notNull()
     .defaultNow(),
 })
+
+export const runnerStatus = pgEnum("runner_status", [
+  "active",
+  "draining",
+  "stale",
+  "deregistered",
+])
+
+export const executionMode = pgEnum("execution_mode", [
+  "session",
+  "submission",
+])
+
+export const jobStatus = pgEnum("job_status", [
+  "dispatched",
+  "accepted",
+  "running",
+  "succeeded",
+  "failed",
+  "cancelled",
+  "lost",
+])
+
+export const runners = createTable(
+  "runner",
+  {
+    id: varchar("id", { length: 64 }).notNull().primaryKey(),
+    name: varchar("name", { length: 255 }).notNull(),
+    publicUrl: varchar("public_url", { length: 2048 }).notNull(),
+    secretHash: varchar("secret_hash", { length: 128 }).notNull(),
+    secretCiphertext: text("secret_ciphertext").notNull(),
+    secretNonce: varchar("secret_nonce", { length: 64 }).notNull(),
+    status: runnerStatus("status").notNull().default("active"),
+    region: varchar("region", { length: 64 }),
+    labels: jsonb("labels").notNull().default(sql`'{}'::jsonb`),
+    version: varchar("version", { length: 64 }),
+    registeredAt: timestamp("registered_at", {
+      mode: "date",
+      withTimezone: true,
+    })
+      .notNull()
+      .defaultNow(),
+    lastSeenAt: timestamp("last_seen_at", {
+      mode: "date",
+      withTimezone: true,
+    })
+      .notNull()
+      .defaultNow(),
+    deregisteredAt: timestamp("deregistered_at", {
+      mode: "date",
+      withTimezone: true,
+    }),
+  },
+  (t) => [index("idx_runner_status_last_seen").on(t.status, t.lastSeenAt)],
+)
+
+export const runnerCapabilities = createTable(
+  "runner_capability",
+  {
+    runnerId: varchar("runner_id", { length: 64 }).notNull(),
+    mode: executionMode("mode").notNull(),
+    concurrency: integer("concurrency").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.runnerId, t.mode] }),
+    foreignKey({
+      name: "runner_capability_runner_id_fk",
+      columns: [t.runnerId],
+      foreignColumns: [runners.id],
+    }),
+  ],
+)
+
+export const runnerHeartbeats = createTable(
+  "runner_heartbeat",
+  {
+    runnerId: varchar("runner_id", { length: 64 }).notNull().primaryKey(),
+    reportedAt: timestamp("reported_at", {
+      mode: "date",
+      withTimezone: true,
+    }).notNull(),
+    sessionConcurrencyUsed: integer("session_concurrency_used").notNull(),
+    sessionConcurrencyMax: integer("session_concurrency_max").notNull(),
+    submissionConcurrencyUsed: integer(
+      "submission_concurrency_used",
+    ).notNull(),
+    submissionConcurrencyMax: integer("submission_concurrency_max").notNull(),
+  },
+  (t) => [
+    foreignKey({
+      name: "runner_heartbeat_runner_id_fk",
+      columns: [t.runnerId],
+      foreignColumns: [runners.id],
+    }),
+  ],
+)
+
+export const executionJobs = createTable(
+  "execution_job",
+  {
+    id: varchar("id", { length: 64 }).notNull().primaryKey(),
+    containerName: varchar("container_name", { length: 64 })
+      .notNull()
+      .unique(),
+    runnerId: varchar("runner_id", { length: 64 }).notNull(),
+    mode: executionMode("mode").notNull(),
+    image: varchar("image", { length: 512 }).notNull(),
+    submissionId: integer("submission_id"),
+    testcaseId: integer("testcase_id"),
+    terminalSessionId: integer("terminal_session_id"),
+    status: jobStatus("status").notNull().default("dispatched"),
+    attempt: integer("attempt").notNull().default(1),
+    dispatchedAt: timestamp("dispatched_at", {
+      mode: "date",
+      withTimezone: true,
+    })
+      .notNull()
+      .defaultNow(),
+    acceptedAt: timestamp("accepted_at", {
+      mode: "date",
+      withTimezone: true,
+    }),
+    lastPushAt: timestamp("last_push_at", {
+      mode: "date",
+      withTimezone: true,
+    }),
+    lastPollAt: timestamp("last_poll_at", {
+      mode: "date",
+      withTimezone: true,
+    }),
+    result: jsonb("result"),
+    errorMessage: text("error_message"),
+    finishedAt: timestamp("finished_at", {
+      mode: "date",
+      withTimezone: true,
+    }),
+  },
+  (t) => [
+    index("idx_execution_job_runner_status").on(t.runnerId, t.status),
+    index("idx_execution_job_status_dispatched").on(t.status, t.dispatchedAt),
+    foreignKey({
+      name: "execution_job_runner_id_fk",
+      columns: [t.runnerId],
+      foreignColumns: [runners.id],
+    }),
+  ],
+)
+
+export const terminalSessionRunners = createTable(
+  "terminal_session_runner",
+  {
+    terminalSessionId: integer("terminal_session_id").notNull().primaryKey(),
+    runnerId: varchar("runner_id", { length: 64 }).notNull(),
+    containerName: varchar("container_name", { length: 64 })
+      .notNull()
+      .unique(),
+    executionJobId: varchar("execution_job_id", { length: 64 })
+      .notNull()
+      .unique(),
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    foreignKey({
+      name: "terminal_session_runner_session_id_fk",
+      columns: [t.terminalSessionId],
+      foreignColumns: [terminalSessions.id],
+    }),
+    foreignKey({
+      name: "terminal_session_runner_runner_id_fk",
+      columns: [t.runnerId],
+      foreignColumns: [runners.id],
+    }),
+    foreignKey({
+      name: "terminal_session_runner_job_id_fk",
+      columns: [t.executionJobId],
+      foreignColumns: [executionJobs.id],
+    }),
+  ],
+)

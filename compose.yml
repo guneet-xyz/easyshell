@@ -41,6 +41,31 @@ services:
     volumes:
       - /tmp/easyshell:/tmp/easyshell
       - /var/run/docker.sock:/var/run/docker.sock
+  coordinator:
+    build:
+      context: .
+      dockerfile: ./apps/coordinator/Dockerfile
+    container_name: easyshell-dev-coordinator
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      COORDINATOR_TOKEN: token-coordinator
+      COORDINATOR_REGISTRATION_TOKEN: token-registration
+      LOG_LEVEL: debug
+      NODE_ENV: development
+      MAX_ATTEMPTS: "3"
+    networks:
+      - easyshell
+    ports:
+      - 4100:4100
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:4100 2>/dev/null || exit 0"]
+      interval: 5s
+      timeout: 3s
+      retries: 6
+      start_period: 10s
   website:
     build:
       context: .

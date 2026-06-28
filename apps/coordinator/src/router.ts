@@ -116,7 +116,7 @@ export const appRouter = router({
     ping: publicProcedure
       .input(HealthPingInputSchema)
       .output(HealthPingOutputSchema)
-      .query(() => notImplemented()),
+      .query(() => ({ ok: true as const, version: "0.1.0" })),
   }),
 })
 

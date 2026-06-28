@@ -62,10 +62,18 @@ export const appRouter = router({
   health: router({
     ping: publicProcedure
       .input(HealthPingInputSchema)
-      .query((): z.infer<typeof HealthPingOutputSchema> => notImplemented()),
+      .query((): z.infer<typeof HealthPingOutputSchema> => ({
+        ok: true as const,
+        version: "0.1.0",
+      })),
     capacity: publicProcedure
       .input(HealthCapacityInputSchema)
-      .query((): z.infer<typeof HealthCapacityOutputSchema> => notImplemented()),
+      .query((): z.infer<typeof HealthCapacityOutputSchema> => ({
+        session_used: 0,
+        session_max: 64,
+        submission_used: 0,
+        submission_max: 4,
+      })),
   }),
 })
 

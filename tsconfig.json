@@ -29,5 +29,10 @@
     }
   },
   "include": ["**/*.ts", "**/*.tsx", "**/*.cjs", "**/*.js"],
-  "exclude": ["node_modules", "apps/submission-manager/submission-manager.cjs"]
+  "exclude": [
+    "node_modules",
+    "apps/submission-manager/submission-manager.cjs",
+    "apps/coordinator/coordinator.cjs",
+    "apps/runner/runner.cjs"
+  ]
 }

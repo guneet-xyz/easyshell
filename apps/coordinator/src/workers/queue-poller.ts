@@ -10,6 +10,7 @@ import { createLogger } from "@easyshell/logger"
 import { sleep } from "@easyshell/utils"
 
 import { db } from "../db"
+import { dispatch } from "../services/dispatcher"
 import { generateContainerName } from "../services/job-name"
 import { insertExecutionJob } from "../services/jobs"
 import { getProblemSlugFromId } from "../services/problems"
@@ -151,11 +152,15 @@ export async function revertQueueItem(
 /**
  * Records an `execution_job` row for the claimed item and logs success.
  *
- * NOTE: T14 will replace the placeholder `runner_id` here with a real
- * runner selected by the dispatcher. `execution_job.runner_id` is
- * `varchar(64) NOT NULL` with a FK to `runner.id` — see schema. To avoid
- * making the column nullable mid-wave, we use the sentinel value
- * `"unassigned"` and T14 must `UPDATE` the row when picking a runner.
+ * The `runner_id` column is set to the sentinel `"unassigned"`; the
+ * dispatcher updates it to the real runner id once `runner.jobs.accept`
+ * succeeds. `execution_job.runner_id` is `varchar(64) NOT NULL` with a
+ * FK to `runner.id`, so the sentinel keeps the column non-null without
+ * forcing a schema change.
+ *
+ * The submission script is stashed in `execution_job.result.input` for
+ * the dispatcher to read back — see `services/jobs.ts` for the
+ * rationale.
  *
  * On failure we revert the queue row so another poller (or the same one
  * on its next tick) can try again.
@@ -166,13 +171,13 @@ export async function processClaimedItem(item: ClaimedQueueItem): Promise<void> 
       await insertExecutionJob(tx, {
         id: item.jobId,
         containerName: item.containerName,
-        // T14 TODO: replace with real runner id from the dispatcher.
         runnerId: "unassigned",
         mode: "submission",
         image: item.image,
         submissionId: item.submissionId,
         testcaseId: item.testcaseId,
         attempt: 1,
+        result: { input: item.input },
       })
     })
 
@@ -187,8 +192,7 @@ export async function processClaimedItem(item: ClaimedQueueItem): Promise<void> 
       "queue.claim.success",
     )
 
-    // T14 will replace this stub with a real runner dispatch RPC.
-    log.debug({ job_id: item.jobId }, "dispatch.todo")
+    await dispatch(item.jobId)
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err)
     log.error(

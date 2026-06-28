@@ -12,7 +12,6 @@ import { createLogger } from "@easyshell/logger"
 
 import { type Context } from "../context"
 import { db } from "../db"
-import { env } from "../env"
 import {
   DeregisterInputSchema,
   DeregisterOutputSchema,
@@ -21,6 +20,7 @@ import {
   RegisterRunnerInputSchema,
   RegisterRunnerOutputSchema,
 } from "../schemas"
+import { encryptSecret } from "../services/secret"
 
 const log = createLogger("coordinator:runners")
 
@@ -62,22 +62,11 @@ export const runnersRouter = router({
         .update(runnerSecret)
         .digest("hex")
 
-      // Encrypt the runner secret for at-rest storage. COORDINATOR_SECRET_KEY
-      // is optional; if absent we store only the hash and leave ciphertext empty.
-      let secretCiphertext = ""
-      let secretNonce = ""
-      if (env.COORDINATOR_SECRET_KEY) {
-        const key = Buffer.from(env.COORDINATOR_SECRET_KEY, "hex")
-        const nonce = crypto.randomBytes(12)
-        const cipher = crypto.createCipheriv("aes-256-gcm", key, nonce)
-        const encrypted = Buffer.concat([
-          cipher.update(runnerSecret, "utf8"),
-          cipher.final(),
-        ])
-        const tag = cipher.getAuthTag()
-        secretCiphertext = Buffer.concat([encrypted, tag]).toString("base64")
-        secretNonce = nonce.toString("hex")
-      }
+      // SECURITY: store an encrypted copy so the coordinator can replay
+      // the secret to the runner at dispatch / watchdog time without
+      // keeping plaintext in memory between calls.
+      const { ciphertext: secretCiphertext, nonce: secretNonce } =
+        encryptSecret(runnerSecret)
 
       await db.transaction(async (tx) => {
         await tx.insert(runners).values({

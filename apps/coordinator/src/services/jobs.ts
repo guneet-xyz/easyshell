@@ -21,6 +21,9 @@ export interface InsertExecutionJobParams {
   testcaseId?: number
   terminalSessionId?: number
   attempt?: number
+  // queue-poller parks the submission script here; dispatcher reads it
+  // back. Avoids adding a dedicated `input` column.
+  result?: Record<string, unknown>
 }
 
 /**
@@ -42,5 +45,6 @@ export async function insertExecutionJob(
     terminalSessionId: params.terminalSessionId,
     attempt: params.attempt ?? 1,
     status: "dispatched",
+    result: params.result,
   })
 }

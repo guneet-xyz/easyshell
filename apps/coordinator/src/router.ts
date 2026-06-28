@@ -1,6 +1,7 @@
 import { initTRPC, TRPCError } from "@trpc/server"
 
 import { type Context } from "./context"
+import { jobsRouter } from "./routers/jobs"
 import { runnersRouter } from "./routers/runners"
 import { submissionsRouter } from "./routers/submissions"
 import {
@@ -16,10 +17,6 @@ import {
   IsAliveOutputSchema,
   KillTerminalSessionInputSchema,
   KillTerminalSessionOutputSchema,
-  ReportProgressInputSchema,
-  ReportProgressOutputSchema,
-  ReportResultInputSchema,
-  ReportResultOutputSchema,
 } from "./schemas"
 
 export type { Context }
@@ -34,16 +31,7 @@ const notImplemented = (): never => {
 
 export const appRouter = router({
   runners: runnersRouter,
-  jobs: router({
-    reportResult: publicProcedure
-      .input(ReportResultInputSchema)
-      .output(ReportResultOutputSchema)
-      .mutation(() => notImplemented()),
-    reportProgress: publicProcedure
-      .input(ReportProgressInputSchema)
-      .output(ReportProgressOutputSchema)
-      .mutation(() => notImplemented()),
-  }),
+  jobs: jobsRouter,
   terminalSessions: router({
     create: publicProcedure
       .input(CreateTerminalSessionInputSchema)

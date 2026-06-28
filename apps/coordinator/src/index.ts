@@ -2,16 +2,15 @@ import { createHTTPServer } from "@trpc/server/adapters/standalone"
 
 import { createLogger } from "@easyshell/logger"
 
+import { createContext } from "./context"
 import { env } from "./env"
-import { appRouter, type Context } from "./router"
+import { appRouter } from "./router"
 
 const log = createLogger("coordinator", { env: env.NODE_ENV })
 
 const server = createHTTPServer({
   router: appRouter,
-  createContext(): Context {
-    return { actor: "unauth" }
-  },
+  createContext,
   onError({ error, path }) {
     if (error.code !== "INTERNAL_SERVER_ERROR") return
     // suppress "not implemented" noise from the stub procedures

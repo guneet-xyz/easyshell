@@ -1,10 +1,10 @@
 import { initTRPC, TRPCError } from "@trpc/server"
 
+import { type Context } from "./context"
+import { runnersRouter } from "./routers/runners"
 import {
   CreateTerminalSessionInputSchema,
   CreateTerminalSessionOutputSchema,
-  DeregisterInputSchema,
-  DeregisterOutputSchema,
   EnqueueSubmissionInputSchema,
   EnqueueSubmissionOutputSchema,
   ExecTerminalSessionInputSchema,
@@ -15,14 +15,10 @@ import {
   GetStatusOutputSchema,
   HealthPingInputSchema,
   HealthPingOutputSchema,
-  HeartbeatInputSchema,
-  HeartbeatOutputSchema,
   IsAliveInputSchema,
   IsAliveOutputSchema,
   KillTerminalSessionInputSchema,
   KillTerminalSessionOutputSchema,
-  RegisterRunnerInputSchema,
-  RegisterRunnerOutputSchema,
   ReportProgressInputSchema,
   ReportProgressOutputSchema,
   ReportResultInputSchema,
@@ -33,11 +29,7 @@ import {
   RetryTestcaseOutputSchema,
 } from "./schemas"
 
-// Stub context — will be replaced with real context in Wave 4 (T7/T11)
-export type Context = {
-  actor: "runner" | "website" | "unauth"
-  runnerId?: string
-}
+export type { Context }
 
 const t = initTRPC.context<Context>().create()
 const router = t.router
@@ -48,20 +40,7 @@ const notImplemented = (): never => {
 }
 
 export const appRouter = router({
-  runners: router({
-    register: publicProcedure
-      .input(RegisterRunnerInputSchema)
-      .output(RegisterRunnerOutputSchema)
-      .mutation(() => notImplemented()),
-    heartbeat: publicProcedure
-      .input(HeartbeatInputSchema)
-      .output(HeartbeatOutputSchema)
-      .mutation(() => notImplemented()),
-    deregister: publicProcedure
-      .input(DeregisterInputSchema)
-      .output(DeregisterOutputSchema)
-      .mutation(() => notImplemented()),
-  }),
+  runners: runnersRouter,
   jobs: router({
     reportResult: publicProcedure
       .input(ReportResultInputSchema)

@@ -1,13 +1,14 @@
 import { createHTTPServer } from "@trpc/server/adapters/standalone"
-import path from "node:path"
 import fs from "node:fs"
+import path from "node:path"
 
 import { createLogger } from "@easyshell/logger"
 
-import { env } from "./env"
-import { getDb } from "./db/sqlite"
+import { createContext } from "./context"
 import { migrate } from "./db/migrations"
-import { appRouter, type Context } from "./router"
+import { getDb } from "./db/sqlite"
+import { env } from "./env"
+import { appRouter } from "./router"
 
 const log = createLogger("runner", { env: env.NODE_ENV })
 
@@ -24,9 +25,7 @@ migrate(db)
 
 const server = createHTTPServer({
   router: appRouter,
-  createContext(): Context {
-    return { actor: "unauth" }
-  },
+  createContext,
   onError({ error, path: p }) {
     if (error.message === "not implemented") return
     log.error({ path: p, err: error }, "tRPC error")

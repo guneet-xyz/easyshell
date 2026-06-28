@@ -10,7 +10,8 @@
   "scripts": {
     "build": "pnpm exec esbuild src/index.ts --bundle --platform=node --outfile=runner.cjs --external:better-sqlite3 --external:pino --external:pino-pretty --external:thread-stream",
     "start": "node runner.cjs",
-    "dev": "pnpm run build && pnpm run start"
+    "dev": "pnpm run build && pnpm run start",
+    "test": "vitest run"
   },
   "dependencies": {
     "@easyshell/logger": "workspace:*",
@@ -26,6 +27,7 @@
     "@types/node": "^20.17.16",
     "esbuild": "^0.27.3",
     "pino-pretty": "^11.0.0",
-    "tsx": "^4.19.3"
+    "tsx": "^4.19.3",
+    "vitest": "^3.0.0"
   }
 }

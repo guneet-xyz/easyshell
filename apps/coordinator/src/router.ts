@@ -2,17 +2,14 @@ import { initTRPC, TRPCError } from "@trpc/server"
 
 import { type Context } from "./context"
 import { runnersRouter } from "./routers/runners"
+import { submissionsRouter } from "./routers/submissions"
 import {
   CreateTerminalSessionInputSchema,
   CreateTerminalSessionOutputSchema,
-  EnqueueSubmissionInputSchema,
-  EnqueueSubmissionOutputSchema,
   ExecTerminalSessionInputSchema,
   ExecTerminalSessionOutputSchema,
   GetRouteInputSchema,
   GetRouteOutputSchema,
-  GetStatusInputSchema,
-  GetStatusOutputSchema,
   HealthPingInputSchema,
   HealthPingOutputSchema,
   IsAliveInputSchema,
@@ -23,10 +20,6 @@ import {
   ReportProgressOutputSchema,
   ReportResultInputSchema,
   ReportResultOutputSchema,
-  RetryAllFailedInputSchema,
-  RetryAllFailedOutputSchema,
-  RetryTestcaseInputSchema,
-  RetryTestcaseOutputSchema,
 } from "./schemas"
 
 export type { Context }
@@ -73,24 +66,7 @@ export const appRouter = router({
       .output(GetRouteOutputSchema)
       .query(() => notImplemented()),
   }),
-  submissions: router({
-    enqueue: publicProcedure
-      .input(EnqueueSubmissionInputSchema)
-      .output(EnqueueSubmissionOutputSchema)
-      .mutation(() => notImplemented()),
-    retryTestcase: publicProcedure
-      .input(RetryTestcaseInputSchema)
-      .output(RetryTestcaseOutputSchema)
-      .mutation(() => notImplemented()),
-    retryAllFailedForSubmission: publicProcedure
-      .input(RetryAllFailedInputSchema)
-      .output(RetryAllFailedOutputSchema)
-      .mutation(() => notImplemented()),
-    getStatus: publicProcedure
-      .input(GetStatusInputSchema)
-      .output(GetStatusOutputSchema)
-      .query(() => notImplemented()),
-  }),
+  submissions: submissionsRouter,
   health: router({
     ping: publicProcedure
       .input(HealthPingInputSchema)

@@ -66,6 +66,37 @@ services:
       timeout: 3s
       retries: 6
       start_period: 10s
+  runner:
+    build:
+      context: .
+      dockerfile: ./apps/runner/Dockerfile
+    container_name: easyshell-dev-runner
+    depends_on:
+      coordinator:
+        condition: service_healthy
+    environment:
+      RUNNER_NAME: runner-1
+      RUNNER_PUBLIC_URL: http://runner:4200
+      COORDINATOR_URL: http://coordinator:4100
+      COORDINATOR_REGISTRATION_TOKEN: token-registration
+      RUNNER_DB_PATH: /var/lib/easyshell-runner/runner.db
+      WORKING_DIR: /tmp/easyshell
+      LOG_LEVEL: debug
+      NODE_ENV: development
+    networks:
+      - easyshell
+    ports:
+      - 4200:4200
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/easyshell:/tmp/easyshell
+      - runner-data:/var/lib/easyshell-runner
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:4200 2>/dev/null || exit 0"]
+      interval: 5s
+      timeout: 3s
+      retries: 6
+      start_period: 15s
   website:
     build:
       context: .
@@ -106,3 +137,5 @@ services:
       interval: 1s
       timeout: 500ms
       retries: 3
+volumes:
+  runner-data:

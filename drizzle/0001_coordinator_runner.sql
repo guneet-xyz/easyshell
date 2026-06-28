@@ -66,6 +66,11 @@ CREATE TABLE "easyshell_terminal_session_runner" (
 	CONSTRAINT "easyshell_terminal_session_runner_execution_job_id_unique" UNIQUE("execution_job_id")
 );
 --> statement-breakpoint
+DELETE FROM "easyshell_submission_testcase_queue" a
+  USING "easyshell_submission_testcase_queue" b
+  WHERE a.ctid < b.ctid
+    AND a.submission_id = b.submission_id
+    AND a.testcase_id = b.testcase_id;--> statement-breakpoint
 ALTER TABLE "easyshell_submission_testcase_queue" ADD CONSTRAINT "easyshell_submission_testcase_queue_submission_id_testcase_id_pk" PRIMARY KEY("submission_id","testcase_id");--> statement-breakpoint
 ALTER TABLE "easyshell_submission_testcase_queue" ADD COLUMN "attempts" integer DEFAULT 0 NOT NULL;--> statement-breakpoint
 ALTER TABLE "easyshell_submission_testcase_queue" ADD COLUMN "last_error" text;--> statement-breakpoint
@@ -80,4 +85,6 @@ ALTER TABLE "easyshell_terminal_session_runner" ADD CONSTRAINT "terminal_session
 ALTER TABLE "easyshell_terminal_session_runner" ADD CONSTRAINT "terminal_session_runner_job_id_fk" FOREIGN KEY ("execution_job_id") REFERENCES "public"."easyshell_execution_job"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "idx_execution_job_runner_status" ON "easyshell_execution_job" USING btree ("runner_id","status");--> statement-breakpoint
 CREATE INDEX "idx_execution_job_status_dispatched" ON "easyshell_execution_job" USING btree ("status","dispatched_at");--> statement-breakpoint
-CREATE INDEX "idx_runner_status_last_seen" ON "easyshell_runner" USING btree ("status","last_seen_at");
+CREATE INDEX "idx_runner_status_last_seen" ON "easyshell_runner" USING btree ("status","last_seen_at");--> statement-breakpoint
+CREATE INDEX "idx_queue_status_attempts" ON "easyshell_submission_testcase_queue" USING btree ("status","attempts") WHERE status = 'pending';--> statement-breakpoint
+CREATE INDEX "idx_execution_job_submission" ON "easyshell_execution_job" USING btree ("submission_id","testcase_id") WHERE submission_id IS NOT NULL;

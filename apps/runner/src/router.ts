@@ -2,17 +2,12 @@ import { initTRPC, TRPCError } from "@trpc/server"
 import type { z } from "zod"
 
 import { type Context } from "./context"
+import { jobsRouter } from "./routers/jobs"
 import {
-  AcceptJobInputSchema,
-  AcceptJobOutputSchema,
-  CancelJobInputSchema,
-  CancelJobOutputSchema,
   CreateSessionInputSchema,
   CreateSessionOutputSchema,
   ExecSessionInputSchema,
   ExecSessionOutputSchema,
-  GetJobInputSchema,
-  GetJobOutputSchema,
   HealthCapacityInputSchema,
   HealthCapacityOutputSchema,
   HealthPingInputSchema,
@@ -38,17 +33,7 @@ const notImplemented = (): never => {
 }
 
 export const appRouter = router({
-  jobs: router({
-    accept: coordinatorProcedure
-      .input(AcceptJobInputSchema)
-      .mutation((): z.infer<typeof AcceptJobOutputSchema> => notImplemented()),
-    get: coordinatorProcedure
-      .input(GetJobInputSchema)
-      .query((): z.infer<typeof GetJobOutputSchema> => notImplemented()),
-    cancel: coordinatorProcedure
-      .input(CancelJobInputSchema)
-      .mutation((): z.infer<typeof CancelJobOutputSchema> => notImplemented()),
-  }),
+  jobs: jobsRouter,
   terminalSessions: router({
     create: coordinatorProcedure
       .input(CreateSessionInputSchema)

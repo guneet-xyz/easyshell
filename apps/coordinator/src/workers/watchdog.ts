@@ -48,7 +48,7 @@ const TERMINAL_BATCH_SIZE = 20
 
 // ─── 1. Runner staleness sweeper ────────────────────────────────────────────
 
-async function markStaleRunners(): Promise<void> {
+export async function markStaleRunners(): Promise<void> {
   const cutoff = new Date(Date.now() - RUNNER_STALE_AFTER_MS)
   const result = await db
     .update(runners)
@@ -65,7 +65,7 @@ async function markStaleRunners(): Promise<void> {
 
 // ─── 2. Job watchdog (poll runner for jobs without recent push) ─────────────
 
-async function watchdogJobs(): Promise<void> {
+export async function watchdogJobs(): Promise<void> {
   const staleCutoff = new Date(Date.now() - JOB_STALE_AFTER_MS)
   const staleJobs = await db
     .select()
@@ -167,7 +167,7 @@ async function markJobLost(jobId: string, reason: string): Promise<void> {
 
 // ─── 3. Lost-job requeue sweeper (defensive: catch orphans) ─────────────────
 
-async function requeueLostJobs(): Promise<void> {
+export async function requeueLostJobs(): Promise<void> {
   // Any execution_job in "lost" whose queue row is still in "running" is
   // an orphan from a markJobLost that died mid-flight (e.g., process
   // crash after UPDATE execution_job but before UPDATE queue row).
@@ -291,7 +291,7 @@ async function requeueOrFailQueueRow(
 
 // ─── 4. Terminal session expiry sweeper ─────────────────────────────────────
 
-async function expireTerminalSessions(): Promise<void> {
+export async function expireTerminalSessions(): Promise<void> {
   const now = new Date()
   const expired = await db
     .select({ id: terminalSessions.id })

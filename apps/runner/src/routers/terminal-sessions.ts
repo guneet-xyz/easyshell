@@ -48,6 +48,7 @@ import {
   KillSessionInputSchema,
   type KillSessionOutputSchema,
 } from "../schemas"
+import { decrementSession, incrementSession } from "../services/capacity"
 
 const log = createLogger("runner:terminal-sessions")
 
@@ -278,6 +279,7 @@ export const terminalSessionsRouter = router({
         db.prepare(
           "UPDATE container SET docker_state='running' WHERE container_name=?",
         ).run(input.container_name)
+        incrementSession()
 
         log.info({ container_name: input.container_name }, "terminal-session.created")
         return { ok: true }
@@ -379,6 +381,7 @@ export const terminalSessionsRouter = router({
         db.prepare(
           "INSERT OR IGNORE INTO cleanup_pending (container_name, reason, queued_at) VALUES (?,?,?)",
         ).run(input.container_name, "cancelled", Date.now())
+        decrementSession()
 
         log.info({ container_name: input.container_name }, "terminal-session.killed")
         return { ok: true }

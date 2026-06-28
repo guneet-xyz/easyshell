@@ -10,9 +10,12 @@ import { migrate } from "./db/migrations"
 import { getDb } from "./db/sqlite"
 import { env } from "./env"
 import { appRouter } from "./router"
+import { getCapacity } from "./services/capacity"
 import { bootstrap } from "./workers/bootstrap"
 import { heartbeatLoop } from "./workers/heartbeat"
 import { pushRetryLoop } from "./workers/push-retry"
+import { runRecovery } from "./workers/recovery"
+import { startReconciliation } from "./workers/reconciliation"
 
 const log = createLogger("runner", { env: env.NODE_ENV })
 
@@ -31,24 +34,22 @@ async function main(): Promise<void> {
   // 1. Bootstrap — exits process if RUNNER_ID/RUNNER_SECRET are not set (first-boot registration).
   await bootstrap()
 
-  // 2. Start heartbeat loop in the background — non-blocking. T22 will replace the
-  //    placeholder capacity snapshot with a live in-memory counter.
-  heartbeatLoop(() => ({
-    session_used: 0,
-    session_max: env.SESSION_MAX_CONCURRENCY,
-    submission_used: 0,
-    submission_max: env.SUBMISSION_MAX_CONCURRENCY,
-  })).catch((err: unknown) => {
+  // 2. Reconcile SQLite ↔ docker once before exposing capacity to the coordinator.
+  await runRecovery()
+
+  // 3. Periodic 30s reconciliation sweep — non-blocking.
+  startReconciliation()
+
+  // 4. Heartbeat loop — non-blocking. Reads live counters from services/capacity.ts.
+  heartbeatLoop(getCapacity).catch((err: unknown) => {
     log.error(
       { err: err instanceof Error ? err.message : String(err) },
       "heartbeat-loop crashed",
     )
   })
 
-  // 3. Start push-retry loop in the background — non-blocking. Replays terminal
-  //    job statuses (succeeded/failed/cancelled) to the coordinator via
-  //    jobs.reportResult until they are ack'd. Exits cleanly if RUNNER_ID or
-  //    RUNNER_SECRET are missing.
+  // 5. push-retry loop — non-blocking. Replays terminal job statuses to the
+  //    coordinator until acked. Exits cleanly if RUNNER_ID/RUNNER_SECRET missing.
   pushRetryLoop().catch((err: unknown) => {
     log.error(
       { err: err instanceof Error ? err.message : String(err) },

@@ -30,7 +30,7 @@ interface ActiveJobRow {
   container_name: string
 }
 
-async function scanOnce(): Promise<void> {
+export async function scanOnce(): Promise<void> {
   const db = getDb(env.RUNNER_DB_PATH)
   const active = db
     .prepare(

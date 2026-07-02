@@ -18,8 +18,8 @@
 // in {accepted, running, succeeded} depending on microtask timing.
 // ==========================================
 
-import Database from "better-sqlite3"
 import fs from "node:fs"
+import Database from "better-sqlite3"
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { migrate } from "../../src/db/migrations"
@@ -42,7 +42,8 @@ const { TEST_WORKING_DIR, dockerState, dbHolder, capacityState } = vi.hoisted(
 
 vi.mock("../../src/env", () => ({
   env: {
-    RUNNER_SECRET: "test-secret-64hex0000000000000000000000000000000000000000000000000000",
+    RUNNER_SECRET:
+      "test-secret-64hex0000000000000000000000000000000000000000000000000000",
     RUNNER_PORT: 4200,
     RUNNER_NAME: "test-runner",
     RUNNER_PUBLIC_URL: "http://localhost:4200",
@@ -94,7 +95,10 @@ vi.mock("../../src/services/capacity", () => ({
     capacityState.submission_used++
   }),
   decrementSubmission: vi.fn(() => {
-    capacityState.submission_used = Math.max(0, capacityState.submission_used - 1)
+    capacityState.submission_used = Math.max(
+      0,
+      capacityState.submission_used - 1,
+    )
   }),
   incrementSession: vi.fn(),
   decrementSession: vi.fn(),
@@ -174,8 +178,8 @@ describe("routers/jobs", () => {
       const result = await caller.accept(buildInput({ job_id: "capped" }))
       expect(result).toEqual({ status: "at_capacity" })
       // No row should have been inserted.
-      const row = dbHolder.db!
-        .prepare("SELECT job_id FROM accepted_job WHERE job_id=?")
+      const row = dbHolder
+        .db!.prepare("SELECT job_id FROM accepted_job WHERE job_id=?")
         .get("capped")
       expect(row).toBeUndefined()
       // dockerRun must NOT have been spawned.
@@ -189,8 +193,10 @@ describe("routers/jobs", () => {
       const result = await caller.accept(buildInput({ job_id: "j-accept" }))
       expect(result).toEqual({ status: "accepted" })
 
-      const job = dbHolder.db!
-        .prepare("SELECT job_id, mode, image FROM accepted_job WHERE job_id=?")
+      const job = dbHolder
+        .db!.prepare(
+          "SELECT job_id, mode, image FROM accepted_job WHERE job_id=?",
+        )
         .get("j-accept") as
         | { job_id: string; mode: string; image: string }
         | undefined
@@ -200,8 +206,8 @@ describe("routers/jobs", () => {
         image: "easyshell-foo",
       })
 
-      const container = dbHolder.db!
-        .prepare("SELECT job_id FROM container WHERE container_name=?")
+      const container = dbHolder
+        .db!.prepare("SELECT job_id FROM container WHERE container_name=?")
         .get("cnt-j-accept") as { job_id: string } | undefined
       expect(container?.job_id).toBe("j-accept")
 
@@ -214,15 +220,17 @@ describe("routers/jobs", () => {
       dockerState.run.mockResolvedValue({ stdout: "", stderr: "", exitCode: 0 })
       const caller = jobsRouter.createCaller({ actor: "coordinator" })
 
-      await caller.accept(buildInput({ job_id: "j-dup", container_name: "cnt-1" }))
+      await caller.accept(
+        buildInput({ job_id: "j-dup", container_name: "cnt-1" }),
+      )
       const second = await caller.accept(
         buildInput({ job_id: "j-dup", container_name: "cnt-2" }),
       )
       expect(second).toEqual({ status: "duplicate" })
 
       // Still only one row + only one dockerRun call (the first accept).
-      const count = dbHolder.db!
-        .prepare("SELECT COUNT(*) AS c FROM accepted_job WHERE job_id=?")
+      const count = dbHolder
+        .db!.prepare("SELECT COUNT(*) AS c FROM accepted_job WHERE job_id=?")
         .get("j-dup") as { c: number }
       expect(count.c).toBe(1)
     })
@@ -251,8 +259,8 @@ describe("routers/jobs", () => {
     })
 
     it("returns 'accepted' status for an accepted row", async () => {
-      dbHolder.db!
-        .prepare(
+      dbHolder
+        .db!.prepare(
           `INSERT INTO accepted_job (job_id, container_name, image, mode, status, accepted_at) VALUES (?,?,?,?,?,?)`,
         )
         .run("j-a", "cnt-a", "img", "submission", "accepted", Date.now())
@@ -262,8 +270,8 @@ describe("routers/jobs", () => {
     })
 
     it("collapses starting/running statuses to 'running'", async () => {
-      dbHolder.db!
-        .prepare(
+      dbHolder
+        .db!.prepare(
           `INSERT INTO accepted_job (job_id, container_name, image, mode, status, accepted_at) VALUES (?,?,?,?,?,?)`,
         )
         .run("j-s", "cnt-s", "img", "submission", "starting", Date.now())
@@ -275,8 +283,8 @@ describe("routers/jobs", () => {
     it("returns the full payload for a succeeded row", async () => {
       const startedAt = 1_700_000_000_000
       const finishedAt = 1_700_000_001_000
-      dbHolder.db!
-        .prepare(
+      dbHolder
+        .db!.prepare(
           `INSERT INTO accepted_job
              (job_id, container_name, image, mode, status, accepted_at,
               started_at, finished_at, exit_code, stdout, stderr, fs)
@@ -310,19 +318,27 @@ describe("routers/jobs", () => {
     })
 
     it("returns 'failed' with the error_message for a failed row", async () => {
-      dbHolder.db!
-        .prepare(
+      dbHolder
+        .db!.prepare(
           `INSERT INTO accepted_job (job_id, container_name, image, mode, status, accepted_at, error_message) VALUES (?,?,?,?,?,?,?)`,
         )
-        .run("j-fail", "cnt-f", "img", "submission", "failed", Date.now(), "exit 137")
+        .run(
+          "j-fail",
+          "cnt-f",
+          "img",
+          "submission",
+          "failed",
+          Date.now(),
+          "exit 137",
+        )
       const caller = jobsRouter.createCaller({ actor: "coordinator" })
       const result = await caller.get({ job_id: "j-fail" })
       expect(result).toEqual({ status: "failed", error: "exit 137" })
     })
 
     it("maps 'lost' to 'failed' with a fallback message", async () => {
-      dbHolder.db!
-        .prepare(
+      dbHolder
+        .db!.prepare(
           `INSERT INTO accepted_job (job_id, container_name, image, mode, status, accepted_at) VALUES (?,?,?,?,?,?)`,
         )
         .run("j-lost", "cnt-l", "img", "submission", "lost", Date.now())
@@ -332,8 +348,8 @@ describe("routers/jobs", () => {
     })
 
     it("returns 'cancelled' for a cancelled row", async () => {
-      dbHolder.db!
-        .prepare(
+      dbHolder
+        .db!.prepare(
           `INSERT INTO accepted_job (job_id, container_name, image, mode, status, accepted_at) VALUES (?,?,?,?,?,?)`,
         )
         .run("j-cnl", "cnt-c", "img", "submission", "cancelled", Date.now())
@@ -352,8 +368,8 @@ describe("routers/jobs", () => {
     })
 
     it("calls dockerKill, marks the row cancelled, and reports was_running=true for a running job", async () => {
-      dbHolder.db!
-        .prepare(
+      dbHolder
+        .db!.prepare(
           `INSERT INTO accepted_job (job_id, container_name, image, mode, status, accepted_at) VALUES (?,?,?,?,?,?)`,
         )
         .run("j-run", "cnt-run", "img", "submission", "running", Date.now())
@@ -364,15 +380,15 @@ describe("routers/jobs", () => {
 
       expect(result).toEqual({ ok: true, was_running: true })
       expect(dockerState.kill).toHaveBeenCalledWith("cnt-run")
-      const row = dbHolder.db!
-        .prepare("SELECT status FROM accepted_job WHERE job_id=?")
+      const row = dbHolder
+        .db!.prepare("SELECT status FROM accepted_job WHERE job_id=?")
         .get("j-run") as { status: string }
       expect(row.status).toBe("cancelled")
     })
 
     it("reports was_running=false when cancelling a row that already finished", async () => {
-      dbHolder.db!
-        .prepare(
+      dbHolder
+        .db!.prepare(
           `INSERT INTO accepted_job (job_id, container_name, image, mode, status, accepted_at) VALUES (?,?,?,?,?,?)`,
         )
         .run("j-done", "cnt-done", "img", "submission", "succeeded", Date.now())
@@ -383,8 +399,8 @@ describe("routers/jobs", () => {
       expect(result).toEqual({ ok: true, was_running: false })
       // dockerKill is still called for idempotency, but the row was
       // already terminal — the status moves to 'cancelled' regardless.
-      const row = dbHolder.db!
-        .prepare("SELECT status FROM accepted_job WHERE job_id=?")
+      const row = dbHolder
+        .db!.prepare("SELECT status FROM accepted_job WHERE job_id=?")
         .get("j-done") as { status: string }
       expect(row.status).toBe("cancelled")
     })

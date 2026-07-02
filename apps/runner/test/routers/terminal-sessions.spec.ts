@@ -13,9 +13,9 @@
 //     (200 with body, 423 Locked, 5xx error, or a request-level error)
 // ==========================================
 
-import Database from "better-sqlite3"
 import { EventEmitter } from "node:events"
 import fs from "node:fs"
+import Database from "better-sqlite3"
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { migrate } from "../../src/db/migrations"
@@ -35,7 +35,8 @@ const { TEST_WORKING_DIR, dockerState, dbHolder, httpRequestMock } = vi.hoisted(
 
 vi.mock("../../src/env", () => ({
   env: {
-    RUNNER_SECRET: "test-secret-64hex0000000000000000000000000000000000000000000000000000",
+    RUNNER_SECRET:
+      "test-secret-64hex0000000000000000000000000000000000000000000000000000",
     RUNNER_PORT: 4200,
     RUNNER_NAME: "test-runner",
     RUNNER_PUBLIC_URL: "http://localhost:4200",
@@ -131,7 +132,10 @@ function makeFakeReq(): FakeReq {
  * response that emits the given body and then `end`. statusCode is
  * 200 unless overridden.
  */
-function mockSocketResponse(opts: { statusCode?: number; body?: string }): FakeReq {
+function mockSocketResponse(opts: {
+  statusCode?: number
+  body?: string
+}): FakeReq {
   const req = makeFakeReq()
   httpRequestMock.mockImplementation((_reqOpts, cb: (res: FakeRes) => void) => {
     queueMicrotask(() => {
@@ -204,7 +208,9 @@ describe("routers/terminal-sessions", () => {
         stderr: "",
         exitCode: 0,
       })
-      const caller = terminalSessionsRouter.createCaller({ actor: "coordinator" })
+      const caller = terminalSessionsRouter.createCaller({
+        actor: "coordinator",
+      })
 
       const result = await caller.create({
         container_name: "easyshell-sess-1",
@@ -226,8 +232,8 @@ describe("routers/terminal-sessions", () => {
       expect(runArgs.image).toBe("easyshell-foo")
       expect(runArgs.extraVolumes?.[0]).toContain("easyshell-sess-1")
 
-      const job = dbHolder.db!
-        .prepare(
+      const job = dbHolder
+        .db!.prepare(
           "SELECT job_id, mode, status FROM accepted_job WHERE container_name=?",
         )
         .get("easyshell-sess-1") as {
@@ -239,13 +245,15 @@ describe("routers/terminal-sessions", () => {
       expect(job.mode).toBe("session")
       expect(job.status).toBe("running")
 
-      const container = dbHolder.db!
-        .prepare("SELECT docker_state FROM container WHERE container_name=?")
+      const container = dbHolder
+        .db!.prepare(
+          "SELECT docker_state FROM container WHERE container_name=?",
+        )
         .get("easyshell-sess-1") as { docker_state: string }
       expect(container.docker_state).toBe("running")
 
-      const terminal = dbHolder.db!
-        .prepare(
+      const terminal = dbHolder
+        .db!.prepare(
           "SELECT socket_path FROM terminal_session WHERE container_name=?",
         )
         .get("easyshell-sess-1") as { socket_path: string }
@@ -258,7 +266,9 @@ describe("routers/terminal-sessions", () => {
         stderr: "pull access denied",
         exitCode: 125,
       })
-      const caller = terminalSessionsRouter.createCaller({ actor: "coordinator" })
+      const caller = terminalSessionsRouter.createCaller({
+        actor: "coordinator",
+      })
 
       await expect(
         caller.create({
@@ -267,8 +277,8 @@ describe("routers/terminal-sessions", () => {
         }),
       ).rejects.toThrow(/docker run failed/)
 
-      const row = dbHolder.db!
-        .prepare(
+      const row = dbHolder
+        .db!.prepare(
           "SELECT status, error_message FROM accepted_job WHERE container_name=?",
         )
         .get("easyshell-sess-fail") as {
@@ -285,8 +295,8 @@ describe("routers/terminal-sessions", () => {
       const socketPath = `${TEST_WORKING_DIR}/sessions/${containerName}/main.sock`
       const now = Date.now()
       dbHolder.db!.transaction(() => {
-        dbHolder.db!
-          .prepare(
+        dbHolder
+          .db!.prepare(
             `INSERT INTO accepted_job (job_id, container_name, image, mode, status, accepted_at) VALUES (?,?,?,?,?,?)`,
           )
           .run(
@@ -297,13 +307,19 @@ describe("routers/terminal-sessions", () => {
             "running",
             now,
           )
-        dbHolder.db!
-          .prepare(
+        dbHolder
+          .db!.prepare(
             `INSERT INTO container (container_name, job_id, docker_state, working_dir, created_at) VALUES (?,?,?,?,?)`,
           )
-          .run(containerName, `session-${containerName}`, "running", "/tmp", now)
-        dbHolder.db!
-          .prepare(
+          .run(
+            containerName,
+            `session-${containerName}`,
+            "running",
+            "/tmp",
+            now,
+          )
+        dbHolder
+          .db!.prepare(
             `INSERT INTO terminal_session (container_name, job_id, socket_path, created_at) VALUES (?,?,?,?)`,
           )
           .run(containerName, `session-${containerName}`, socketPath, now)
@@ -318,7 +334,9 @@ describe("routers/terminal-sessions", () => {
         body: JSON.stringify({ stdout: "out\n", stderr: "" }),
       })
 
-      const caller = terminalSessionsRouter.createCaller({ actor: "coordinator" })
+      const caller = terminalSessionsRouter.createCaller({
+        actor: "coordinator",
+      })
       const result = await caller.exec({
         container_name: "easyshell-sess-exec",
         command: "ls /",
@@ -340,8 +358,8 @@ describe("routers/terminal-sessions", () => {
       expect(httpCallOpts.path).toBe("/")
       expect(httpCallOpts.method).toBe("POST")
 
-      const log = dbHolder.db!
-        .prepare(
+      const log = dbHolder
+        .db!.prepare(
           "SELECT command, stdout, stderr, exit_status FROM command_log WHERE container_name=?",
         )
         .get("easyshell-sess-exec") as {
@@ -358,8 +376,8 @@ describe("routers/terminal-sessions", () => {
       })
 
       // last_exec_at must have been bumped.
-      const ts = dbHolder.db!
-        .prepare(
+      const ts = dbHolder
+        .db!.prepare(
           "SELECT last_exec_at FROM terminal_session WHERE container_name=?",
         )
         .get("easyshell-sess-exec") as { last_exec_at: number }
@@ -370,7 +388,9 @@ describe("routers/terminal-sessions", () => {
       seedTerminalSession("easyshell-sess-locked")
       mockSocketResponse({ statusCode: 423 })
 
-      const caller = terminalSessionsRouter.createCaller({ actor: "coordinator" })
+      const caller = terminalSessionsRouter.createCaller({
+        actor: "coordinator",
+      })
       const result = await caller.exec({
         container_name: "easyshell-sess-locked",
         command: "ls",
@@ -380,8 +400,8 @@ describe("routers/terminal-sessions", () => {
         expect(result.type).toBe("container_locked")
       }
 
-      const log = dbHolder.db!
-        .prepare(
+      const log = dbHolder
+        .db!.prepare(
           "SELECT exit_status FROM command_log WHERE container_name=?",
         )
         .get("easyshell-sess-locked") as { exit_status: string }
@@ -392,7 +412,9 @@ describe("routers/terminal-sessions", () => {
       seedTerminalSession("easyshell-sess-500")
       mockSocketResponse({ statusCode: 500, body: "internal" })
 
-      const caller = terminalSessionsRouter.createCaller({ actor: "coordinator" })
+      const caller = terminalSessionsRouter.createCaller({
+        actor: "coordinator",
+      })
       const result = await caller.exec({
         container_name: "easyshell-sess-500",
         command: "ls",
@@ -402,8 +424,8 @@ describe("routers/terminal-sessions", () => {
         expect(result.type).toBe("session_error")
         expect(result.message).toContain("internal")
       }
-      const log = dbHolder.db!
-        .prepare(
+      const log = dbHolder
+        .db!.prepare(
           "SELECT exit_status FROM command_log WHERE container_name=?",
         )
         .get("easyshell-sess-500") as { exit_status: string }
@@ -416,7 +438,9 @@ describe("routers/terminal-sessions", () => {
         Object.assign(new Error("ENOENT"), { code: "ENOENT" }),
       )
 
-      const caller = terminalSessionsRouter.createCaller({ actor: "coordinator" })
+      const caller = terminalSessionsRouter.createCaller({
+        actor: "coordinator",
+      })
       const result = await caller.exec({
         container_name: "easyshell-sess-down",
         command: "ls",
@@ -425,8 +449,8 @@ describe("routers/terminal-sessions", () => {
       if (result.status === "error") {
         expect(result.type).toBe("session_not_running")
       }
-      const log = dbHolder.db!
-        .prepare(
+      const log = dbHolder
+        .db!.prepare(
           "SELECT exit_status FROM command_log WHERE container_name=?",
         )
         .get("easyshell-sess-down") as { exit_status: string }
@@ -434,7 +458,9 @@ describe("routers/terminal-sessions", () => {
     })
 
     it("returns error/session_not_running and writes container_down log when no session row exists", async () => {
-      const caller = terminalSessionsRouter.createCaller({ actor: "coordinator" })
+      const caller = terminalSessionsRouter.createCaller({
+        actor: "coordinator",
+      })
       const result = await caller.exec({
         container_name: "easyshell-sess-ghost",
         command: "ls",
@@ -446,8 +472,8 @@ describe("routers/terminal-sessions", () => {
       // http.request must NOT have been called — we shortcut on missing row.
       expect(httpRequestMock).not.toHaveBeenCalled()
 
-      const log = dbHolder.db!
-        .prepare(
+      const log = dbHolder
+        .db!.prepare(
           "SELECT exit_status, command FROM command_log WHERE container_name=?",
         )
         .get("easyshell-sess-ghost") as {
@@ -461,15 +487,24 @@ describe("routers/terminal-sessions", () => {
   describe("isRunning", () => {
     it("returns the running flag from dockerInspect", async () => {
       dockerState.inspect.mockResolvedValueOnce({ exists: true, running: true })
-      const caller = terminalSessionsRouter.createCaller({ actor: "coordinator" })
-      const result = await caller.isRunning({ container_name: "easyshell-sess-1" })
+      const caller = terminalSessionsRouter.createCaller({
+        actor: "coordinator",
+      })
+      const result = await caller.isRunning({
+        container_name: "easyshell-sess-1",
+      })
       expect(result).toEqual({ is_running: true })
       expect(dockerState.inspect).toHaveBeenCalledWith("easyshell-sess-1")
     })
 
     it("returns is_running=false when container is missing or stopped", async () => {
-      dockerState.inspect.mockResolvedValueOnce({ exists: false, running: false })
-      const caller = terminalSessionsRouter.createCaller({ actor: "coordinator" })
+      dockerState.inspect.mockResolvedValueOnce({
+        exists: false,
+        running: false,
+      })
+      const caller = terminalSessionsRouter.createCaller({
+        actor: "coordinator",
+      })
       const result = await caller.isRunning({ container_name: "ghost" })
       expect(result).toEqual({ is_running: false })
     })
@@ -479,8 +514,8 @@ describe("routers/terminal-sessions", () => {
     it("calls dockerKill, marks the job cancelled, and enqueues cleanup_pending", async () => {
       const now = Date.now()
       const containerName = "easyshell-sess-kill"
-      dbHolder.db!
-        .prepare(
+      dbHolder
+        .db!.prepare(
           `INSERT INTO accepted_job (job_id, container_name, image, mode, status, accepted_at) VALUES (?,?,?,?,?,?)`,
         )
         .run(
@@ -491,34 +526,38 @@ describe("routers/terminal-sessions", () => {
           "running",
           now,
         )
-      dbHolder.db!
-        .prepare(
+      dbHolder
+        .db!.prepare(
           `INSERT INTO container (container_name, job_id, docker_state, working_dir, created_at) VALUES (?,?,?,?,?)`,
         )
         .run(containerName, `session-${containerName}`, "running", "/tmp", now)
 
       dockerState.kill.mockResolvedValue({ ok: true })
 
-      const caller = terminalSessionsRouter.createCaller({ actor: "coordinator" })
+      const caller = terminalSessionsRouter.createCaller({
+        actor: "coordinator",
+      })
       const result = await caller.kill({ container_name: containerName })
       expect(result).toEqual({ ok: true })
       expect(dockerState.kill).toHaveBeenCalledWith(containerName)
 
-      const job = dbHolder.db!
-        .prepare(
+      const job = dbHolder
+        .db!.prepare(
           "SELECT status, finished_at FROM accepted_job WHERE container_name=?",
         )
         .get(containerName) as { status: string; finished_at: number | null }
       expect(job.status).toBe("cancelled")
       expect(job.finished_at).toBeGreaterThan(0)
 
-      const container = dbHolder.db!
-        .prepare("SELECT docker_state FROM container WHERE container_name=?")
+      const container = dbHolder
+        .db!.prepare(
+          "SELECT docker_state FROM container WHERE container_name=?",
+        )
         .get(containerName) as { docker_state: string }
       expect(container.docker_state).toBe("removed")
 
-      const pending = dbHolder.db!
-        .prepare(
+      const pending = dbHolder
+        .db!.prepare(
           "SELECT reason FROM cleanup_pending WHERE container_name=?",
         )
         .get(containerName) as { reason: string }
@@ -527,8 +566,8 @@ describe("routers/terminal-sessions", () => {
 
     it("is idempotent — kill on a container that's already gone still returns ok:true", async () => {
       const containerName = "easyshell-sess-already-dead"
-      dbHolder.db!
-        .prepare(
+      dbHolder
+        .db!.prepare(
           `INSERT INTO accepted_job (job_id, container_name, image, mode, status, accepted_at) VALUES (?,?,?,?,?,?)`,
         )
         .run(
@@ -539,13 +578,18 @@ describe("routers/terminal-sessions", () => {
           "running",
           Date.now(),
         )
-      dockerState.kill.mockResolvedValue({ ok: false, error: "No such container" })
+      dockerState.kill.mockResolvedValue({
+        ok: false,
+        error: "No such container",
+      })
 
-      const caller = terminalSessionsRouter.createCaller({ actor: "coordinator" })
+      const caller = terminalSessionsRouter.createCaller({
+        actor: "coordinator",
+      })
       const result = await caller.kill({ container_name: containerName })
       expect(result).toEqual({ ok: true })
-      const job = dbHolder.db!
-        .prepare("SELECT status FROM accepted_job WHERE container_name=?")
+      const job = dbHolder
+        .db!.prepare("SELECT status FROM accepted_job WHERE container_name=?")
         .get(containerName) as { status: string }
       expect(job.status).toBe("cancelled")
     })

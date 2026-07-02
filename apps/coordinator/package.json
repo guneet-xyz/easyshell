@@ -9,8 +9,8 @@
   },
   "scripts": {
     "build": "node esbuild.config.mjs",
-    "start": "node coordinator.cjs",
     "dev": "pnpm run build && pnpm run start",
+    "start": "node coordinator.cjs",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage"
   },

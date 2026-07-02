@@ -3,7 +3,12 @@ import { z } from "zod"
 // ─── Shared primitives ───────────────────────────────────────────────────────
 
 export const ExecutionModeSchema = z.enum(["session", "submission"])
-export const RunnerStatusSchema = z.enum(["active", "draining", "stale", "deregistered"])
+export const RunnerStatusSchema = z.enum([
+  "active",
+  "draining",
+  "stale",
+  "deregistered",
+])
 export const JobStatusSchema = z.enum([
   "dispatched",
   "accepted",
@@ -94,7 +99,11 @@ export const ExecTerminalSessionInputSchema = z.object({
   command: z.string(),
 })
 export const ExecTerminalSessionOutputSchema = z.discriminatedUnion("status", [
-  z.object({ status: z.literal("success"), stdout: z.string(), stderr: z.string() }),
+  z.object({
+    status: z.literal("success"),
+    stdout: z.string(),
+    stderr: z.string(),
+  }),
   z.object({
     status: z.literal("error"),
     type: z.enum([
@@ -157,7 +166,10 @@ export const RetryAllFailedInputSchema = z.object({
   submission_id: z.number().int().positive(),
 })
 export const RetryAllFailedOutputSchema = z.discriminatedUnion("status", [
-  z.object({ status: z.literal("queued"), requeued_count: z.number().int().nonnegative() }),
+  z.object({
+    status: z.literal("queued"),
+    requeued_count: z.number().int().nonnegative(),
+  }),
   z.object({ status: z.literal("forbidden") }),
   z.object({ status: z.literal("not_found") }),
 ])

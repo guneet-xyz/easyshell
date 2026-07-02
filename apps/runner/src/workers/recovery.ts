@@ -65,7 +65,11 @@ export async function runRecovery(): Promise<void> {
         if (!inspect.exists) {
           db.prepare(
             "UPDATE accepted_job SET status='lost', error_message=?, finished_at=? WHERE job_id=?",
-          ).run("container disappeared during runner downtime", Date.now(), row.job_id)
+          ).run(
+            "container disappeared during runner downtime",
+            Date.now(),
+            row.job_id,
+          )
           db.prepare(
             "INSERT OR IGNORE INTO cleanup_pending (container_name, reason, queued_at) VALUES (?,?,?)",
           ).run(row.container_name, "startup_recovery", Date.now())
@@ -120,7 +124,9 @@ export async function runRecovery(): Promise<void> {
 
 async function drainCleanupQueue(db: ReturnType<typeof getDb>): Promise<void> {
   const pending = db
-    .prepare("SELECT container_name, reason FROM cleanup_pending WHERE attempts < ?")
+    .prepare(
+      "SELECT container_name, reason FROM cleanup_pending WHERE attempts < ?",
+    )
     .all(MAX_CLEANUP_ATTEMPTS) as CleanupRow[]
 
   if (pending.length === 0) return
@@ -131,17 +137,27 @@ async function drainCleanupQueue(db: ReturnType<typeof getDb>): Promise<void> {
     try {
       await dockerRm(item.container_name)
 
-      const submissionDir = path.join(env.WORKING_DIR, "submissions", item.container_name)
+      const submissionDir = path.join(
+        env.WORKING_DIR,
+        "submissions",
+        item.container_name,
+      )
       if (fs.existsSync(submissionDir)) {
         fs.rmSync(submissionDir, { recursive: true, force: true })
       }
 
-      const sessionDir = path.join(env.WORKING_DIR, "sessions", item.container_name)
+      const sessionDir = path.join(
+        env.WORKING_DIR,
+        "sessions",
+        item.container_name,
+      )
       if (fs.existsSync(sessionDir)) {
         fs.rmSync(sessionDir, { recursive: true, force: true })
       }
 
-      db.prepare("DELETE FROM cleanup_pending WHERE container_name=?").run(item.container_name)
+      db.prepare("DELETE FROM cleanup_pending WHERE container_name=?").run(
+        item.container_name,
+      )
       log.debug(
         { container_name: item.container_name, reason: item.reason },
         "runner.recovery.cleanup-ok",

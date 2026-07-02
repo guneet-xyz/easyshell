@@ -141,9 +141,9 @@ async function pushOnce(): Promise<void> {
         job_id: row.job_id,
         outcome: payload,
       })
-      db.prepare(
-        "UPDATE accepted_job SET push_acked=1 WHERE job_id=?",
-      ).run(row.job_id)
+      db.prepare("UPDATE accepted_job SET push_acked=1 WHERE job_id=?").run(
+        row.job_id,
+      )
       log.info({ job_id: row.job_id }, "push.acked")
     } catch (err: unknown) {
       db.prepare(
@@ -169,9 +169,7 @@ async function pushOnce(): Promise<void> {
  */
 export async function pushRetryLoop(): Promise<void> {
   if (!env.RUNNER_ID || !env.RUNNER_SECRET) {
-    log.warn(
-      "runner.push-retry.skipped — RUNNER_ID or RUNNER_SECRET not set",
-    )
+    log.warn("runner.push-retry.skipped — RUNNER_ID or RUNNER_SECRET not set")
     return
   }
   log.info({ interval_ms: LOOP_INTERVAL_MS }, "runner.push-retry.loop-started")

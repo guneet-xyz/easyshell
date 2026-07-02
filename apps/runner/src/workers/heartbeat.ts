@@ -33,9 +33,7 @@ export async function heartbeatLoop(
   getCapacity: () => CapacitySnapshot,
 ): Promise<void> {
   if (!env.RUNNER_ID || !env.RUNNER_SECRET) {
-    log.warn(
-      "runner.heartbeat.skipped — RUNNER_ID or RUNNER_SECRET not set",
-    )
+    log.warn("runner.heartbeat.skipped — RUNNER_ID or RUNNER_SECRET not set")
     return
   }
 

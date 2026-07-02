@@ -20,8 +20,12 @@ export const env = createEnv({
     SUBMISSION_MAX_CONCURRENCY: z.coerce.number().int().positive().default(4),
     SESSION_MAX_CONCURRENCY: z.coerce.number().int().positive().default(64),
     RUNNER_DB_PATH: z.string().default("/var/lib/easyshell-runner/runner.db"),
-    LOG_LEVEL: z.enum(["trace", "debug", "info", "warn", "error", "fatal"]).default("info"),
-    NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+    LOG_LEVEL: z
+      .enum(["trace", "debug", "info", "warn", "error", "fatal"])
+      .default("info"),
+    NODE_ENV: z
+      .enum(["development", "production", "test"])
+      .default("development"),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,

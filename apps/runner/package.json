@@ -9,8 +9,8 @@
   },
   "scripts": {
     "build": "pnpm exec esbuild src/index.ts --bundle --platform=node --outfile=runner.cjs --external:better-sqlite3 --external:pino --external:pino-pretty --external:thread-stream",
-    "start": "node runner.cjs",
     "dev": "pnpm run build && pnpm run start",
+    "start": "node runner.cjs",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage"
   },

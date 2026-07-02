@@ -90,6 +90,9 @@ export function decryptSecret(ciphertext: string, nonce: string): string {
   const encrypted = data.subarray(0, data.length - GCM_TAG_BYTES)
   const decipher = crypto.createDecipheriv("aes-256-gcm", key, nonceBytes)
   decipher.setAuthTag(tag)
-  const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()])
+  const decrypted = Buffer.concat([
+    decipher.update(encrypted),
+    decipher.final(),
+  ])
   return decrypted.toString("utf8")
 }

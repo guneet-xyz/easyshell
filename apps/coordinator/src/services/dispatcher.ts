@@ -20,18 +20,15 @@
 
 import { and, eq, sql } from "drizzle-orm"
 
-import {
-  executionJobs,
-  submissionTestcaseQueue,
-} from "@easyshell/db/schema"
+import { executionJobs, submissionTestcaseQueue } from "@easyshell/db/schema"
 import { createLogger } from "@easyshell/logger"
 
 import { db } from "../db"
-import { pickRunner } from "./runner-picker"
 import {
   createRunnerClientFromCreds,
   type AcceptJobInput,
 } from "./runner-client"
+import { pickRunner } from "./runner-picker"
 import { decryptSecret } from "./secret"
 
 const log = createLogger("coordinator:dispatcher")
@@ -195,10 +192,7 @@ async function dispatchInner(jobId: string): Promise<void> {
         )
       }
       await markJobFailed(jobId, "runner at capacity")
-      log.warn(
-        { job_id: jobId, runner_id: runner.id },
-        "dispatch.at-capacity",
-      )
+      log.warn({ job_id: jobId, runner_id: runner.id }, "dispatch.at-capacity")
       return
     }
 

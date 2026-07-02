@@ -39,8 +39,9 @@ export async function pickRunner(
       publicUrl: runners.publicUrl,
       secretCiphertext: runners.secretCiphertext,
       secretNonce: runners.secretNonce,
-      spareCapacity:
-        sql<number>`COALESCE(${maxCol} - ${usedCol}, 0)`.as("spare_capacity"),
+      spareCapacity: sql<number>`COALESCE(${maxCol} - ${usedCol}, 0)`.as(
+        "spare_capacity",
+      ),
     })
     .from(runners)
     .innerJoin(

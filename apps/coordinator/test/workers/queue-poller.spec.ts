@@ -256,7 +256,9 @@ describe("claimNextQueueItem", () => {
       .mockResolvedValueOnce([]) // inner CTE
       .mockResolvedValueOnce([]) // submission lookup → empty
 
-    await expect(claimNextQueueItem()).rejects.toThrow(/Submission 99 not found/)
+    await expect(claimNextQueueItem()).rejects.toThrow(
+      /Submission 99 not found/,
+    )
   })
 })
 

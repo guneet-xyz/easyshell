@@ -13,7 +13,11 @@ type TxStub = Parameters<typeof insertExecutionJob>[0]
 const insertSpy = vi.fn<AnyFn>()
 const valuesSpy = vi.fn<AnyFn>()
 
-function makeTx(): { tx: TxStub; insertSpy: typeof insertSpy; valuesSpy: typeof valuesSpy } {
+function makeTx(): {
+  tx: TxStub
+  insertSpy: typeof insertSpy
+  valuesSpy: typeof valuesSpy
+} {
   const tx = {
     insert: (table: unknown) => {
       insertSpy(table)

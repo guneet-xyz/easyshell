@@ -40,9 +40,7 @@ const runnerClientJobsGetQuery = vi
 const mockRunnerClient = {
   jobs: { get: { query: runnerClientJobsGetQuery } },
 }
-const createRunnerClientFromDbSpy = vi
-  .fn()
-  .mockResolvedValue(mockRunnerClient)
+const createRunnerClientFromDbSpy = vi.fn().mockResolvedValue(mockRunnerClient)
 
 vi.mock("../../src/services/runner-client", () => ({
   createRunnerClientFromDb: createRunnerClientFromDbSpy,
@@ -160,9 +158,7 @@ beforeEach(() => {
   updateWhereSpy.mockReset()
   updateReturningSpy.mockReset().mockResolvedValue([])
   updateWhereThenSpy.mockReset().mockResolvedValue([])
-  runnerClientJobsGetQuery
-    .mockReset()
-    .mockResolvedValue({ status: "unknown" })
+  runnerClientJobsGetQuery.mockReset().mockResolvedValue({ status: "unknown" })
   createRunnerClientFromDbSpy.mockReset().mockResolvedValue(mockRunnerClient)
   logInfoSpy.mockReset()
   logWarnSpy.mockReset()
@@ -318,7 +314,7 @@ describe("watchdog.requeueLostJobs", () => {
     >
     expect(insertedRow.passed).toBe(false)
     expect(insertedRow.exitCode).toBe(-1)
-    expect((insertedRow.stderr as string)).toContain("max attempts exceeded")
+    expect(insertedRow.stderr as string).toContain("max attempts exceeded")
 
     expect(updateTableSpy).toHaveBeenCalledTimes(1)
     const setArg = updateSetSpy.mock.calls[0]?.[0] as Record<string, unknown>

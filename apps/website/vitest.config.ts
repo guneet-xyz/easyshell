@@ -1,5 +1,4 @@
 import path from "node:path"
-
 import { defineConfig } from "vitest/config"
 
 // `import.meta.dirname` is available on Node 20.11+, which this repo targets

@@ -63,8 +63,8 @@ describe("retryAllFailedTestcases", () => {
   it("throws Error('forbidden') when coordinator returns status=forbidden", async () => {
     retryAllMutate.mockResolvedValueOnce({ status: "forbidden" })
 
-    await expect(
-      retryAllFailedTestcases({ submissionId: 42 }),
-    ).rejects.toThrow("forbidden")
+    await expect(retryAllFailedTestcases({ submissionId: 42 })).rejects.toThrow(
+      "forbidden",
+    )
   })
 })

@@ -82,4 +82,3 @@ See [TESTING.md](../../TESTING.md) for full testing documentation and convention
 ```bash
 pnpm --filter @easyshell/website test  # unit tests (server actions + coordinator client)
 ```
-

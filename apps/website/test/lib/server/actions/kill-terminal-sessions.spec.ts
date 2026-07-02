@@ -28,9 +28,7 @@ vi.mock("@easyshell/db/schema", () => ({
 
 // Drizzle chain mock — `.update(t).set(v).where(c).returning(s)` resolves to
 // the configured rows, swapped per-test via `mockResolvedValueOnce`.
-const updateReturningSpy = vi
-  .fn()
-  .mockResolvedValue([{ id: 11 }, { id: 12 }])
+const updateReturningSpy = vi.fn().mockResolvedValue([{ id: 11 }, { id: 12 }])
 
 vi.mock("@/db", () => ({
   db: {

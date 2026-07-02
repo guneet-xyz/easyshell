@@ -2,7 +2,6 @@
 // Internal Functions to interact with the coordinator
 // ================================================================
 import crypto from "node:crypto"
-
 import { and, asc, eq, isNull } from "drizzle-orm"
 
 import { createCoordinatorClient } from "@easyshell/coordinator/client"

@@ -1,11 +1,7 @@
 import crypto from "node:crypto"
-
 import { and, eq, sql } from "drizzle-orm"
 
-import {
-  submissionTestcaseQueue,
-  submissions,
-} from "@easyshell/db/schema"
+import { submissions, submissionTestcaseQueue } from "@easyshell/db/schema"
 import { createLogger } from "@easyshell/logger"
 import { sleep } from "@easyshell/utils"
 
@@ -165,7 +161,9 @@ export async function revertQueueItem(
  * On failure we revert the queue row so another poller (or the same one
  * on its next tick) can try again.
  */
-export async function processClaimedItem(item: ClaimedQueueItem): Promise<void> {
+export async function processClaimedItem(
+  item: ClaimedQueueItem,
+): Promise<void> {
   try {
     await db.transaction(async (tx) => {
       await insertExecutionJob(tx, {

@@ -315,14 +315,14 @@ export async function expireTerminalSessions(): Promise<void> {
 
 // ─── boot ────────────────────────────────────────────────────────────────────
 
-function runSafely(
-  name: string,
-  fn: () => Promise<void>,
-): () => void {
+function runSafely(name: string, fn: () => Promise<void>): () => void {
   return () => {
     fn().catch((err: unknown) => {
       log.error(
-        { sweeper: name, error: err instanceof Error ? err.message : String(err) },
+        {
+          sweeper: name,
+          error: err instanceof Error ? err.message : String(err),
+        },
         "watchdog.sweeper-error",
       )
     })

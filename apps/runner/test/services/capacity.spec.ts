@@ -14,7 +14,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("../../src/env", () => ({
   env: {
-    RUNNER_SECRET: "test-secret-64hex0000000000000000000000000000000000000000000000000000",
+    RUNNER_SECRET:
+      "test-secret-64hex0000000000000000000000000000000000000000000000000000",
     RUNNER_PORT: 4200,
     RUNNER_NAME: "test-runner",
     RUNNER_PUBLIC_URL: "http://localhost:4200",

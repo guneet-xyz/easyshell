@@ -101,13 +101,13 @@ describe("workers/bootstrap", () => {
       runner_secret: "new-secret",
     })
 
-    const exitSpy = vi
-      .spyOn(process, "exit")
-      .mockImplementation(((code?: number) => {
-        // Throw to abort the bootstrap function at the exit point — the
-        // function would otherwise continue past `process.exit(0)`.
-        throw new Error(`__EXIT_${code ?? 0}__`)
-      }) as never)
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation(((
+      code?: number,
+    ) => {
+      // Throw to abort the bootstrap function at the exit point — the
+      // function would otherwise continue past `process.exit(0)`.
+      throw new Error(`__EXIT_${code ?? 0}__`)
+    }) as never)
     const stderrSpy = vi
       .spyOn(process.stderr, "write")
       .mockImplementation((() => true) as never)
@@ -144,11 +144,11 @@ describe("workers/bootstrap", () => {
       runner_id: "regenerated-id",
       runner_secret: "fresh-secret",
     })
-    const exitSpy = vi
-      .spyOn(process, "exit")
-      .mockImplementation(((code?: number) => {
-        throw new Error(`__EXIT_${code ?? 0}__`)
-      }) as never)
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation(((
+      code?: number,
+    ) => {
+      throw new Error(`__EXIT_${code ?? 0}__`)
+    }) as never)
     vi.spyOn(process.stderr, "write").mockImplementation((() => true) as never)
 
     const { bootstrap } = await import("../../src/workers/bootstrap")
@@ -160,11 +160,11 @@ describe("workers/bootstrap", () => {
 
   it("calls process.exit(1) when the registration mutate rejects", async () => {
     mutateMock.mockRejectedValue(new Error("coordinator unreachable"))
-    const exitSpy = vi
-      .spyOn(process, "exit")
-      .mockImplementation(((code?: number) => {
-        throw new Error(`__EXIT_${code ?? 0}__`)
-      }) as never)
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation(((
+      code?: number,
+    ) => {
+      throw new Error(`__EXIT_${code ?? 0}__`)
+    }) as never)
     const stderrSpy = vi
       .spyOn(process.stderr, "write")
       .mockImplementation((() => true) as never)

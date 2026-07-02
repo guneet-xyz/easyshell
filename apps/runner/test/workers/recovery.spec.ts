@@ -28,7 +28,8 @@ const { dockerState, dbHolder } = vi.hoisted(() => ({
 
 vi.mock("../../src/env", () => ({
   env: {
-    RUNNER_SECRET: "test-secret-64hex0000000000000000000000000000000000000000000000000000",
+    RUNNER_SECRET:
+      "test-secret-64hex0000000000000000000000000000000000000000000000000000",
     RUNNER_PORT: 4200,
     RUNNER_NAME: "test-runner",
     RUNNER_PUBLIC_URL: "http://localhost:4200",
@@ -82,7 +83,14 @@ function seedAcceptedJob(
     container_name: string
     image?: string
     mode?: "submission" | "session"
-    status: "accepted" | "starting" | "running" | "succeeded" | "failed" | "cancelled" | "lost"
+    status:
+      | "accepted"
+      | "starting"
+      | "running"
+      | "succeeded"
+      | "failed"
+      | "cancelled"
+      | "lost"
   },
 ): void {
   db.prepare(
@@ -128,16 +136,20 @@ describe("workers/recovery", () => {
     await runRecovery()
 
     expect(dockerState.inspect).toHaveBeenCalledWith("easyshell-job-1")
-    const row = dbHolder.db!
-      .prepare("SELECT status, error_message FROM accepted_job WHERE job_id=?")
+    const row = dbHolder
+      .db!.prepare(
+        "SELECT status, error_message FROM accepted_job WHERE job_id=?",
+      )
       .get("job-1") as { status: string; error_message: string | null }
     expect(row.status).toBe("lost")
     expect(row.error_message).toContain("disappeared")
     // cleanup_pending was inserted with reason='startup_recovery' but the
     // subsequent drainCleanupQueue successfully `dockerRm`-ed it and
     // removed it from the queue. So the row should be GONE after drain.
-    const pending = dbHolder.db!
-      .prepare("SELECT container_name FROM cleanup_pending WHERE container_name=?")
+    const pending = dbHolder
+      .db!.prepare(
+        "SELECT container_name FROM cleanup_pending WHERE container_name=?",
+      )
       .get("easyshell-job-1")
     expect(pending).toBeUndefined()
     // dockerRm was called as part of drainCleanupQueue.
@@ -155,8 +167,10 @@ describe("workers/recovery", () => {
 
     await runRecovery()
 
-    const row = dbHolder.db!
-      .prepare("SELECT status, error_message FROM accepted_job WHERE job_id=?")
+    const row = dbHolder
+      .db!.prepare(
+        "SELECT status, error_message FROM accepted_job WHERE job_id=?",
+      )
       .get("job-2") as { status: string; error_message: string | null }
     expect(row.status).toBe("lost")
     expect(row.error_message).toContain("exited")
@@ -173,14 +187,16 @@ describe("workers/recovery", () => {
 
     await runRecovery()
 
-    const row = dbHolder.db!
-      .prepare("SELECT status, error_message FROM accepted_job WHERE job_id=?")
+    const row = dbHolder
+      .db!.prepare(
+        "SELECT status, error_message FROM accepted_job WHERE job_id=?",
+      )
       .get("job-3") as { status: string; error_message: string | null }
     expect(row.status).toBe("running")
     expect(row.error_message).toBeNull()
     // No cleanup_pending should be enqueued for a healthy container.
-    const pending = dbHolder.db!
-      .prepare("SELECT COUNT(*) AS c FROM cleanup_pending")
+    const pending = dbHolder
+      .db!.prepare("SELECT COUNT(*) AS c FROM cleanup_pending")
       .get() as { c: number }
     expect(pending.c).toBe(0)
     // No dockerRm calls — nothing to clean up.
@@ -197,8 +213,8 @@ describe("workers/recovery", () => {
 
     await runRecovery()
 
-    const row = dbHolder.db!
-      .prepare("SELECT status FROM accepted_job WHERE job_id=?")
+    const row = dbHolder
+      .db!.prepare("SELECT status FROM accepted_job WHERE job_id=?")
       .get("job-4") as { status: string }
     expect(row.status).toBe("running")
   })
@@ -218,8 +234,8 @@ describe("workers/recovery", () => {
     await runRecovery()
 
     expect(dockerState.inspect).not.toHaveBeenCalled()
-    const succeeded = dbHolder.db!
-      .prepare("SELECT status FROM accepted_job WHERE job_id=?")
+    const succeeded = dbHolder
+      .db!.prepare("SELECT status FROM accepted_job WHERE job_id=?")
       .get("job-5") as { status: string }
     expect(succeeded.status).toBe("succeeded")
   })
@@ -227,8 +243,8 @@ describe("workers/recovery", () => {
   it("bumps cleanup_pending.attempts when dockerRm rejects (keeps row in queue)", async () => {
     // Seed a pre-existing cleanup_pending row directly so we can test
     // the failure branch of drainCleanupQueue in isolation.
-    dbHolder.db!
-      .prepare(
+    dbHolder
+      .db!.prepare(
         "INSERT INTO cleanup_pending (container_name, reason, queued_at, attempts) VALUES (?,?,?,?)",
       )
       .run("ghost-container", "orphaned", Date.now(), 0)
@@ -236,8 +252,8 @@ describe("workers/recovery", () => {
 
     await runRecovery()
 
-    const pending = dbHolder.db!
-      .prepare(
+    const pending = dbHolder
+      .db!.prepare(
         "SELECT attempts, last_attempt_at FROM cleanup_pending WHERE container_name=?",
       )
       .get("ghost-container") as { attempts: number; last_attempt_at: number }
@@ -257,8 +273,8 @@ describe("workers/recovery", () => {
     await expect(runRecovery()).resolves.toBeUndefined()
     // Status remains unchanged because the per-row catch swallows the
     // error rather than rewriting the row.
-    const row = dbHolder.db!
-      .prepare("SELECT status FROM accepted_job WHERE job_id=?")
+    const row = dbHolder
+      .db!.prepare("SELECT status FROM accepted_job WHERE job_id=?")
       .get("job-7") as { status: string }
     expect(row.status).toBe("running")
   })

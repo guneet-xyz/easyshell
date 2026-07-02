@@ -195,8 +195,8 @@ describe("workers/push-retry", () => {
       },
     })
 
-    const row = dbHolder.db!
-      .prepare("SELECT push_acked FROM accepted_job WHERE job_id=?")
+    const row = dbHolder
+      .db!.prepare("SELECT push_acked FROM accepted_job WHERE job_id=?")
       .get("job-ok") as { push_acked: number }
     expect(row.push_acked).toBe(1)
   })
@@ -258,8 +258,8 @@ describe("workers/push-retry", () => {
       status: "succeeded",
     })
     // Override status post-seed to a non-terminal value.
-    dbHolder.db!
-      .prepare("UPDATE accepted_job SET status='running' WHERE job_id=?")
+    dbHolder
+      .db!.prepare("UPDATE accepted_job SET status='running' WHERE job_id=?")
       .run("job-running")
     reportResultMock.mockResolvedValue({ acked: true })
 
@@ -288,8 +288,8 @@ describe("workers/push-retry", () => {
     // First tick: mutate rejects → push_attempts becomes 1, push_acked still 0.
     await tick(10_001)
     expect(reportResultMock).toHaveBeenCalledTimes(1)
-    const afterFail = dbHolder.db!
-      .prepare(
+    const afterFail = dbHolder
+      .db!.prepare(
         "SELECT push_attempts, push_acked, last_push_at FROM accepted_job WHERE job_id=?",
       )
       .get("job-retry") as {
@@ -304,8 +304,8 @@ describe("workers/push-retry", () => {
     // Second tick: mutate succeeds → push_acked=1 and the loop did not crash.
     await tick(10_001)
     expect(reportResultMock).toHaveBeenCalledTimes(2)
-    const afterOk = dbHolder.db!
-      .prepare("SELECT push_acked FROM accepted_job WHERE job_id=?")
+    const afterOk = dbHolder
+      .db!.prepare("SELECT push_acked FROM accepted_job WHERE job_id=?")
       .get("job-retry") as { push_acked: number }
     expect(afterOk.push_acked).toBe(1)
   })

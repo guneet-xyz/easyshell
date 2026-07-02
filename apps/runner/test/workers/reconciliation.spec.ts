@@ -21,7 +21,8 @@ const { dockerState, dbHolder } = vi.hoisted(() => ({
 
 vi.mock("../../src/env", () => ({
   env: {
-    RUNNER_SECRET: "test-secret-64hex0000000000000000000000000000000000000000000000000000",
+    RUNNER_SECRET:
+      "test-secret-64hex0000000000000000000000000000000000000000000000000000",
     RUNNER_PORT: 4200,
     RUNNER_NAME: "test-runner",
     RUNNER_PUBLIC_URL: "http://localhost:4200",
@@ -75,7 +76,14 @@ function seedAcceptedJob(
     `INSERT INTO accepted_job
        (job_id, container_name, image, mode, status, accepted_at)
      VALUES (?,?,?,?,?,?)`,
-  ).run(row.job_id, row.container_name, "easyshell-foo", "submission", row.status, Date.now())
+  ).run(
+    row.job_id,
+    row.container_name,
+    "easyshell-foo",
+    "submission",
+    row.status,
+    Date.now(),
+  )
 }
 
 const { scanOnce, startReconciliation } = await import(
@@ -104,8 +112,8 @@ describe("workers/reconciliation", () => {
 
       await scanOnce()
 
-      const row = dbHolder.db!
-        .prepare(
+      const row = dbHolder
+        .db!.prepare(
           "SELECT status, error_message, finished_at FROM accepted_job WHERE job_id=?",
         )
         .get("job-1") as {
@@ -117,8 +125,8 @@ describe("workers/reconciliation", () => {
       expect(row.error_message).toContain("reconciliation")
       expect(row.finished_at).toBeGreaterThan(0)
 
-      const pending = dbHolder.db!
-        .prepare(
+      const pending = dbHolder
+        .db!.prepare(
           "SELECT container_name, reason FROM cleanup_pending WHERE container_name=?",
         )
         .get("easyshell-job-1") as
@@ -140,16 +148,16 @@ describe("workers/reconciliation", () => {
 
       await scanOnce()
 
-      const row = dbHolder.db!
-        .prepare(
+      const row = dbHolder
+        .db!.prepare(
           "SELECT status, error_message FROM accepted_job WHERE job_id=?",
         )
         .get("job-2") as { status: string; error_message: string | null }
       expect(row.status).toBe("running")
       expect(row.error_message).toBeNull()
 
-      const pending = dbHolder.db!
-        .prepare("SELECT COUNT(*) AS c FROM cleanup_pending")
+      const pending = dbHolder
+        .db!.prepare("SELECT COUNT(*) AS c FROM cleanup_pending")
         .get() as { c: number }
       expect(pending.c).toBe(0)
     })
@@ -164,13 +172,15 @@ describe("workers/reconciliation", () => {
 
       await scanOnce()
 
-      const row = dbHolder.db!
-        .prepare("SELECT status FROM accepted_job WHERE job_id=?")
+      const row = dbHolder
+        .db!.prepare("SELECT status FROM accepted_job WHERE job_id=?")
         .get("job-3") as { status: string }
       expect(row.status).toBe("lost")
 
-      const pending = dbHolder.db!
-        .prepare("SELECT reason FROM cleanup_pending WHERE container_name=?")
+      const pending = dbHolder
+        .db!.prepare(
+          "SELECT reason FROM cleanup_pending WHERE container_name=?",
+        )
         .get("easyshell-job-3") as { reason: string } | undefined
       expect(pending?.reason).toBe("orphaned")
     })
@@ -208,14 +218,14 @@ describe("workers/reconciliation", () => {
 
       await expect(scanOnce()).resolves.toBeUndefined()
 
-      const job6 = dbHolder.db!
-        .prepare("SELECT status FROM accepted_job WHERE job_id=?")
+      const job6 = dbHolder
+        .db!.prepare("SELECT status FROM accepted_job WHERE job_id=?")
         .get("job-6") as { status: string }
       // The throw was swallowed → status unchanged.
       expect(job6.status).toBe("running")
 
-      const job7 = dbHolder.db!
-        .prepare("SELECT status FROM accepted_job WHERE job_id=?")
+      const job7 = dbHolder
+        .db!.prepare("SELECT status FROM accepted_job WHERE job_id=?")
         .get("job-7") as { status: string }
       expect(job7.status).toBe("lost")
     })

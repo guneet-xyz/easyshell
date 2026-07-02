@@ -16,6 +16,7 @@
   - [Environment Variables](#environment-variables)
   - [Scripts](#scripts)
   - [Problems](#problems)
+- [Deployment Guide](docs/deployment.md)
 
 ## Architecture and Features
 

@@ -58,10 +58,19 @@ export const ExecSessionInputSchema = z.object({
   command: z.string(),
 })
 export const ExecSessionOutputSchema = z.discriminatedUnion("status", [
-  z.object({ status: z.literal("success"), stdout: z.string(), stderr: z.string() }),
+  z.object({
+    status: z.literal("success"),
+    stdout: z.string(),
+    stderr: z.string(),
+  }),
   z.object({
     status: z.literal("error"),
-    type: z.enum(["took_too_long", "session_not_running", "session_error", "container_locked"]),
+    type: z.enum([
+      "took_too_long",
+      "session_not_running",
+      "session_error",
+      "container_locked",
+    ]),
     message: z.string(),
   }),
 ])

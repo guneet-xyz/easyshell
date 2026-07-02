@@ -28,7 +28,6 @@
 import fs from "node:fs"
 import http from "node:http"
 import path from "node:path"
-
 import { initTRPC, TRPCError } from "@trpc/server"
 import type { z } from "zod"
 
@@ -40,12 +39,12 @@ import { dockerInspect, dockerKill, dockerRun } from "../docker/cli"
 import { env } from "../env"
 import {
   CreateSessionInputSchema,
-  type CreateSessionOutputSchema,
   ExecSessionInputSchema,
-  type ExecSessionOutputSchema,
   IsRunningInputSchema,
-  type IsRunningOutputSchema,
   KillSessionInputSchema,
+  type CreateSessionOutputSchema,
+  type ExecSessionOutputSchema,
+  type IsRunningOutputSchema,
   type KillSessionOutputSchema,
 } from "../schemas"
 import { decrementSession, incrementSession } from "../services/capacity"
@@ -80,7 +79,11 @@ type SocketExecResult =
   | { status: "success"; stdout: string; stderr: string }
   | {
       status: "error"
-      type: "took_too_long" | "session_not_running" | "session_error" | "container_locked"
+      type:
+        | "took_too_long"
+        | "session_not_running"
+        | "session_error"
+        | "container_locked"
       message: string
     }
 
@@ -116,14 +119,20 @@ function execViaSocket(
             settle({
               status: "error",
               type: "session_error",
-              message: body || `container error (status ${res.statusCode ?? "?"})`,
+              message:
+                body || `container error (status ${res.statusCode ?? "?"})`,
             })
             return
           }
           try {
-            const parsed = JSON.parse(body) as { stdout?: unknown; stderr?: unknown }
-            const stdout = typeof parsed.stdout === "string" ? parsed.stdout : ""
-            const stderr = typeof parsed.stderr === "string" ? parsed.stderr : ""
+            const parsed = JSON.parse(body) as {
+              stdout?: unknown
+              stderr?: unknown
+            }
+            const stdout =
+              typeof parsed.stdout === "string" ? parsed.stdout : ""
+            const stderr =
+              typeof parsed.stderr === "string" ? parsed.stderr : ""
             settle({ status: "success", stdout, stderr })
           } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : String(err)
@@ -211,7 +220,11 @@ export const terminalSessionsRouter = router({
       async ({ input }): Promise<z.infer<typeof CreateSessionOutputSchema>> => {
         const db = getDb(env.RUNNER_DB_PATH)
         const jobId = sessionJobId(input.container_name)
-        const sessionDir = path.join(env.WORKING_DIR, "sessions", input.container_name)
+        const sessionDir = path.join(
+          env.WORKING_DIR,
+          "sessions",
+          input.container_name,
+        )
         const socketPath = path.join(sessionDir, "main.sock")
         fs.mkdirSync(sessionDir, { recursive: true })
 
@@ -227,7 +240,14 @@ export const terminalSessionsRouter = router({
             `INSERT OR IGNORE INTO accepted_job
               (job_id, container_name, image, mode, status, accepted_at)
               VALUES (?,?,?,?,?,?)`,
-          ).run(jobId, input.container_name, input.image, "session", "starting", now)
+          ).run(
+            jobId,
+            input.container_name,
+            input.image,
+            "session",
+            "starting",
+            now,
+          )
           db.prepare(
             `INSERT OR IGNORE INTO container
               (container_name, job_id, docker_state, working_dir, created_at)
@@ -281,7 +301,10 @@ export const terminalSessionsRouter = router({
         ).run(input.container_name)
         incrementSession()
 
-        log.info({ container_name: input.container_name }, "terminal-session.created")
+        log.info(
+          { container_name: input.container_name },
+          "terminal-session.created",
+        )
         return { ok: true }
       },
     ),
@@ -344,7 +367,11 @@ export const terminalSessionsRouter = router({
         ).run(finishedAt, input.container_name)
 
         if (result.status === "success") {
-          return { status: "success", stdout: result.stdout, stderr: result.stderr }
+          return {
+            status: "success",
+            stdout: result.stdout,
+            stderr: result.stderr,
+          }
         }
         return { status: "error", type: result.type, message: result.message }
       },
@@ -383,7 +410,10 @@ export const terminalSessionsRouter = router({
         ).run(input.container_name, "cancelled", Date.now())
         decrementSession()
 
-        log.info({ container_name: input.container_name }, "terminal-session.killed")
+        log.info(
+          { container_name: input.container_name },
+          "terminal-session.killed",
+        )
         return { ok: true }
       },
     ),

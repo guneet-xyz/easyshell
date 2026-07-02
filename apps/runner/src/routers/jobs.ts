@@ -22,7 +22,6 @@
 
 import fs from "node:fs"
 import path from "node:path"
-
 import { initTRPC, TRPCError } from "@trpc/server"
 import type { z } from "zod"
 
@@ -100,7 +99,11 @@ function runSubmissionJob(params: {
   const db = getDb(env.RUNNER_DB_PATH)
 
   void (async () => {
-    const containerDir = path.join(env.WORKING_DIR, "submissions", containerName)
+    const containerDir = path.join(
+      env.WORKING_DIR,
+      "submissions",
+      containerName,
+    )
     fs.mkdirSync(containerDir, { recursive: true })
 
     const inputPath = path.join(containerDir, "input.sh")
@@ -147,9 +150,12 @@ function runSubmissionJob(params: {
       // exitCode === 0 → parse the entrypoint's output.json.
       let out: EntrypointOutput
       try {
-        out = JSON.parse(fs.readFileSync(outputPath, "utf8")) as EntrypointOutput
+        out = JSON.parse(
+          fs.readFileSync(outputPath, "utf8"),
+        ) as EntrypointOutput
       } catch (parseErr: unknown) {
-        const msg = parseErr instanceof Error ? parseErr.message : String(parseErr)
+        const msg =
+          parseErr instanceof Error ? parseErr.message : String(parseErr)
         db.prepare(
           "UPDATE accepted_job SET status='failed', finished_at=?, error_message=? WHERE job_id=?",
         ).run(finishedAt, `failed to parse output.json: ${msg}`, jobId)
@@ -208,9 +214,7 @@ export const jobsRouter = router({
   accept: coordinatorProcedure
     .input(AcceptJobInputSchema)
     .mutation(
-      async ({
-        input,
-      }): Promise<z.infer<typeof AcceptJobOutputSchema>> => {
+      async ({ input }): Promise<z.infer<typeof AcceptJobOutputSchema>> => {
         const db = getDb(env.RUNNER_DB_PATH)
 
         // 1. Idempotency: a previously-accepted job_id is a no-op.
@@ -336,7 +340,10 @@ export const jobsRouter = router({
           }
         }
         case "failed":
-          return { status: "failed", error: row.error_message ?? "unknown error" }
+          return {
+            status: "failed",
+            error: row.error_message ?? "unknown error",
+          }
         case "cancelled":
           return { status: "cancelled" }
         case "lost":
@@ -354,9 +361,7 @@ export const jobsRouter = router({
   cancel: coordinatorProcedure
     .input(CancelJobInputSchema)
     .mutation(
-      async ({
-        input,
-      }): Promise<z.infer<typeof CancelJobOutputSchema>> => {
+      async ({ input }): Promise<z.infer<typeof CancelJobOutputSchema>> => {
         const db = getDb(env.RUNNER_DB_PATH)
         const row = db
           .prepare(

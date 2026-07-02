@@ -1,5 +1,4 @@
 import crypto from "node:crypto"
-
 import { initTRPC, TRPCError } from "@trpc/server"
 import { eq } from "drizzle-orm"
 

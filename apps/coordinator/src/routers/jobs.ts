@@ -20,9 +20,9 @@ import { and, eq, inArray } from "drizzle-orm"
 
 import {
   executionJobs,
+  submissions,
   submissionTestcaseQueue,
   submissionTestcases,
-  submissions,
 } from "@easyshell/db/schema"
 import { createLogger } from "@easyshell/logger"
 
@@ -116,9 +116,7 @@ export const jobsRouter = router({
       }
 
       // Idempotency: a terminal job is a no-op.
-      if (
-        !(IN_FLIGHT_STATUSES as readonly string[]).includes(job.status)
-      ) {
+      if (!(IN_FLIGHT_STATUSES as readonly string[]).includes(job.status)) {
         log.info(
           { job_id: input.job_id, current_status: job.status },
           "reportResult.idempotent-skip",
@@ -215,10 +213,7 @@ export const jobsRouter = router({
           .where(eq(executionJobs.id, input.job_id))
       } else if (outcome.status === "failed") {
         if (job.submissionId != null && job.testcaseId != null) {
-          const attempts = await fetchAttempts(
-            job.submissionId,
-            job.testcaseId,
-          )
+          const attempts = await fetchAttempts(job.submissionId, job.testcaseId)
 
           if (attempts >= env.MAX_ATTEMPTS) {
             await writeSyntheticFail(

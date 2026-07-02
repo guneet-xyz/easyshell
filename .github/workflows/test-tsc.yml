@@ -48,10 +48,6 @@ jobs:
         name: cache website
         working-directory: ./packages/problems
 
-      - run: pnpm run cache:submission-manager
-        name: cache submission-manager
-        working-directory: ./packages/problems
-
       - run: pnpm run lint:tsc
         name: check types
 

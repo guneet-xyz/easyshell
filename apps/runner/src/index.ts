@@ -1,6 +1,5 @@
 import fs from "node:fs"
 import path from "node:path"
-
 import { createHTTPServer } from "@trpc/server/adapters/standalone"
 
 import { createLogger } from "@easyshell/logger"
@@ -14,8 +13,8 @@ import { getCapacity } from "./services/capacity"
 import { bootstrap } from "./workers/bootstrap"
 import { heartbeatLoop } from "./workers/heartbeat"
 import { pushRetryLoop } from "./workers/push-retry"
-import { runRecovery } from "./workers/recovery"
 import { startReconciliation } from "./workers/reconciliation"
+import { runRecovery } from "./workers/recovery"
 
 const log = createLogger("runner", { env: env.NODE_ENV })
 

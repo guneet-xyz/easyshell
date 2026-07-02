@@ -10,7 +10,10 @@ const t = initTRPC.context<Context>().create()
  */
 export const coordinatorProcedure = t.procedure.use(({ ctx, next }) => {
   if (ctx.actor !== "coordinator") {
-    throw new TRPCError({ code: "UNAUTHORIZED", message: "Coordinator credentials required" })
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "Coordinator credentials required",
+    })
   }
   return next({ ctx })
 })

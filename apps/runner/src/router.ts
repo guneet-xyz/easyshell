@@ -17,7 +17,10 @@ const router = t.router
 const publicProcedure = t.procedure
 const coordinatorProcedure = t.procedure.use(({ ctx, next }) => {
   if (ctx.actor !== "coordinator") {
-    throw new TRPCError({ code: "UNAUTHORIZED", message: "Coordinator credentials required" })
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "Coordinator credentials required",
+    })
   }
   return next({ ctx })
 })
@@ -27,14 +30,12 @@ export const appRouter = router({
   terminalSessions: terminalSessionsRouter,
   health: router({
     // INTENTIONALLY unauth — this is the compose healthcheck endpoint.
-    ping: publicProcedure
-      .input(HealthPingInputSchema)
-      .query(
-        (): z.infer<typeof HealthPingOutputSchema> => ({
-          ok: true as const,
-          version: "0.1.0",
-        }),
-      ),
+    ping: publicProcedure.input(HealthPingInputSchema).query(
+      (): z.infer<typeof HealthPingOutputSchema> => ({
+        ok: true as const,
+        version: "0.1.0",
+      }),
+    ),
     capacity: coordinatorProcedure
       .input(HealthCapacityInputSchema)
       .query((): z.infer<typeof HealthCapacityOutputSchema> => getCapacity()),

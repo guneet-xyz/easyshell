@@ -19,76 +19,76 @@ Auth is bearer-token on every tRPC call except `health.ping`.
 
 **`easyshell_runner`** — one row per registered Runner. Coordinator-owned.
 
-| column            | type                          | notes                                                                                                       |
-| ----------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `id`              | `varchar(64) PRIMARY KEY`     | server-issued at registration (`crypto.randomUUID()`)                                                       |
-| `name`            | `varchar(255) NOT NULL`       | human-friendly label; client-supplied at register                                                           |
-| `public_url`      | `varchar(2048) NOT NULL`      | URL Coordinator uses to reach Runner (`RUNNER_PUBLIC_URL` env)                                              |
-| `secret_hash`     | `varchar(128) NOT NULL`       | sha256 hex of the per-runner secret                                                                          |
-| `status`          | `runner_status NOT NULL`      | new enum `{active, draining, stale, deregistered}`; default `active`                                         |
-| `region`          | `varchar(64)`                 | optional, client-supplied                                                                                    |
-| `labels`          | `jsonb NOT NULL DEFAULT '{}'` | optional key-value labels                                                                                    |
-| `version`         | `varchar(64)`                 | runner binary version, client-supplied                                                                       |
-| `registered_at`   | `timestamptz NOT NULL DEFAULT now()` |                                                                                                       |
-| `last_seen_at`    | `timestamptz NOT NULL DEFAULT now()` | updated on every heartbeat; sweeper marks `stale` if `now() - last_seen_at > 30s`                     |
-| `deregistered_at` | `timestamptz`                 | nullable; set when Runner deregisters cleanly or is manually retired                                         |
+| column            | type                                 | notes                                                                             |
+| ----------------- | ------------------------------------ | --------------------------------------------------------------------------------- |
+| `id`              | `varchar(64) PRIMARY KEY`            | server-issued at registration (`crypto.randomUUID()`)                             |
+| `name`            | `varchar(255) NOT NULL`              | human-friendly label; client-supplied at register                                 |
+| `public_url`      | `varchar(2048) NOT NULL`             | URL Coordinator uses to reach Runner (`RUNNER_PUBLIC_URL` env)                    |
+| `secret_hash`     | `varchar(128) NOT NULL`              | sha256 hex of the per-runner secret                                               |
+| `status`          | `runner_status NOT NULL`             | new enum `{active, draining, stale, deregistered}`; default `active`              |
+| `region`          | `varchar(64)`                        | optional, client-supplied                                                         |
+| `labels`          | `jsonb NOT NULL DEFAULT '{}'`        | optional key-value labels                                                         |
+| `version`         | `varchar(64)`                        | runner binary version, client-supplied                                            |
+| `registered_at`   | `timestamptz NOT NULL DEFAULT now()` |                                                                                   |
+| `last_seen_at`    | `timestamptz NOT NULL DEFAULT now()` | updated on every heartbeat; sweeper marks `stale` if `now() - last_seen_at > 30s` |
+| `deregistered_at` | `timestamptz`                        | nullable; set when Runner deregisters cleanly or is manually retired              |
 
 Indexes: `idx_runner_status_last_seen` on `(status, last_seen_at DESC)`.
 
 **`easyshell_runner_capability`** — many-to-one with runner; advertises supported modes.
 
-| column        | type                        | notes                                       |
-| ------------- | --------------------------- | ------------------------------------------- |
-| `runner_id`   | `varchar(64) NOT NULL`      | FK → `easyshell_runner.id`                  |
-| `mode`        | `execution_mode NOT NULL`   | new enum `{session, submission}`            |
-| `concurrency` | `integer NOT NULL`          | max concurrent jobs of this mode on runner |
+| column        | type                      | notes                                      |
+| ------------- | ------------------------- | ------------------------------------------ |
+| `runner_id`   | `varchar(64) NOT NULL`    | FK → `easyshell_runner.id`                 |
+| `mode`        | `execution_mode NOT NULL` | new enum `{session, submission}`           |
+| `concurrency` | `integer NOT NULL`        | max concurrent jobs of this mode on runner |
 
 Primary key: `(runner_id, mode)`. FK with `ON DELETE CASCADE`.
 
 **`easyshell_runner_heartbeat`** — one row per runner, upserted on every heartbeat. Separate table (not a column on `easyshell_runner`) so that capacity history can later be retained without touching the registry row.
 
-| column                       | type                          | notes                                                          |
-| ---------------------------- | ----------------------------- | -------------------------------------------------------------- |
-| `runner_id`                  | `varchar(64) PRIMARY KEY`     | FK → `easyshell_runner.id`, `ON DELETE CASCADE`                |
-| `reported_at`                | `timestamptz NOT NULL`        |                                                                |
-| `session_concurrency_used`   | `integer NOT NULL`            |                                                                |
-| `session_concurrency_max`    | `integer NOT NULL`            |                                                                |
-| `submission_concurrency_used`| `integer NOT NULL`            |                                                                |
-| `submission_concurrency_max` | `integer NOT NULL`            |                                                                |
+| column                        | type                      | notes                                           |
+| ----------------------------- | ------------------------- | ----------------------------------------------- |
+| `runner_id`                   | `varchar(64) PRIMARY KEY` | FK → `easyshell_runner.id`, `ON DELETE CASCADE` |
+| `reported_at`                 | `timestamptz NOT NULL`    |                                                 |
+| `session_concurrency_used`    | `integer NOT NULL`        |                                                 |
+| `session_concurrency_max`     | `integer NOT NULL`        |                                                 |
+| `submission_concurrency_used` | `integer NOT NULL`        |                                                 |
+| `submission_concurrency_max`  | `integer NOT NULL`        |                                                 |
 
 **`easyshell_execution_job`** — one row per dispatched unit of work. Coordinator-owned. Container name lives here.
 
-| column           | type                                  | notes                                                                                                                                                   |
-| ---------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`             | `varchar(64) PRIMARY KEY`             | UUID v4                                                                                                                                                  |
-| `container_name` | `varchar(64) NOT NULL UNIQUE`         | `easyshell-{uuidv4}`; immutable                                                                                                                          |
-| `runner_id`      | `varchar(64) NOT NULL`                | FK → `easyshell_runner.id`                                                                                                                               |
-| `mode`           | `execution_mode NOT NULL`             | `session` or `submission`                                                                                                                                |
-| `image`          | `varchar(512) NOT NULL`               | e.g. `easyshell-foo-7`                                                                                                                                   |
-| `submission_id`  | `integer`                             | nullable; populated when mode=submission                                                                                                                  |
-| `testcase_id`    | `integer`                             | nullable; populated when mode=submission                                                                                                                  |
-| `terminal_session_id` | `integer`                        | nullable; populated when mode=session                                                                                                                     |
-| `status`         | `job_status NOT NULL`                 | new enum `{dispatched, accepted, running, succeeded, failed, cancelled, lost}`; default `dispatched`                                                     |
-| `attempt`        | `integer NOT NULL DEFAULT 1`          | which attempt of the queue-row this dispatch represents                                                                                                  |
-| `dispatched_at`  | `timestamptz NOT NULL DEFAULT now()`  |                                                                                                                                                          |
-| `accepted_at`    | `timestamptz`                         | set when Runner ACKs `jobs.accept`                                                                                                                       |
-| `last_push_at`   | `timestamptz`                         | last time Runner pushed status/result; null = never pushed                                                                                              |
-| `last_poll_at`   | `timestamptz`                         | last time Coordinator watchdog polled this runner for this job                                                                                          |
-| `result`         | `jsonb`                               | populated on success or failure; shape mirrors today's `/run-submission` GET response (`stdout`, `stderr`, `exit_code`, `fs`, `started_at`, `finished_at`) or `{error: string}` on failure |
-| `error_message`  | `text`                                | nullable; populated on `failed`/`lost`                                                                                                                   |
-| `finished_at`    | `timestamptz`                         |                                                                                                                                                          |
+| column                | type                                 | notes                                                                                                                                                                                      |
+| --------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `id`                  | `varchar(64) PRIMARY KEY`            | UUID v4                                                                                                                                                                                    |
+| `container_name`      | `varchar(64) NOT NULL UNIQUE`        | `easyshell-{uuidv4}`; immutable                                                                                                                                                            |
+| `runner_id`           | `varchar(64) NOT NULL`               | FK → `easyshell_runner.id`                                                                                                                                                                 |
+| `mode`                | `execution_mode NOT NULL`            | `session` or `submission`                                                                                                                                                                  |
+| `image`               | `varchar(512) NOT NULL`              | e.g. `easyshell-foo-7`                                                                                                                                                                     |
+| `submission_id`       | `integer`                            | nullable; populated when mode=submission                                                                                                                                                   |
+| `testcase_id`         | `integer`                            | nullable; populated when mode=submission                                                                                                                                                   |
+| `terminal_session_id` | `integer`                            | nullable; populated when mode=session                                                                                                                                                      |
+| `status`              | `job_status NOT NULL`                | new enum `{dispatched, accepted, running, succeeded, failed, cancelled, lost}`; default `dispatched`                                                                                       |
+| `attempt`             | `integer NOT NULL DEFAULT 1`         | which attempt of the queue-row this dispatch represents                                                                                                                                    |
+| `dispatched_at`       | `timestamptz NOT NULL DEFAULT now()` |                                                                                                                                                                                            |
+| `accepted_at`         | `timestamptz`                        | set when Runner ACKs `jobs.accept`                                                                                                                                                         |
+| `last_push_at`        | `timestamptz`                        | last time Runner pushed status/result; null = never pushed                                                                                                                                 |
+| `last_poll_at`        | `timestamptz`                        | last time Coordinator watchdog polled this runner for this job                                                                                                                             |
+| `result`              | `jsonb`                              | populated on success or failure; shape mirrors today's `/run-submission` GET response (`stdout`, `stderr`, `exit_code`, `fs`, `started_at`, `finished_at`) or `{error: string}` on failure |
+| `error_message`       | `text`                               | nullable; populated on `failed`/`lost`                                                                                                                                                     |
+| `finished_at`         | `timestamptz`                        |                                                                                                                                                                                            |
 
 Indexes: `idx_execution_job_runner_status` on `(runner_id, status)`; `idx_execution_job_submission` on `(submission_id, testcase_id)` (partial: `WHERE submission_id IS NOT NULL`); `idx_execution_job_status_dispatched` on `(status, dispatched_at)` (watchdog scan).
 
 **`easyshell_terminal_session_runner`** — pins a terminal session to one runner for its lifetime. Coordinator-owned.
 
-| column              | type                          | notes                                                                                |
-| ------------------- | ----------------------------- | ------------------------------------------------------------------------------------ |
-| `terminal_session_id` | `integer PRIMARY KEY`       | FK → `easyshell_terminal_session.id`                                                 |
-| `runner_id`         | `varchar(64) NOT NULL`        | FK → `easyshell_runner.id`                                                           |
-| `container_name`    | `varchar(64) NOT NULL UNIQUE` | `easyshell-{uuidv4}`                                                                 |
-| `execution_job_id`  | `varchar(64) NOT NULL UNIQUE` | FK → `easyshell_execution_job.id`; the create-job that produced this container       |
-| `created_at`        | `timestamptz NOT NULL DEFAULT now()` |                                                                               |
+| column                | type                                 | notes                                                                          |
+| --------------------- | ------------------------------------ | ------------------------------------------------------------------------------ |
+| `terminal_session_id` | `integer PRIMARY KEY`                | FK → `easyshell_terminal_session.id`                                           |
+| `runner_id`           | `varchar(64) NOT NULL`               | FK → `easyshell_runner.id`                                                     |
+| `container_name`      | `varchar(64) NOT NULL UNIQUE`        | `easyshell-{uuidv4}`                                                           |
+| `execution_job_id`    | `varchar(64) NOT NULL UNIQUE`        | FK → `easyshell_execution_job.id`; the create-job that produced this container |
+| `created_at`          | `timestamptz NOT NULL DEFAULT now()` |                                                                                |
 
 **Alterations to `easyshell_submission_testcase_queue`**:
 
@@ -204,24 +204,28 @@ CREATE TABLE cleanup_pending (
 
 ```ts
 // runners.register — first-boot only; auth: COORDINATOR_REGISTRATION_TOKEN
-input  = z.object({
+input = z.object({
   name: z.string().min(1).max(255),
   public_url: z.string().url(),
   region: z.string().max(64).optional(),
   labels: z.record(z.string()).default({}),
   version: z.string().max(64).optional(),
-  capabilities: z.array(z.object({
-    mode: z.enum(["session","submission"]),
-    concurrency: z.number().int().positive(),
-  })).min(1),
+  capabilities: z
+    .array(
+      z.object({
+        mode: z.enum(["session", "submission"]),
+        concurrency: z.number().int().positive(),
+      }),
+    )
+    .min(1),
 })
 output = z.object({
   runner_id: z.string(),
-  runner_secret: z.string(),    // 32-byte hex; shown ONCE
+  runner_secret: z.string(), // 32-byte hex; shown ONCE
 })
 
 // runners.heartbeat — auth: per-runner bearer
-input  = z.object({
+input = z.object({
   capacity: z.object({
     session_used: z.number().int().nonnegative(),
     session_max: z.number().int().nonnegative(),
@@ -229,10 +233,10 @@ input  = z.object({
     submission_max: z.number().int().nonnegative(),
   }),
 })
-output = z.object({ status: z.enum(["ack","drain","deregister"]) })
+output = z.object({ status: z.enum(["ack", "drain", "deregister"]) })
 
 // runners.deregister — auth: per-runner bearer
-input  = z.object({})
+input = z.object({})
 output = z.object({ ok: z.literal(true) })
 ```
 
@@ -240,7 +244,7 @@ output = z.object({ ok: z.literal(true) })
 
 ```ts
 // jobs.reportResult — auth: per-runner bearer
-input  = z.object({
+input = z.object({
   job_id: z.string(),
   outcome: z.discriminatedUnion("status", [
     z.object({
@@ -249,7 +253,7 @@ input  = z.object({
       stderr: z.string(),
       exit_code: z.number().int(),
       fs: z.record(z.string()).default({}),
-      started_at: z.string(),       // ISO 8601
+      started_at: z.string(), // ISO 8601
       finished_at: z.string(),
     }),
     z.object({
@@ -264,9 +268,9 @@ input  = z.object({
 output = z.object({ acked: z.literal(true) })
 
 // jobs.reportProgress — auth: per-runner bearer; emitted on accept + on container-state changes
-input  = z.object({
+input = z.object({
   job_id: z.string(),
-  state: z.enum(["accepted","starting","running"]),
+  state: z.enum(["accepted", "starting", "running"]),
   detail: z.string().optional(),
 })
 output = z.object({ acked: z.literal(true) })
@@ -276,43 +280,55 @@ output = z.object({ acked: z.literal(true) })
 
 ```ts
 // terminalSessions.create — auth: COORDINATOR_TOKEN
-input  = z.object({
+input = z.object({
   terminal_session_id: z.number().int().positive(),
-  image: z.string().min(1),       // e.g. easyshell-foo-7
+  image: z.string().min(1), // e.g. easyshell-foo-7
 })
 output = z.object({
-  container_name: z.string(),     // easyshell-{uuid}, opaque to caller
+  container_name: z.string(), // easyshell-{uuid}, opaque to caller
   runner_id: z.string(),
 })
 
 // terminalSessions.exec — auth: COORDINATOR_TOKEN; 5s timeout
-input  = z.object({
+input = z.object({
   terminal_session_id: z.number().int().positive(),
   command: z.string(),
 })
 output = z.discriminatedUnion("status", [
-  z.object({ status: z.literal("success"), stdout: z.string(), stderr: z.string() }),
+  z.object({
+    status: z.literal("success"),
+    stdout: z.string(),
+    stderr: z.string(),
+  }),
   z.object({
     status: z.literal("error"),
-    type: z.enum(["took_too_long","session_not_running","session_error","critical_server_error","runner_unreachable"]),
+    type: z.enum([
+      "took_too_long",
+      "session_not_running",
+      "session_error",
+      "critical_server_error",
+      "runner_unreachable",
+    ]),
     message: z.string(),
   }),
 ])
 
 // terminalSessions.isAlive — auth: COORDINATOR_TOKEN
-input  = z.object({ terminal_session_id: z.number().int().positive() })
+input = z.object({ terminal_session_id: z.number().int().positive() })
 output = z.object({ is_running: z.boolean() })
 
 // terminalSessions.kill — auth: COORDINATOR_TOKEN
-input  = z.object({ terminal_session_id: z.number().int().positive() })
+input = z.object({ terminal_session_id: z.number().int().positive() })
 output = z.object({ ok: z.literal(true) })
 
 // terminalSessions.getRoute — auth: COORDINATOR_TOKEN; internal/debug
-input  = z.object({ terminal_session_id: z.number().int().positive() })
-output = z.object({
-  runner_id: z.string(),
-  container_name: z.string(),
-}).nullable()
+input = z.object({ terminal_session_id: z.number().int().positive() })
+output = z
+  .object({
+    runner_id: z.string(),
+    container_name: z.string(),
+  })
+  .nullable()
 ```
 
 **Coordinator router — `submissions.*` (Website → Coordinator)**
@@ -321,7 +337,7 @@ output = z.object({
 // submissions.enqueue — auth: COORDINATOR_TOKEN
 // Called instead of website inserting queue rows directly; preserves existing newSubmission() server action's
 // signature by wrapping this call. Coordinator inserts submissions + queue rows in a single transaction.
-input  = z.object({
+input = z.object({
   user_id: z.string().min(1),
   problem_id: z.number().int().positive(),
   input: z.string(),
@@ -332,7 +348,7 @@ output = z.object({
 })
 
 // submissions.retryTestcase — auth: COORDINATOR_TOKEN; owner check inside coordinator
-input  = z.object({
+input = z.object({
   acting_user_id: z.string().min(1),
   submission_id: z.number().int().positive(),
   testcase_id: z.number().int().positive(),
@@ -341,31 +357,36 @@ output = z.discriminatedUnion("status", [
   z.object({ status: z.literal("queued") }),
   z.object({ status: z.literal("forbidden") }),
   z.object({ status: z.literal("not_found") }),
-  z.object({ status: z.literal("not_failed") }),  // can only retry rows in status=failed
+  z.object({ status: z.literal("not_failed") }), // can only retry rows in status=failed
 ])
 
 // submissions.retryAllFailedForSubmission — auth: COORDINATOR_TOKEN; owner check inside coordinator
-input  = z.object({
+input = z.object({
   acting_user_id: z.string().min(1),
   submission_id: z.number().int().positive(),
 })
 output = z.discriminatedUnion("status", [
-  z.object({ status: z.literal("queued"), requeued_count: z.number().int().nonnegative() }),
+  z.object({
+    status: z.literal("queued"),
+    requeued_count: z.number().int().nonnegative(),
+  }),
   z.object({ status: z.literal("forbidden") }),
   z.object({ status: z.literal("not_found") }),
 ])
 
 // submissions.getStatus — auth: COORDINATOR_TOKEN; thin wrapper for debug
-input  = z.object({ submission_id: z.number().int().positive() })
+input = z.object({ submission_id: z.number().int().positive() })
 output = z.object({
   submission_id: z.number().int().positive(),
-  testcases: z.array(z.object({
-    testcase_id: z.number().int().positive(),
-    status: z.enum(["pending","running","finished","failed","cancelled"]),
-    attempts: z.number().int().nonnegative(),
-    last_error: z.string().nullable(),
-    passed: z.boolean().nullable(),
-  })),
+  testcases: z.array(
+    z.object({
+      testcase_id: z.number().int().positive(),
+      status: z.enum(["pending", "running", "finished", "failed", "cancelled"]),
+      attempts: z.number().int().nonnegative(),
+      last_error: z.string().nullable(),
+      passed: z.boolean().nullable(),
+    }),
+  ),
 })
 ```
 
@@ -373,7 +394,7 @@ output = z.object({
 
 ```ts
 // health.ping — UNAUTH; for docker compose service_healthy + load balancers
-input  = z.object({})
+input = z.object({})
 output = z.object({ ok: z.literal(true), version: z.string() })
 ```
 
@@ -381,41 +402,46 @@ output = z.object({ ok: z.literal(true), version: z.string() })
 
 ```ts
 // jobs.accept — auth: per-runner bearer
-input  = z.object({
+input = z.object({
   job_id: z.string(),
-  container_name: z.string(),         // server-supplied; immutable
-  mode: z.enum(["session","submission"]),
+  container_name: z.string(), // server-supplied; immutable
+  mode: z.enum(["session", "submission"]),
   image: z.string().min(1),
-  input: z.string().optional(),       // required when mode=submission
-  resource_limits: z.object({
-    memory: z.string().default("10m"),
-    cpus: z.string().default("0.1"),
-  }).default({ memory: "10m", cpus: "0.1" }),
+  input: z.string().optional(), // required when mode=submission
+  resource_limits: z
+    .object({
+      memory: z.string().default("10m"),
+      cpus: z.string().default("0.1"),
+    })
+    .default({ memory: "10m", cpus: "0.1" }),
 })
 output = z.discriminatedUnion("status", [
   z.object({ status: z.literal("accepted") }),
   z.object({ status: z.literal("at_capacity") }),
-  z.object({ status: z.literal("duplicate") }),  // job_id already in SQLite — idempotent retry
+  z.object({ status: z.literal("duplicate") }), // job_id already in SQLite — idempotent retry
 ])
 
 // jobs.get — auth: per-runner bearer; watchdog poll
-input  = z.object({ job_id: z.string() })
+input = z.object({ job_id: z.string() })
 output = z.discriminatedUnion("status", [
-  z.object({ status: z.literal("unknown") }),    // job not in local SQLite
+  z.object({ status: z.literal("unknown") }), // job not in local SQLite
   z.object({ status: z.literal("accepted") }),
   z.object({ status: z.literal("running") }),
   z.object({
     status: z.literal("succeeded"),
-    stdout: z.string(), stderr: z.string(), exit_code: z.number().int(),
+    stdout: z.string(),
+    stderr: z.string(),
+    exit_code: z.number().int(),
     fs: z.record(z.string()).default({}),
-    started_at: z.string(), finished_at: z.string(),
+    started_at: z.string(),
+    finished_at: z.string(),
   }),
   z.object({ status: z.literal("failed"), error: z.string() }),
   z.object({ status: z.literal("cancelled") }),
 ])
 
 // jobs.cancel — auth: per-runner bearer
-input  = z.object({ job_id: z.string() })
+input = z.object({ job_id: z.string() })
 output = z.object({ ok: z.literal(true), was_running: z.boolean() })
 ```
 
@@ -425,26 +451,35 @@ output = z.object({ ok: z.literal(true), was_running: z.boolean() })
 // terminalSessions.create — auth: per-runner bearer; idempotent on container_name
 // This is the dispatch path for a session-mode execution job. Coordinator may call jobs.accept instead with mode=session
 // and skip this; this procedure is the explicit terminal-session API for the Coordinator's terminal-routing module.
-input  = z.object({ container_name: z.string(), image: z.string().min(1) })
+input = z.object({ container_name: z.string(), image: z.string().min(1) })
 output = z.object({ ok: z.literal(true) })
 
 // terminalSessions.exec — auth: per-runner bearer; 5s timeout enforced server-side
-input  = z.object({ container_name: z.string(), command: z.string() })
+input = z.object({ container_name: z.string(), command: z.string() })
 output = z.discriminatedUnion("status", [
-  z.object({ status: z.literal("success"), stdout: z.string(), stderr: z.string() }),
+  z.object({
+    status: z.literal("success"),
+    stdout: z.string(),
+    stderr: z.string(),
+  }),
   z.object({
     status: z.literal("error"),
-    type: z.enum(["took_too_long","session_not_running","session_error","container_locked"]),
+    type: z.enum([
+      "took_too_long",
+      "session_not_running",
+      "session_error",
+      "container_locked",
+    ]),
     message: z.string(),
   }),
 ])
 
 // terminalSessions.isRunning — auth: per-runner bearer
-input  = z.object({ container_name: z.string() })
+input = z.object({ container_name: z.string() })
 output = z.object({ is_running: z.boolean() })
 
 // terminalSessions.kill — auth: per-runner bearer; idempotent
-input  = z.object({ container_name: z.string() })
+input = z.object({ container_name: z.string() })
 output = z.object({ ok: z.literal(true) })
 ```
 
@@ -452,11 +487,11 @@ output = z.object({ ok: z.literal(true) })
 
 ```ts
 // health.ping — UNAUTH
-input  = z.object({})
+input = z.object({})
 output = z.object({ ok: z.literal(true), version: z.string() })
 
 // health.capacity — auth: per-runner bearer; identical payload to runners.heartbeat input
-input  = z.object({})
+input = z.object({})
 output = z.object({
   session_used: z.number().int().nonnegative(),
   session_max: z.number().int().nonnegative(),
@@ -467,15 +502,15 @@ output = z.object({
 
 ## Protocol — failure handling matrix
 
-| Failure                                      | Detection                                                                                                                                                                                                                                                                | Coordinator action                                                                                                                                                                                                                                                                                                                                          |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Coordinator restart                          | n/a (self)                                                                                                                                                                                                                                                                | On boot: load all `easyshell_execution_job` in `{dispatched, accepted, running}`; for each, call `runner.jobs.get`. If unknown → mark `lost` and increment queue `attempts` then re-poll. If running → resume watchdog. If finished → write result + flip queue.                                                                                            |
-| Runner restart                               | Heartbeat gap > 30s; or `runner.health.ping` fails                                                                                                                                                                                                                       | Mark runner `stale`; for every `execution_job` with `runner_id = stale-runner` in `{accepted, running}`: call `runner.jobs.get` once on resume; if reported, continue; if `unknown`, mark job `lost`, increment queue `attempts`, requeue if under `MAX_ATTEMPTS`.                                                                                          |
-| Runner disappears after accepting            | `jobs.get` returns `unknown` OR runner becomes `stale` for >30s with no push                                                                                                                                                                                            | Job → `lost`; queue row `attempts++`, `last_error="runner lost: {runner_id}"`. If `attempts < MAX_ATTEMPTS`: requeue (status=`pending`, clear `claimed_*`). Else: synthetic-fail (insert `easyshell_submission_testcase` with `passed=false`, `stderr="coordinator: max attempts exceeded"`, `exit_code=-1`), set queue `status=failed`.                    |
-| Duplicate dispatch                           | `jobs.accept` returns `{status: "duplicate"}`                                                                                                                                                                                                                            | Treat as success; reuse existing `execution_job` row; do not increment `attempt`.                                                                                                                                                                                                                                                                          |
-| Job accepted, no result                      | `now() - dispatched_at > 5min` AND no push AND `last_poll_at` stale                                                                                                                                                                                                       | Watchdog poll `jobs.get`. If `unknown` → `lost` (see above). If `running` for > 10min total → cancel via `jobs.cancel`, mark `failed`, queue `attempts++`.                                                                                                                                                                                                  |
-| Cancellation races (Runner finishes mid-cancel) | `jobs.cancel` returns `was_running=true` but `jobs.reportResult` also arrives                                                                                                                                                                                       | First-write-wins on the `easyshell_execution_job.status` column (`UPDATE … WHERE status IN ('dispatched','accepted','running')`); second write is a no-op log line.                                                                                                                                                                                        |
-| Stale Runner SQLite rows (container gone)    | Runner boot reconciliation: for each `accepted_job` with `status IN ('accepted','starting','running')`, run `docker inspect {container_name}`. If exit_code != 0 → container gone.                                                                                       | Runner marks SQLite row `status=lost`, enqueues into `cleanup_pending`, pushes `reportResult` with `status=failed, error="container disappeared during runner downtime"`.                                                                                                                                                                                  |
+| Failure                                         | Detection                                                                                                                                                                          | Coordinator action                                                                                                                                                                                                                                                                                                                       |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Coordinator restart                             | n/a (self)                                                                                                                                                                         | On boot: load all `easyshell_execution_job` in `{dispatched, accepted, running}`; for each, call `runner.jobs.get`. If unknown → mark `lost` and increment queue `attempts` then re-poll. If running → resume watchdog. If finished → write result + flip queue.                                                                         |
+| Runner restart                                  | Heartbeat gap > 30s; or `runner.health.ping` fails                                                                                                                                 | Mark runner `stale`; for every `execution_job` with `runner_id = stale-runner` in `{accepted, running}`: call `runner.jobs.get` once on resume; if reported, continue; if `unknown`, mark job `lost`, increment queue `attempts`, requeue if under `MAX_ATTEMPTS`.                                                                       |
+| Runner disappears after accepting               | `jobs.get` returns `unknown` OR runner becomes `stale` for >30s with no push                                                                                                       | Job → `lost`; queue row `attempts++`, `last_error="runner lost: {runner_id}"`. If `attempts < MAX_ATTEMPTS`: requeue (status=`pending`, clear `claimed_*`). Else: synthetic-fail (insert `easyshell_submission_testcase` with `passed=false`, `stderr="coordinator: max attempts exceeded"`, `exit_code=-1`), set queue `status=failed`. |
+| Duplicate dispatch                              | `jobs.accept` returns `{status: "duplicate"}`                                                                                                                                      | Treat as success; reuse existing `execution_job` row; do not increment `attempt`.                                                                                                                                                                                                                                                        |
+| Job accepted, no result                         | `now() - dispatched_at > 5min` AND no push AND `last_poll_at` stale                                                                                                                | Watchdog poll `jobs.get`. If `unknown` → `lost` (see above). If `running` for > 10min total → cancel via `jobs.cancel`, mark `failed`, queue `attempts++`.                                                                                                                                                                               |
+| Cancellation races (Runner finishes mid-cancel) | `jobs.cancel` returns `was_running=true` but `jobs.reportResult` also arrives                                                                                                      | First-write-wins on the `easyshell_execution_job.status` column (`UPDATE … WHERE status IN ('dispatched','accepted','running')`); second write is a no-op log line.                                                                                                                                                                      |
+| Stale Runner SQLite rows (container gone)       | Runner boot reconciliation: for each `accepted_job` with `status IN ('accepted','starting','running')`, run `docker inspect {container_name}`. If exit_code != 0 → container gone. | Runner marks SQLite row `status=lost`, enqueues into `cleanup_pending`, pushes `reportResult` with `status=failed, error="container disappeared during runner downtime"`.                                                                                                                                                                |
 
 ## Protocol — periodic sweepers (Coordinator)
 

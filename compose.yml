@@ -32,7 +32,11 @@ services:
     ports:
       - 4100:4100
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost:4100 2>/dev/null || exit 0"]
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q --spider http://localhost:4100 2>/dev/null || exit 0",
+        ]
       interval: 5s
       timeout: 3s
       retries: 6
@@ -63,7 +67,11 @@ services:
       - /tmp/easyshell:/tmp/easyshell
       - runner-data:/var/lib/easyshell-runner
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost:4200 2>/dev/null || exit 0"]
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q --spider http://localhost:4200 2>/dev/null || exit 0",
+        ]
       interval: 5s
       timeout: 3s
       retries: 6
@@ -92,7 +100,11 @@ services:
       - /tmp/easyshell:/tmp/easyshell
       - runner-2-data:/var/lib/easyshell-runner
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost:4200 2>/dev/null || exit 0"]
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q --spider http://localhost:4200 2>/dev/null || exit 0",
+        ]
       interval: 5s
       timeout: 3s
       retries: 6
@@ -101,14 +113,20 @@ services:
     image: alpine:3.21
     container_name: easyshell-dev-session-manager
     profiles: ["legacy"]
-    command: ["sh", "-c", "echo legacy-session-manager-placeholder && sleep infinity"]
+    command:
+      ["sh", "-c", "echo legacy-session-manager-placeholder && sleep infinity"]
     networks:
       - easyshell
   submission-manager:
     image: alpine:3.21
     container_name: easyshell-dev-submission-manager
     profiles: ["legacy"]
-    command: ["sh", "-c", "echo legacy-submission-manager-placeholder && sleep infinity"]
+    command:
+      [
+        "sh",
+        "-c",
+        "echo legacy-submission-manager-placeholder && sleep infinity",
+      ]
     networks:
       - easyshell
   website:

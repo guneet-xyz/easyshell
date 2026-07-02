@@ -19,17 +19,19 @@ E2E (Vitest + Testcontainers, real Postgres + Docker)
 
 ## Quick start
 
-| Command | What it does |
-|---|---|
-| `pnpm test` | Run all unit tests across all workspace packages |
-| `pnpm test:coverage` | Unit tests + coverage gate (coordinator ≥70%, runner ≥70%) |
-| `pnpm test:e2e` | E2E suite, requires Docker |
-| `pnpm --filter @easyshell/coordinator test:watch` | Watch mode for coordinator |
+| Command                                           | What it does                                               |
+| ------------------------------------------------- | ---------------------------------------------------------- |
+| `pnpm test`                                       | Run all unit tests across all workspace packages           |
+| `pnpm test:coverage`                              | Unit tests + coverage gate (coordinator ≥70%, runner ≥70%) |
+| `pnpm test:e2e`                                   | E2E suite, requires Docker                                 |
+| `pnpm --filter @easyshell/coordinator test:watch` | Watch mode for coordinator                                 |
 
 ## Unit test conventions
 
 ### File layout
+
 Test files mirror the `src/` layout under `test/`:
+
 ```
 apps/coordinator/src/services/dispatcher.ts
 → apps/coordinator/test/services/dispatcher.spec.ts
@@ -41,6 +43,7 @@ apps/runner/src/workers/recovery.ts
 All test files use the `.spec.ts` suffix.
 
 ### Mock ordering (CRITICAL)
+
 Vitest hoists `vi.mock(...)` calls. Always declare mocks **before** any imports, and import the SUT via dynamic `await import(...)` **after** all mocks are registered:
 
 ```ts
@@ -82,6 +85,7 @@ describe("myFunction", () => {
 ```
 
 ### Mutable env state with vi.hoisted
+
 When a test needs to change env values between test cases (e.g., testing both "key set" and "key unset" branches), use `vi.hoisted`:
 
 ```ts
@@ -102,6 +106,7 @@ it("with registry", () => {
 ```
 
 ### 8-line logger mock (copy-paste)
+
 ```ts
 vi.mock("@easyshell/logger", () => ({
   createLogger: () => ({
@@ -117,6 +122,7 @@ vi.mock("@easyshell/logger", () => ({
 ```
 
 ### Drizzle chain mock
+
 For tests that need to assert Drizzle query calls, build chainable spies that mirror the fluent API:
 
 ```ts
@@ -143,10 +149,12 @@ vi.mock("../../src/db", () => ({
 See `apps/coordinator/test/workers/queue-poller.spec.ts` for a complete CTE chain mock example.
 
 ### Runner SQLite tests
+
 Runner tests that exercise the SQLite layer use real `better-sqlite3` with an `:memory:` database, **never a real file path**:
 
 ```ts
 import Database from "better-sqlite3"
+
 import { runMigrations } from "../../src/db/migrations"
 
 let testDb: Database.Database
@@ -162,7 +170,9 @@ vi.mock("../../src/db/sqlite", () => ({
 ```
 
 ### tRPC router tests
+
 Call router procedures via `createCaller`:
+
 ```ts
 const { myRouter } = await import("../../src/routers/my-router")
 
@@ -172,7 +182,9 @@ expect(result).toMatchObject({ ... })
 ```
 
 ### Adding a test for a new file
+
 When you add a new source file:
+
 1. Create a matching spec file in `test/` mirroring the `src/` path
 2. Add at minimum: one happy-path test and one failure/error-path test
 3. Run `pnpm --filter @easyshell/<package> test` to verify before committing
@@ -189,19 +201,25 @@ The e2e suite lives in `apps/e2e/` and uses Vitest's `globalSetup` to boot a rea
 4. **Runner process**, `apps/runner/runner.cjs` on port 4299
 
 ### Running e2e locally
+
 ```bash
 pnpm test:e2e
 ```
+
 Requires Docker to be running. The suite boots the full stack, runs tests, then tears everything down.
 
 ### Adding an e2e scenario
+
 Add a new `it(...)` block in `apps/e2e/test/scenarios.spec.ts`. Use the shared state written by setup:
 
 ```ts
 import { readFileSync } from "node:fs"
 
 const state = JSON.parse(readFileSync("/tmp/easyshell-e2e-state.json", "utf-8"))
-const client = createCoordinatorClient({ url: state.coordinatorUrl, token: state.coordinatorToken })
+const client = createCoordinatorClient({
+  url: state.coordinatorUrl,
+  token: state.coordinatorToken,
+})
 ```
 
 Use a 120s per-test timeout (already configured in `apps/e2e/vitest.config.ts`).
@@ -212,12 +230,13 @@ Use a 120s per-test timeout (already configured in `apps/e2e/vitest.config.ts`).
 
 Coverage is enforced on `apps/coordinator` and `apps/runner` only.
 
-| Package | Lines | Functions | Branches | Statements |
-|---|---|---|---|---|
-| apps/coordinator | ≥70% | ≥70% | ≥60% | ≥70% |
-| apps/runner | ≥70% | ≥70% | ≥60% | ≥70% |
+| Package          | Lines | Functions | Branches | Statements |
+| ---------------- | ----- | --------- | -------- | ---------- |
+| apps/coordinator | ≥70%  | ≥70%      | ≥60%     | ≥70%       |
+| apps/runner      | ≥70%  | ≥70%      | ≥60%     | ≥70%       |
 
 Run with HTML report:
+
 ```bash
 pnpm test:coverage
 open apps/coordinator/coverage/index.html
@@ -264,8 +283,13 @@ vi.mock("../../src/env", () => ({
 
 vi.mock("@easyshell/logger", () => ({
   createLogger: () => ({
-    info: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn(),
-    trace: vi.fn(), fatal: vi.fn(), child: vi.fn(() => ({})),
+    info: vi.fn(),
+    debug: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    trace: vi.fn(),
+    fatal: vi.fn(),
+    child: vi.fn(() => ({})),
   }),
 }))
 
@@ -283,12 +307,20 @@ beforeEach(() => {
 // ── Tests ────────────────────────────────────────────────────────────────
 describe("myExport", () => {
   it("happy path: returns expected value", async () => {
-    const result = await myExport({ /* valid input */ })
-    expect(result).toMatchObject({ /* expected shape */ })
+    const result = await myExport({
+      /* valid input */
+    })
+    expect(result).toMatchObject({
+      /* expected shape */
+    })
   })
 
   it("failure path: throws / returns error on invalid input", async () => {
-    await expect(myExport({ /* invalid input */ })).rejects.toThrow(/expected error/)
+    await expect(
+      myExport({
+        /* invalid input */
+      }),
+    ).rejects.toThrow(/expected error/)
     // OR: expect(result.status).toBe("error")
   })
 })

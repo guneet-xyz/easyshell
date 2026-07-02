@@ -283,10 +283,7 @@ export const runnerStatus = pgEnum("runner_status", [
   "deregistered",
 ])
 
-export const executionMode = pgEnum("execution_mode", [
-  "session",
-  "submission",
-])
+export const executionMode = pgEnum("execution_mode", ["session", "submission"])
 
 export const jobStatus = pgEnum("job_status", [
   "dispatched",
@@ -309,7 +306,9 @@ export const runners = createTable(
     secretNonce: varchar("secret_nonce", { length: 64 }).notNull(),
     status: runnerStatus("status").notNull().default("active"),
     region: varchar("region", { length: 64 }),
-    labels: jsonb("labels").notNull().default(sql`'{}'::jsonb`),
+    labels: jsonb("labels")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     version: varchar("version", { length: 64 }),
     registeredAt: timestamp("registered_at", {
       mode: "date",
@@ -358,9 +357,7 @@ export const runnerHeartbeats = createTable(
     }).notNull(),
     sessionConcurrencyUsed: integer("session_concurrency_used").notNull(),
     sessionConcurrencyMax: integer("session_concurrency_max").notNull(),
-    submissionConcurrencyUsed: integer(
-      "submission_concurrency_used",
-    ).notNull(),
+    submissionConcurrencyUsed: integer("submission_concurrency_used").notNull(),
     submissionConcurrencyMax: integer("submission_concurrency_max").notNull(),
   },
   (t) => [
@@ -376,9 +373,7 @@ export const executionJobs = createTable(
   "execution_job",
   {
     id: varchar("id", { length: 64 }).notNull().primaryKey(),
-    containerName: varchar("container_name", { length: 64 })
-      .notNull()
-      .unique(),
+    containerName: varchar("container_name", { length: 64 }).notNull().unique(),
     runnerId: varchar("runner_id", { length: 64 }).notNull(),
     mode: executionMode("mode").notNull(),
     image: varchar("image", { length: 512 }).notNull(),
@@ -428,9 +423,7 @@ export const terminalSessionRunners = createTable(
   {
     terminalSessionId: integer("terminal_session_id").notNull().primaryKey(),
     runnerId: varchar("runner_id", { length: 64 }).notNull(),
-    containerName: varchar("container_name", { length: 64 })
-      .notNull()
-      .unique(),
+    containerName: varchar("container_name", { length: 64 }).notNull().unique(),
     executionJobId: varchar("execution_job_id", { length: 64 })
       .notNull()
       .unique(),

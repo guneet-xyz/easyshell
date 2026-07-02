@@ -97,12 +97,8 @@
           "name": "easyshell_account_user_id_easyshell_user_id_fk",
           "tableFrom": "easyshell_account",
           "tableTo": "easyshell_user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -110,10 +106,7 @@
       "compositePrimaryKeys": {
         "easyshell_account_provider_provider_account_id_pk": {
           "name": "easyshell_account_provider_provider_account_id_pk",
-          "columns": [
-            "provider",
-            "provider_account_id"
-          ]
+          "columns": ["provider", "provider_account_id"]
         }
       },
       "uniqueConstraints": {},
@@ -160,12 +153,8 @@
           "name": "easyshell_bookmark_user_id_easyshell_user_id_fk",
           "tableFrom": "easyshell_bookmark",
           "tableTo": "easyshell_user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -173,10 +162,7 @@
       "compositePrimaryKeys": {
         "easyshell_bookmark_user_id_problem_id_pk": {
           "name": "easyshell_bookmark_user_id_problem_id_pk",
-          "columns": [
-            "user_id",
-            "problem_id"
-          ]
+          "columns": ["user_id", "problem_id"]
         }
       },
       "uniqueConstraints": {},
@@ -345,12 +331,8 @@
           "name": "execution_job_runner_id_fk",
           "tableFrom": "easyshell_execution_job",
           "tableTo": "easyshell_runner",
-          "columnsFrom": [
-            "runner_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["runner_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -360,9 +342,7 @@
         "easyshell_execution_job_container_name_unique": {
           "name": "easyshell_execution_job_container_name_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "container_name"
-          ]
+          "columns": ["container_name"]
         }
       },
       "policies": {},
@@ -422,12 +402,8 @@
           "name": "easyshell_images_uploaded_by_easyshell_user_id_fk",
           "tableFrom": "easyshell_images",
           "tableTo": "easyshell_user",
-          "columnsFrom": [
-            "uploaded_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["uploaded_by"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -437,9 +413,7 @@
         "easyshell_images_name_unique": {
           "name": "easyshell_images_name_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "name"
-          ]
+          "columns": ["name"]
         }
       },
       "policies": {},
@@ -476,12 +450,8 @@
           "name": "runner_capability_runner_id_fk",
           "tableFrom": "easyshell_runner_capability",
           "tableTo": "easyshell_runner",
-          "columnsFrom": [
-            "runner_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["runner_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -489,10 +459,7 @@
       "compositePrimaryKeys": {
         "easyshell_runner_capability_runner_id_mode_pk": {
           "name": "easyshell_runner_capability_runner_id_mode_pk",
-          "columns": [
-            "runner_id",
-            "mode"
-          ]
+          "columns": ["runner_id", "mode"]
         }
       },
       "uniqueConstraints": {},
@@ -547,12 +514,8 @@
           "name": "runner_heartbeat_runner_id_fk",
           "tableFrom": "easyshell_runner_heartbeat",
           "tableTo": "easyshell_runner",
-          "columnsFrom": [
-            "runner_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["runner_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -726,12 +689,8 @@
           "name": "easyshell_session_user_id_easyshell_user_id_fk",
           "tableFrom": "easyshell_session",
           "tableTo": "easyshell_user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -804,12 +763,8 @@
           "name": "submission_testcase_queue_fk",
           "tableFrom": "easyshell_submission_testcase_queue",
           "tableTo": "easyshell_submissions",
-          "columnsFrom": [
-            "submission_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["submission_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -817,10 +772,7 @@
       "compositePrimaryKeys": {
         "easyshell_submission_testcase_queue_submission_id_testcase_id_pk": {
           "name": "easyshell_submission_testcase_queue_submission_id_testcase_id_pk",
-          "columns": [
-            "submission_id",
-            "testcase_id"
-          ]
+          "columns": ["submission_id", "testcase_id"]
         }
       },
       "uniqueConstraints": {},
@@ -893,12 +845,8 @@
           "name": "submission_testcase_submission_id_fk",
           "tableFrom": "easyshell_submission_testcase",
           "tableTo": "easyshell_submissions",
-          "columnsFrom": [
-            "submission_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["submission_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -906,10 +854,7 @@
       "compositePrimaryKeys": {
         "easyshell_submission_testcase_submission_id_testcase_id_pk": {
           "name": "easyshell_submission_testcase_submission_id_testcase_id_pk",
-          "columns": [
-            "submission_id",
-            "testcase_id"
-          ]
+          "columns": ["submission_id", "testcase_id"]
         }
       },
       "uniqueConstraints": {},
@@ -970,12 +915,8 @@
           "name": "easyshell_submissions_user_id_easyshell_user_id_fk",
           "tableFrom": "easyshell_submissions",
           "tableTo": "easyshell_user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1066,12 +1007,8 @@
           "name": "terminal_session_log_session_id_fk",
           "tableFrom": "easyshell_terminal_session_log",
           "tableTo": "easyshell_terminal_session",
-          "columnsFrom": [
-            "session_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["session_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1124,12 +1061,8 @@
           "name": "terminal_session_runner_session_id_fk",
           "tableFrom": "easyshell_terminal_session_runner",
           "tableTo": "easyshell_terminal_session",
-          "columnsFrom": [
-            "terminal_session_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["terminal_session_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1137,12 +1070,8 @@
           "name": "terminal_session_runner_runner_id_fk",
           "tableFrom": "easyshell_terminal_session_runner",
           "tableTo": "easyshell_runner",
-          "columnsFrom": [
-            "runner_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["runner_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1150,12 +1079,8 @@
           "name": "terminal_session_runner_job_id_fk",
           "tableFrom": "easyshell_terminal_session_runner",
           "tableTo": "easyshell_execution_job",
-          "columnsFrom": [
-            "execution_job_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["execution_job_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1165,16 +1090,12 @@
         "easyshell_terminal_session_runner_container_name_unique": {
           "name": "easyshell_terminal_session_runner_container_name_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "container_name"
-          ]
+          "columns": ["container_name"]
         },
         "easyshell_terminal_session_runner_execution_job_id_unique": {
           "name": "easyshell_terminal_session_runner_execution_job_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "execution_job_id"
-          ]
+          "columns": ["execution_job_id"]
         }
       },
       "policies": {},
@@ -1262,12 +1183,8 @@
           "name": "easyshell_terminal_session_user_id_easyshell_user_id_fk",
           "tableFrom": "easyshell_terminal_session",
           "tableTo": "easyshell_user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1424,10 +1341,7 @@
       "compositePrimaryKeys": {
         "easyshell_verification_token_identifier_token_pk": {
           "name": "easyshell_verification_token_identifier_token_pk",
-          "columns": [
-            "identifier",
-            "token"
-          ]
+          "columns": ["identifier", "token"]
         }
       },
       "uniqueConstraints": {},
@@ -1440,10 +1354,7 @@
     "public.execution_mode": {
       "name": "execution_mode",
       "schema": "public",
-      "values": [
-        "session",
-        "submission"
-      ]
+      "values": ["session", "submission"]
     },
     "public.job_status": {
       "name": "job_status",
@@ -1461,23 +1372,12 @@
     "public.queue_item_status": {
       "name": "queue_item_status",
       "schema": "public",
-      "values": [
-        "pending",
-        "running",
-        "finished",
-        "failed",
-        "cancelled"
-      ]
+      "values": ["pending", "running", "finished", "failed", "cancelled"]
     },
     "public.runner_status": {
       "name": "runner_status",
       "schema": "public",
-      "values": [
-        "active",
-        "draining",
-        "stale",
-        "deregistered"
-      ]
+      "values": ["active", "draining", "stale", "deregistered"]
     }
   },
   "schemas": {},

@@ -248,7 +248,7 @@ describe("jobs.reportResult — failed path", () => {
     >
     expect(insertedRow.passed).toBe(false)
     expect(insertedRow.exitCode).toBe(-1)
-    expect((insertedRow.stderr as string)).toContain("max attempts exceeded")
+    expect(insertedRow.stderr as string).toContain("max attempts exceeded")
 
     // Queue → failed (not pending), executionJobs → failed
     expect(updateTableSpy).toHaveBeenCalledTimes(2)

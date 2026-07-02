@@ -63,12 +63,8 @@ const pickRunnerSpy = vi.fn().mockResolvedValue({
   secretCiphertext: "abc",
   secretNonce: "plaintext",
 })
-const createRunnerClientFromDbSpy = vi
-  .fn()
-  .mockResolvedValue(mockRunnerClient)
-const createRunnerClientFromCredsSpy = vi
-  .fn()
-  .mockReturnValue(mockRunnerClient)
+const createRunnerClientFromDbSpy = vi.fn().mockResolvedValue(mockRunnerClient)
+const createRunnerClientFromCredsSpy = vi.fn().mockReturnValue(mockRunnerClient)
 const decryptSecretSpy = vi.fn().mockReturnValue("plaintext-secret")
 const generateContainerNameSpy = vi.fn().mockReturnValue("easyshell-test-uuid")
 const insertExecutionJobSpy = vi.fn().mockResolvedValue(undefined)
@@ -208,15 +204,11 @@ beforeEach(() => {
   createRunnerClientFromDbSpy.mockReset().mockResolvedValue(mockRunnerClient)
   insertExecutionJobSpy.mockReset().mockResolvedValue(undefined)
 
-  runnerClientCreateMutate
-    .mockReset()
-    .mockResolvedValue({ status: "accepted" })
+  runnerClientCreateMutate.mockReset().mockResolvedValue({ status: "accepted" })
   runnerClientExecMutate
     .mockReset()
     .mockResolvedValue({ status: "success", stdout: "hello\n", stderr: "" })
-  runnerClientIsRunningQuery
-    .mockReset()
-    .mockResolvedValue({ is_running: true })
+  runnerClientIsRunningQuery.mockReset().mockResolvedValue({ is_running: true })
   runnerClientKillMutate.mockReset().mockResolvedValue({ ok: true })
 })
 
@@ -288,7 +280,9 @@ describe("terminalSessions.create", () => {
   })
 
   it("marks the job failed and rethrows when runner.create rejects", async () => {
-    runnerClientCreateMutate.mockRejectedValueOnce(new Error("container exists"))
+    runnerClientCreateMutate.mockRejectedValueOnce(
+      new Error("container exists"),
+    )
 
     const caller = terminalSessionsRouter.createCaller(websiteCtx)
     await expect(

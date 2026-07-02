@@ -23,7 +23,7 @@ vi.mock("node:child_process", () => ({
   execFile: execFileMock,
 }))
 vi.mock("node:util", () => ({
-  promisify: <T,>(fn: T): T => fn,
+  promisify: <T>(fn: T): T => fn,
 }))
 vi.mock("../../src/env", () => ({ env: envState }))
 vi.mock("@easyshell/logger", () => ({
@@ -62,7 +62,9 @@ describe("docker CLI adapter", () => {
 
     it("prefixes with registry + /easyshell/ when registry is set", () => {
       envState.DOCKER_REGISTRY = "ghcr.io/myorg"
-      expect(expandImageName("easyshell-foo-7")).toBe("ghcr.io/myorg/easyshell/easyshell-foo-7")
+      expect(expandImageName("easyshell-foo-7")).toBe(
+        "ghcr.io/myorg/easyshell/easyshell-foo-7",
+      )
     })
   })
 
@@ -99,7 +101,9 @@ describe("docker CLI adapter", () => {
     })
 
     it("returns ok:false with error message on failure", async () => {
-      execFileMock.mockRejectedValue(new Error("No such container: missing-container"))
+      execFileMock.mockRejectedValue(
+        new Error("No such container: missing-container"),
+      )
 
       const result = await dockerKill("missing-container")
 
@@ -146,7 +150,11 @@ describe("docker CLI adapter", () => {
 
       await dockerRm("doomed-container")
 
-      expect(execFileMock).toHaveBeenCalledWith("docker", ["rm", "-f", "doomed-container"])
+      expect(execFileMock).toHaveBeenCalledWith("docker", [
+        "rm",
+        "-f",
+        "doomed-container",
+      ])
     })
 
     it("does not throw when container is already gone", async () => {
@@ -165,7 +173,9 @@ describe("docker CLI adapter", () => {
         image: "easyshell-foo-7",
         mode: "session",
         detach: true,
-        extraVolumes: ["/tmp/easyshell/sessions/easyshell-session-x:/tmp/easyshell"],
+        extraVolumes: [
+          "/tmp/easyshell/sessions/easyshell-session-x:/tmp/easyshell",
+        ],
       })
 
       expect(result).toEqual({ stdout: "abc123\n", stderr: "", exitCode: 0 })
@@ -209,7 +219,9 @@ describe("docker CLI adapter", () => {
       expect(argv).toContain("-v")
       expect(argv.filter((a) => a === "-v")).toHaveLength(2)
       expect(argv).toContain("/tmp/easyshell/submissions/x/input.sh:/input.sh")
-      expect(argv).toContain("/tmp/easyshell/submissions/x/output.json:/output.json")
+      expect(argv).toContain(
+        "/tmp/easyshell/submissions/x/output.json:/output.json",
+      )
       expect(argv[argv.length - 2]).toBe("-mode")
       expect(argv[argv.length - 1]).toBe("submission")
     })

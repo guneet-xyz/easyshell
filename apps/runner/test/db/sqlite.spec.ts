@@ -64,7 +64,9 @@ describe("db/sqlite", () => {
 
   it("applies the journal_mode pragma (WAL requested; :memory: keeps memory)", () => {
     const db = mod.getDb(":memory:")
-    const mode = String(db.pragma("journal_mode", { simple: true })).toLowerCase()
+    const mode = String(
+      db.pragma("journal_mode", { simple: true }),
+    ).toLowerCase()
     // SQLite refuses WAL on :memory: databases and keeps "memory" — both
     // are acceptable evidence that the pragma was applied without
     // crashing.

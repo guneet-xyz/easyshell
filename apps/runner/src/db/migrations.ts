@@ -82,7 +82,9 @@ export function migrate(db: Database.Database): void {
   let currentVersion = 0
   try {
     const row = db
-      .prepare("SELECT version FROM schema_version ORDER BY version DESC LIMIT 1")
+      .prepare(
+        "SELECT version FROM schema_version ORDER BY version DESC LIMIT 1",
+      )
       .get() as { version: number } | undefined
     currentVersion = row?.version ?? 0
   } catch {
@@ -94,11 +96,13 @@ export function migrate(db: Database.Database): void {
     return
   }
 
-  log.info({ from: currentVersion, to: CURRENT_VERSION }, "applying SQLite migrations")
-  db.exec(V1_DDL)
-  db.prepare("INSERT OR REPLACE INTO schema_version (version, applied_at) VALUES (?, ?)").run(
-    CURRENT_VERSION,
-    Date.now(),
+  log.info(
+    { from: currentVersion, to: CURRENT_VERSION },
+    "applying SQLite migrations",
   )
+  db.exec(V1_DDL)
+  db.prepare(
+    "INSERT OR REPLACE INTO schema_version (version, applied_at) VALUES (?, ?)",
+  ).run(CURRENT_VERSION, Date.now())
   log.info({ version: CURRENT_VERSION }, "SQLite migrations complete")
 }

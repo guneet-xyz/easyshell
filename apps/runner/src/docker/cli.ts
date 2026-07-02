@@ -105,13 +105,21 @@ export async function dockerRun(args: DockerRunArgs): Promise<DockerRunResult> {
     mode,
   ]
 
-  log.debug({ container_name: containerName, image: fullImage, argv }, "docker.run")
+  log.debug(
+    { container_name: containerName, image: fullImage, argv },
+    "docker.run",
+  )
 
   try {
     const { stdout, stderr } = await execFileAsync("docker", argv)
     return { stdout, stderr, exitCode: 0 }
   } catch (err: unknown) {
-    const e = err as { stdout?: string; stderr?: string; code?: number; message?: string }
+    const e = err as {
+      stdout?: string
+      stderr?: string
+      code?: number
+      message?: string
+    }
     log.warn(
       {
         container_name: containerName,
@@ -138,14 +146,19 @@ export interface DockerKillResult {
  * Kills a running Docker container by name.
  * Matches apps/session-manager/handlers/kill/kill.go:33.
  */
-export async function dockerKill(containerName: string): Promise<DockerKillResult> {
+export async function dockerKill(
+  containerName: string,
+): Promise<DockerKillResult> {
   log.debug({ container_name: containerName }, "docker.kill")
   try {
     await execFileAsync("docker", ["container", "kill", containerName])
     return { ok: true }
   } catch (err: unknown) {
     const e = err as { message?: string }
-    log.warn({ container_name: containerName, error: e.message }, "docker.kill.failed")
+    log.warn(
+      { container_name: containerName, error: e.message },
+      "docker.kill.failed",
+    )
     return { ok: false, error: e.message }
   }
 }
@@ -166,7 +179,9 @@ export interface DockerInspectResult {
  * "container missing" vs "container present" — this adapter also surfaces
  * the running flag so the caller can distinguish stopped containers.
  */
-export async function dockerInspect(containerName: string): Promise<DockerInspectResult> {
+export async function dockerInspect(
+  containerName: string,
+): Promise<DockerInspectResult> {
   log.debug({ container_name: containerName }, "docker.inspect")
   try {
     const { stdout } = await execFileAsync("docker", [

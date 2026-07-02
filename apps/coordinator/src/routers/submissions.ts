@@ -2,9 +2,9 @@ import { initTRPC, TRPCError } from "@trpc/server"
 import { and, eq } from "drizzle-orm"
 
 import {
+  submissions,
   submissionTestcaseQueue,
   submissionTestcases,
-  submissions,
 } from "@easyshell/db/schema"
 import { createLogger } from "@easyshell/logger"
 

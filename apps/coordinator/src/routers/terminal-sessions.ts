@@ -1,5 +1,4 @@
 import crypto from "node:crypto"
-
 import { initTRPC, TRPCError } from "@trpc/server"
 import { eq } from "drizzle-orm"
 import type { z } from "zod"
@@ -13,13 +12,6 @@ import { createLogger } from "@easyshell/logger"
 
 import { type Context } from "../context"
 import { db } from "../db"
-import { generateContainerName } from "../services/job-name"
-import { insertExecutionJob } from "../services/jobs"
-import {
-  createRunnerClientFromDb,
-  type ExecSessionOutput,
-} from "../services/runner-client"
-import { pickRunner } from "../services/runner-picker"
 import {
   CreateTerminalSessionInputSchema,
   CreateTerminalSessionOutputSchema,
@@ -32,6 +24,13 @@ import {
   KillTerminalSessionInputSchema,
   KillTerminalSessionOutputSchema,
 } from "../schemas"
+import { generateContainerName } from "../services/job-name"
+import { insertExecutionJob } from "../services/jobs"
+import {
+  createRunnerClientFromDb,
+  type ExecSessionOutput,
+} from "../services/runner-client"
+import { pickRunner } from "../services/runner-picker"
 
 const log = createLogger("coordinator:terminal-sessions")
 
@@ -53,7 +52,9 @@ type ExecOutput = z.infer<typeof ExecTerminalSessionOutputSchema>
 // The runner schema includes `container_locked` (session busy) which the
 // coordinator's public union does not. Collapse it onto `session_error` so
 // the website-facing discriminator stays stable.
-function mapRunnerExecToCoordinator(runnerResult: ExecSessionOutput): ExecOutput {
+function mapRunnerExecToCoordinator(
+  runnerResult: ExecSessionOutput,
+): ExecOutput {
   if (runnerResult.status === "success") {
     return {
       status: "success",

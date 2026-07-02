@@ -2,10 +2,9 @@
 // E2E global setup — boots the full Coordinator+Runner stack against a
 // Postgres Testcontainer. See task T6 spec for details.
 
-import { type ChildProcess, execSync, spawn } from "node:child_process"
+import { execSync, spawn, type ChildProcess } from "node:child_process"
 import fs from "node:fs"
 import path from "node:path"
-
 import {
   PostgreSqlContainer,
   type StartedPostgreSqlContainer,
@@ -187,6 +186,17 @@ function spawnRunner(
   return proc
 }
 
+function buildStandaloneBundles(): void {
+  execSync("pnpm --filter @easyshell/coordinator build", {
+    cwd: ROOT,
+    stdio: "inherit",
+  })
+  execSync("pnpm --filter @easyshell/runner build", {
+    cwd: ROOT,
+    stdio: "inherit",
+  })
+}
+
 async function killProcess(
   proc: ChildProcess | undefined,
   label: string,
@@ -216,7 +226,9 @@ async function killProcess(
 }
 
 export async function setup(): Promise<void> {
-  if (!fs.existsSync(WORKING_DIR)) fs.mkdirSync(WORKING_DIR, { recursive: true })
+  if (!fs.existsSync(WORKING_DIR))
+    fs.mkdirSync(WORKING_DIR, { recursive: true })
+  buildStandaloneBundles()
 
   // 1. Start Postgres Testcontainer.
   pgContainer = await new PostgreSqlContainer("postgres:16-alpine")

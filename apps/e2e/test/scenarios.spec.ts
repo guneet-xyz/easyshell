@@ -1,8 +1,8 @@
 import fs from "node:fs"
-
-import { createCoordinatorClient } from "@easyshell/coordinator/client"
 import postgres from "postgres"
 import { beforeAll, describe, expect, it } from "vitest"
+
+import { createCoordinatorClient } from "@easyshell/coordinator/client"
 
 const STATE_PATH = "/tmp/easyshell-e2e-state.json"
 

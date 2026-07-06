@@ -6,10 +6,10 @@ jobs:
     uses: ./.github/workflows/release-website.yml
     secrets: inherit
 
-  release-session-manager:
-    uses: ./.github/workflows/release-session-manager.yml
+  release-coordinator:
+    uses: ./.github/workflows/release-coordinator.yml
     secrets: inherit
 
-  release-submission-manager:
-    uses: ./.github/workflows/release-submission-manager.yml
+  release-runner:
+    uses: ./.github/workflows/release-runner.yml
     secrets: inherit

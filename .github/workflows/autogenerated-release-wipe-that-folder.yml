@@ -9,7 +9,7 @@ on:
       - "packages/problems/data/problems/wipe-that-folder/**"
       - "packages/problems/env.ts"
       - "packages/utils/**"
-      - "apps/submission-manager/utils.ts"
+      - "apps/coordinator/src/grading/passed-check.ts"
   workflow_call:
   workflow_dispatch: {}
 

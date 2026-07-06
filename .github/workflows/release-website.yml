@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/release-website.yml"
       - "packages/**"
+      - "apps/coordinator/src/client.ts"
       - "apps/website/**"
   workflow_call:
   workflow_dispatch:

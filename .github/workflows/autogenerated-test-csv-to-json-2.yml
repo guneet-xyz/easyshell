@@ -7,7 +7,7 @@ on:
       - "packages/problems/data/problems/csv-to-json-2/**"
       - "packages/problems/env.ts"
       - "packages/utils/**"
-      - "apps/submission-manager/utils.ts"
+      - "apps/coordinator/src/grading/passed-check.ts"
   workflow_call:
 
 jobs:

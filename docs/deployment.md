@@ -7,6 +7,7 @@ This guide covers the current deployment paths for easyshell after the Coordinat
 | Artifact            | Source                               | Runtime role                                                                                              |
 | ------------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------- |
 | `website:latest`    | `apps/website/Dockerfile`            | Next.js frontend. Calls Coordinator for terminal sessions and submission grading.                         |
+| `migrator` image    | `apps/migrator/Dockerfile`           | Runs Drizzle migrations before application services start.                                                |
 | `coordinator` image | `apps/coordinator/Dockerfile`        | HTTP control plane. Owns queue polling, runner selection, retry procedures, and terminal-session routing. |
 | `runner` image      | `apps/runner/Dockerfile`             | Executes jobs through Docker. Owns Docker socket access and embedded SQLite state.                        |
 | problem images      | `packages/problems/scripts/build.ts` | Testcase containers tagged as `easyshell-{problemSlug}-{testcaseId}`.                                     |
@@ -20,6 +21,9 @@ The local Compose stack in `compose.yml` starts `migrator`, `coordinator`, `runn
 - External Docker network named `easyshell` for Compose deployments.
 - Docker registry that stores:
   - `easyshell/website:latest`
+  - `easyshell/migrator:latest`
+  - `easyshell/coordinator:latest`
+  - `easyshell/runner:latest`
   - problem images under `easyshell/easyshell-{problemSlug}-{testcaseId}`
 - GitHub Actions environment named `registry-push` with registry and Tailscale credentials.
 
@@ -64,6 +68,30 @@ Required GitHub secrets:
 | `TS_OAUTH_CLIENT_ID`     | Tailscale OAuth client id.      |
 | `TS_OAUTH_CLIENT_SECRET` | Tailscale OAuth secret.         |
 
+### Migrator image
+
+Workflow: `.github/workflows/release-migrator.yml`
+
+Triggers:
+
+- push to `main` touching `apps/migrator/**`, `drizzle/**`, `drizzle.config.ts`, `packages/db/**`, workspace lockfiles, or the workflow file
+- `workflow_dispatch`
+- `workflow_call`
+
+Pre-release gates:
+
+- `test-tsc.yml`
+- `test-formatting.yml`
+
+Release steps:
+
+1. Connect to Tailscale.
+2. Log in to `${{ vars.DOCKER_REGISTRY }}`.
+3. Build `apps/migrator/Dockerfile`.
+4. Push `${{ vars.DOCKER_REGISTRY }}/easyshell/migrator:latest`.
+
+Required GitHub environment variables and secrets match the Website image release path, except the migrator does not use website build arguments.
+
 ### Problem images
 
 Workflow: `.github/workflows/release-problems.yml`
@@ -92,13 +120,17 @@ When `DOCKER_REGISTRY` is set, the push script tags and pushes each image as:
 ${DOCKER_REGISTRY}/easyshell/easyshell-{problemSlug}-{testcaseId}
 ```
 
-### Current release-all caveat
+### Release all
 
-Do not use `.github/workflows/release-all.yml` until it is updated. It still references legacy `release-session-manager.yml` and `release-submission-manager.yml` workflows, while the runtime path now uses Coordinator and Runner.
-
-Use these workflows instead:
+`.github/workflows/release-all.yml` releases the application runtime images together:
 
 - `release-website.yml` for the website image
+- `release-migrator.yml` for the database migrator image
+- `release-coordinator.yml` for the coordinator image
+- `release-runner.yml` for the runner image
+
+Release testcase containers separately with:
+
 - `release-problems.yml` for testcase images
 
 ## Runtime environment

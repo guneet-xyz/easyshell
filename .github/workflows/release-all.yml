@@ -6,6 +6,10 @@ jobs:
     uses: ./.github/workflows/release-website.yml
     secrets: inherit
 
+  release-migrator:
+    uses: ./.github/workflows/release-migrator.yml
+    secrets: inherit
+
   release-coordinator:
     uses: ./.github/workflows/release-coordinator.yml
     secrets: inherit

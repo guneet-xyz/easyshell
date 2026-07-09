@@ -53,8 +53,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 vi.mock("../../src/env", () => ({
   env: {
     DATABASE_URL: "postgres://test",
-    COORDINATOR_TOKEN: "test-coord-token",
-    COORDINATOR_REGISTRATION_TOKEN: "test-reg-token",
+    WEBSITE_TOKEN: "test-token",
     COORDINATOR_PORT: 4100,
     MAX_ATTEMPTS: 3,
     LOG_LEVEL: "silent",
@@ -82,6 +81,43 @@ describe("myFunction", () => {
   it("happy path", () => { ... })
   it("error path", () => { ... })
 })
+```
+
+For **runner-side** specs, mock `RUNNER_ID` and `RUNNER_TOKEN` (both are required env — the runner exits at boot without them). Coordinator URL and public URL round out the minimum set:
+
+```ts
+vi.mock("../../src/env", () => ({
+  env: {
+    RUNNER_ID: "test-runner-id",
+    RUNNER_TOKEN: "test-runner-token",
+    RUNNER_NAME: "test-runner",
+    RUNNER_PUBLIC_URL: "http://test-runner:4200",
+    COORDINATOR_URL: "http://test-coordinator:4100",
+    RUNNER_DB_PATH: ":memory:",
+    WORKING_DIR: "/tmp/easyshell-test",
+    SUBMISSION_MAX_CONCURRENCY: 4,
+    SESSION_MAX_CONCURRENCY: 64,
+    LOG_LEVEL: "silent",
+    NODE_ENV: "test",
+  },
+}))
+```
+
+For **website-side** specs that touch admin routes or admin gating, include `ADMIN_EMAILS` alongside `WEBSITE_TOKEN`:
+
+```ts
+vi.mock("@/env", () => ({
+  env: {
+    DATABASE_URL: "postgres://test",
+    COORDINATOR_URL: "http://test-coordinator:4100",
+    WEBSITE_TOKEN: "test-token",
+    ADMIN_EMAILS: "admin@test.local",
+    NEXTAUTH_SECRET: "test",
+    NEXTAUTH_URL: "http://localhost:3000",
+    LOG_LEVEL: "silent",
+    NODE_ENV: "test",
+  },
+}))
 ```
 
 ### Mutable env state with vi.hoisted

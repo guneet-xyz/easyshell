@@ -202,8 +202,31 @@ CREATE TABLE cleanup_pending (
 
 **Coordinator router — `runners.*`**
 
+> `runners.register` was removed. Runners are created out-of-band by an admin via `admin.runners.create` (see the [`admin.runners.*`](#coordinator-router--adminrunners-website--admin-only) block below). Each runner receives its `RUNNER_ID` and `RUNNER_TOKEN` from that flow and boots with them already in its env; there is no first-boot self-registration path and no `COORDINATOR_REGISTRATION_TOKEN` on either side.
+
 ```ts
-// runners.register — first-boot only; auth: COORDINATOR_REGISTRATION_TOKEN
+// runners.heartbeat — auth: per-runner bearer
+input = z.object({
+  capacity: z.object({
+    session_used: z.number().int().nonnegative(),
+    session_max: z.number().int().nonnegative(),
+    submission_used: z.number().int().nonnegative(),
+    submission_max: z.number().int().nonnegative(),
+  }),
+})
+output = z.object({ status: z.enum(["ack", "drain", "deregister"]) })
+
+// runners.deregister — auth: per-runner bearer
+input = z.object({})
+output = z.object({ ok: z.literal(true) })
+```
+
+**Coordinator router — `admin.runners.*` (website → admin-only)**
+
+> All four procedures require the `WEBSITE_TOKEN` bearer AND enforce `websiteProcedure` (`ctx.actor === "website"`). The website layer additionally gates the calling user against `ADMIN_EMAILS` before invoking any of these; the coordinator trusts the website's admin gate.
+
+```ts
+// admin.runners.create — mutation; issues a fresh RUNNER_ID + RUNNER_TOKEN
 input = z.object({
   name: z.string().min(1).max(255),
   public_url: z.string().url(),
@@ -220,24 +243,55 @@ input = z.object({
     .min(1),
 })
 output = z.object({
-  runner_id: z.string(),
-  runner_secret: z.string(), // 32-byte hex; shown ONCE
+  runner_id: z.string(), // crypto.randomUUID(); persisted in easyshell_runner.id
+  runner_token: z.string(), // 32-byte hex; hash + envelope stored server-side; shown ONCE
 })
 
-// runners.heartbeat — auth: per-runner bearer
-input = z.object({
-  capacity: z.object({
-    session_used: z.number().int().nonnegative(),
-    session_max: z.number().int().nonnegative(),
-    submission_used: z.number().int().nonnegative(),
-    submission_max: z.number().int().nonnegative(),
-  }),
-})
-output = z.object({ status: z.enum(["ack", "drain", "deregister"]) })
-
-// runners.deregister — auth: per-runner bearer
+// admin.runners.list — query; returns all runners with their capabilities and status
 input = z.object({})
-output = z.object({ ok: z.literal(true) })
+output = z.object({
+  runners: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      public_url: z.string(),
+      region: z.string().nullable(),
+      labels: z.record(z.string()),
+      version: z.string().nullable(),
+      status: z.enum([
+        "active",
+        "draining",
+        "stale",
+        "deregistered",
+        "revoked",
+      ]),
+      last_seen_at: z.date(),
+      revoked_at: z.date().nullable(),
+      registered_at: z.date(),
+      capabilities: z.array(
+        z.object({
+          mode: z.enum(["session", "submission"]),
+          concurrency: z.number().int().positive(),
+        }),
+      ),
+    }),
+  ),
+})
+
+// admin.runners.revoke — mutation; sets revoked_at = now(); idempotent
+input = z.object({ runner_id: z.string() })
+output = z.object({ revoked: z.literal(true), runner_id: z.string() })
+
+// admin.runners.rotateToken — mutation; instant-cutover rotation
+input = z.object({ runner_id: z.string() })
+output = z.object({
+  runner_id: z.string(),
+  runner_token: z.string(), // fresh 32-byte hex; shown ONCE; old token invalid at commit
+})
+// Errors:
+//   - NOT_FOUND       — runner does not exist
+//   - BAD_REQUEST     — runner is revoked or deregistered
+//   - CONFLICT        — another admin rotated concurrently; refresh and retry
 ```
 
 **Coordinator router — `jobs.*` (Runner → Coordinator push)**
@@ -279,7 +333,7 @@ output = z.object({ acked: z.literal(true) })
 **Coordinator router — `terminalSessions.*` (Website → Coordinator)**
 
 ```ts
-// terminalSessions.create — auth: COORDINATOR_TOKEN
+// terminalSessions.create — auth: WEBSITE_TOKEN
 input = z.object({
   terminal_session_id: z.number().int().positive(),
   image: z.string().min(1), // e.g. easyshell-foo-7
@@ -289,7 +343,7 @@ output = z.object({
   runner_id: z.string(),
 })
 
-// terminalSessions.exec — auth: COORDINATOR_TOKEN; 5s timeout
+// terminalSessions.exec — auth: WEBSITE_TOKEN; 5s timeout
 input = z.object({
   terminal_session_id: z.number().int().positive(),
   command: z.string(),
@@ -313,15 +367,15 @@ output = z.discriminatedUnion("status", [
   }),
 ])
 
-// terminalSessions.isAlive — auth: COORDINATOR_TOKEN
+// terminalSessions.isAlive — auth: WEBSITE_TOKEN
 input = z.object({ terminal_session_id: z.number().int().positive() })
 output = z.object({ is_running: z.boolean() })
 
-// terminalSessions.kill — auth: COORDINATOR_TOKEN
+// terminalSessions.kill — auth: WEBSITE_TOKEN
 input = z.object({ terminal_session_id: z.number().int().positive() })
 output = z.object({ ok: z.literal(true) })
 
-// terminalSessions.getRoute — auth: COORDINATOR_TOKEN; internal/debug
+// terminalSessions.getRoute — auth: WEBSITE_TOKEN; internal/debug
 input = z.object({ terminal_session_id: z.number().int().positive() })
 output = z
   .object({
@@ -334,7 +388,7 @@ output = z
 **Coordinator router — `submissions.*` (Website → Coordinator)**
 
 ```ts
-// submissions.enqueue — auth: COORDINATOR_TOKEN
+// submissions.enqueue — auth: WEBSITE_TOKEN
 // Called instead of website inserting queue rows directly; preserves existing newSubmission() server action's
 // signature by wrapping this call. Coordinator inserts submissions + queue rows in a single transaction.
 input = z.object({
@@ -347,7 +401,7 @@ output = z.object({
   testcase_count: z.number().int().nonnegative(),
 })
 
-// submissions.retryTestcase — auth: COORDINATOR_TOKEN; owner check inside coordinator
+// submissions.retryTestcase — auth: WEBSITE_TOKEN; owner check inside coordinator
 input = z.object({
   acting_user_id: z.string().min(1),
   submission_id: z.number().int().positive(),
@@ -360,7 +414,7 @@ output = z.discriminatedUnion("status", [
   z.object({ status: z.literal("not_failed") }), // can only retry rows in status=failed
 ])
 
-// submissions.retryAllFailedForSubmission — auth: COORDINATOR_TOKEN; owner check inside coordinator
+// submissions.retryAllFailedForSubmission — auth: WEBSITE_TOKEN; owner check inside coordinator
 input = z.object({
   acting_user_id: z.string().min(1),
   submission_id: z.number().int().positive(),
@@ -374,7 +428,7 @@ output = z.discriminatedUnion("status", [
   z.object({ status: z.literal("not_found") }),
 ])
 
-// submissions.getStatus — auth: COORDINATOR_TOKEN; thin wrapper for debug
+// submissions.getStatus — auth: WEBSITE_TOKEN; thin wrapper for debug
 input = z.object({ submission_id: z.number().int().positive() })
 output = z.object({
   submission_id: z.number().int().positive(),

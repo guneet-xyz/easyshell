@@ -6,8 +6,7 @@ import { runnerHeartbeats } from "@easyshell/db/schema"
 vi.mock("../../src/env", () => ({
   env: {
     DATABASE_URL: "postgres://test",
-    COORDINATOR_TOKEN: "test-coord-token",
-    COORDINATOR_REGISTRATION_TOKEN: "test-reg-token",
+    WEBSITE_TOKEN: "test-website-token",
     COORDINATOR_PORT: 4100,
     MAX_ATTEMPTS: 3,
     LOG_LEVEL: "silent",

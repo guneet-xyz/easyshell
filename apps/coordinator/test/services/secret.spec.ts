@@ -20,8 +20,7 @@ vi.mock("@easyshell/logger", () => ({
 // the real branch logic in secret.ts that reads `env.COORDINATOR_SECRET_KEY`.
 const REQUIRED_ENV: Record<string, string> = {
   DATABASE_URL: "postgres://test/test",
-  COORDINATOR_TOKEN: "test-coord-token",
-  COORDINATOR_REGISTRATION_TOKEN: "test-reg-token",
+  WEBSITE_TOKEN: "test-website-token",
 }
 
 beforeEach(() => {

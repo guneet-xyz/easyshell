@@ -28,14 +28,13 @@ const { dockerState, dbHolder } = vi.hoisted(() => ({
 
 vi.mock("../../src/env", () => ({
   env: {
-    RUNNER_SECRET:
-      "test-secret-64hex0000000000000000000000000000000000000000000000000000",
+    RUNNER_TOKEN:
+      "test-token-64hex00000000000000000000000000000000000000000000000000000",
     RUNNER_PORT: 4200,
     RUNNER_NAME: "test-runner",
     RUNNER_PUBLIC_URL: "http://localhost:4200",
     RUNNER_ID: "test-runner-id",
     COORDINATOR_URL: "http://localhost:4100",
-    COORDINATOR_REGISTRATION_TOKEN: "test-reg",
     WORKING_DIR: "/tmp/easyshell-test-recovery",
     RUNNER_DB_PATH: ":memory:",
     SUBMISSION_MAX_CONCURRENCY: 4,

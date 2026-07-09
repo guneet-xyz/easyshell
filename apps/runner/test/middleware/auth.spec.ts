@@ -4,13 +4,13 @@ import { describe, expect, it, vi } from "vitest"
 
 vi.mock("../../src/env", () => ({
   env: {
-    RUNNER_SECRET:
-      "test-secret-64hex0000000000000000000000000000000000000000000000000000",
+    RUNNER_TOKEN:
+      "test-token-64hex00000000000000000000000000000000000000000000000000000",
     RUNNER_PORT: 4200,
     RUNNER_NAME: "test",
     RUNNER_PUBLIC_URL: "http://localhost:4200",
+    RUNNER_ID: "test-runner-id",
     COORDINATOR_URL: "http://localhost:4100",
-    COORDINATOR_REGISTRATION_TOKEN: "test-reg",
     WORKING_DIR: "/tmp",
     RUNNER_DB_PATH: "/tmp/test.db",
     SUBMISSION_MAX_CONCURRENCY: 4,
@@ -39,7 +39,7 @@ describe("runner createContext", () => {
   it("returns coordinator when correct bearer provided", () => {
     const ctx = createContext(
       makeOpts(
-        "test-secret-64hex0000000000000000000000000000000000000000000000000000",
+        "test-token-64hex00000000000000000000000000000000000000000000000000000",
       ),
     )
     expect(ctx.actor).toBe("coordinator")
@@ -53,7 +53,7 @@ describe("runner createContext", () => {
   it("returns unauth when wrong bearer of equal length", () => {
     const ctx = createContext(
       makeOpts(
-        "xxxx-xxxxxx-64hex0000000000000000000000000000000000000000000000000000",
+        "xxxx-xxxxxx-64hex00000000000000000000000000000000000000000000000000000",
       ),
     )
     expect(ctx.actor).toBe("unauth")

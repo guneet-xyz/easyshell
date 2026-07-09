@@ -24,13 +24,12 @@ const {
   dbHolder,
 } = vi.hoisted(() => ({
   envState: {
-    RUNNER_SECRET: "test-secret" as string | undefined,
+    RUNNER_TOKEN: "test-token" as string | undefined,
     RUNNER_PORT: 4200,
     RUNNER_NAME: "test-runner",
     RUNNER_PUBLIC_URL: "http://localhost:4200",
     RUNNER_ID: "runner-id" as string | undefined,
     COORDINATOR_URL: "http://localhost:4100",
-    COORDINATOR_REGISTRATION_TOKEN: "test-reg",
     WORKING_DIR: "/tmp/easyshell-test-push-retry",
     RUNNER_DB_PATH: ":memory:",
     SUBMISSION_MAX_CONCURRENCY: 4,
@@ -68,6 +67,12 @@ vi.mock("@trpc/client", () => ({
     }
   },
   httpBatchLink: httpBatchLinkMock,
+  // The SUT imports TRPCClientError for a runtime `instanceof` check inside
+  // is401(). Without a real class here, `err instanceof undefined` throws a
+  // TypeError inside the catch handler — is401 never returns false, the
+  // UPDATE that bumps push_attempts never runs, and the outer try/catch
+  // swallows the TypeError as a benign log.
+  TRPCClientError: class TRPCClientError extends Error {},
 }))
 
 vi.mock("../../src/db/sqlite", () => ({
@@ -138,28 +143,13 @@ describe("workers/push-retry", () => {
     createTRPCClientMock.mockReset()
     httpBatchLinkMock.mockReset()
     envState.RUNNER_ID = "runner-id"
-    envState.RUNNER_SECRET = "secret"
+    envState.RUNNER_TOKEN = "secret"
     dbHolder.db = makeMemDb()
     vi.useFakeTimers()
   })
 
   afterEach(() => {
     vi.useRealTimers()
-  })
-
-  it("returns immediately without building a client when RUNNER_ID is unset", async () => {
-    envState.RUNNER_ID = undefined
-    const { pushRetryLoop } = await import("../../src/workers/push-retry")
-    await pushRetryLoop()
-    expect(createTRPCClientMock).not.toHaveBeenCalled()
-    expect(reportResultMock).not.toHaveBeenCalled()
-  })
-
-  it("returns immediately when RUNNER_SECRET is unset", async () => {
-    envState.RUNNER_SECRET = undefined
-    const { pushRetryLoop } = await import("../../src/workers/push-retry")
-    await pushRetryLoop()
-    expect(createTRPCClientMock).not.toHaveBeenCalled()
   })
 
   it("pushes a succeeded job and marks push_acked=1", async () => {
@@ -320,7 +310,7 @@ describe("workers/push-retry", () => {
     })
     reportResultMock.mockResolvedValue({ acked: true })
     envState.RUNNER_ID = "headers-id"
-    envState.RUNNER_SECRET = "headers-secret"
+    envState.RUNNER_TOKEN = "headers-secret"
 
     const { pushRetryLoop } = await import("../../src/workers/push-retry")
     void pushRetryLoop().catch(() => {})

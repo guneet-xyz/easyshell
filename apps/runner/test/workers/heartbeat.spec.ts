@@ -20,13 +20,12 @@ const {
   httpBatchLinkMock,
 } = vi.hoisted(() => ({
   envState: {
-    RUNNER_SECRET: undefined as string | undefined,
+    RUNNER_TOKEN: undefined as string | undefined,
     RUNNER_PORT: 4200,
     RUNNER_NAME: "test-runner",
     RUNNER_PUBLIC_URL: "http://localhost:4200",
     RUNNER_ID: undefined as string | undefined,
     COORDINATOR_URL: "http://localhost:4100",
-    COORDINATOR_REGISTRATION_TOKEN: "test-reg",
     WORKING_DIR: "/tmp/easyshell-test",
     RUNNER_DB_PATH: ":memory:",
     SUBMISSION_MAX_CONCURRENCY: 4,
@@ -63,6 +62,10 @@ vi.mock("@trpc/client", () => ({
     }
   },
   httpBatchLink: httpBatchLinkMock,
+  // The SUT imports TRPCClientError for a runtime `instanceof` check inside
+  // is401(). Without a real class here, `err instanceof undefined` throws a
+  // TypeError from the catch handler and silently kills the loop.
+  TRPCClientError: class TRPCClientError extends Error {},
 }))
 
 type CapacitySnapshot = {
@@ -95,7 +98,7 @@ describe("workers/heartbeat", () => {
     createTRPCClientMock.mockReset()
     httpBatchLinkMock.mockReset()
     envState.RUNNER_ID = undefined
-    envState.RUNNER_SECRET = undefined
+    envState.RUNNER_TOKEN = undefined
     vi.useFakeTimers()
   })
 
@@ -109,27 +112,9 @@ describe("workers/heartbeat", () => {
     expect(isDraining()).toBe(false)
   })
 
-  it("returns immediately without building a client when RUNNER_ID is missing", async () => {
-    envState.RUNNER_ID = undefined
-    envState.RUNNER_SECRET = "x"
-    const { heartbeatLoop } = await import("../../src/workers/heartbeat")
-    await heartbeatLoop(() => DEFAULT_SNAPSHOT)
-    expect(createTRPCClientMock).not.toHaveBeenCalled()
-    expect(heartbeatMutateMock).not.toHaveBeenCalled()
-  })
-
-  it("returns immediately without building a client when RUNNER_SECRET is missing", async () => {
-    envState.RUNNER_ID = "x"
-    envState.RUNNER_SECRET = undefined
-    const { heartbeatLoop } = await import("../../src/workers/heartbeat")
-    await heartbeatLoop(() => DEFAULT_SNAPSHOT)
-    expect(createTRPCClientMock).not.toHaveBeenCalled()
-    expect(heartbeatMutateMock).not.toHaveBeenCalled()
-  })
-
   it("sends a heartbeat carrying the capacity snapshot exactly as provided", async () => {
     envState.RUNNER_ID = "runner-1"
-    envState.RUNNER_SECRET = "secret"
+    envState.RUNNER_TOKEN = "secret"
     heartbeatMutateMock.mockResolvedValue({ status: "ack" })
 
     const snapshot: CapacitySnapshot = {
@@ -150,7 +135,7 @@ describe("workers/heartbeat", () => {
 
   it("flips draining=true when coordinator responds with 'drain'", async () => {
     envState.RUNNER_ID = "runner-1"
-    envState.RUNNER_SECRET = "secret"
+    envState.RUNNER_TOKEN = "secret"
     heartbeatMutateMock.mockResolvedValue({ status: "drain" })
 
     const { heartbeatLoop, isDraining } = await import(
@@ -169,7 +154,7 @@ describe("workers/heartbeat", () => {
 
   it("keeps draining=false on a normal 'ack' response", async () => {
     envState.RUNNER_ID = "runner-1"
-    envState.RUNNER_SECRET = "secret"
+    envState.RUNNER_TOKEN = "secret"
     heartbeatMutateMock.mockResolvedValue({ status: "ack" })
 
     const { heartbeatLoop, isDraining } = await import(
@@ -185,7 +170,7 @@ describe("workers/heartbeat", () => {
 
   it("swallows a failed heartbeat and keeps looping", async () => {
     envState.RUNNER_ID = "runner-1"
-    envState.RUNNER_SECRET = "secret"
+    envState.RUNNER_TOKEN = "secret"
     heartbeatMutateMock
       .mockRejectedValueOnce(new Error("network down"))
       .mockResolvedValue({ status: "ack" })
@@ -206,7 +191,7 @@ describe("workers/heartbeat", () => {
 
   it("sets the bearer + x-runner-id auth headers on the client links", async () => {
     envState.RUNNER_ID = "runner-1"
-    envState.RUNNER_SECRET = "the-secret"
+    envState.RUNNER_TOKEN = "the-secret"
     heartbeatMutateMock.mockResolvedValue({ status: "ack" })
 
     const { heartbeatLoop } = await import("../../src/workers/heartbeat")

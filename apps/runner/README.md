@@ -4,13 +4,19 @@ Executes dispatched jobs. Owns the Docker socket on its host, launches problem c
 
 See [Architecture](../../README.md#architecture) for a system overview.
 
+## Deployment
+
+Runners are pre-created by an admin via the website admin dashboard (`/admin/runners`). The operator receives `RUNNER_ID` and `RUNNER_TOKEN` and sets them in the runner's environment before starting the container.
+
+On 401 (e.g., admin revoked the runner or rotated its token), the runner logs `runner.auth.rejected` once and drops to 60s heartbeat interval (does NOT crash). On operator env-swap + restart, the first successful heartbeat resets to the normal 5s cadence.
+
 ## Development
 
 ```bash
 # Build
 pnpm --filter @easyshell/runner build
 
-# Run (requires env vars including RUNNER_ID + RUNNER_SECRET after bootstrap)
+# Run (requires env vars including RUNNER_ID + RUNNER_TOKEN)
 pnpm --filter @easyshell/runner start
 ```
 

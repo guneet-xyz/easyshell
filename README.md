@@ -87,11 +87,18 @@ The quickest way to run the application stack locally is through Docker Compose.
    pnpm run docker:up
    ```
 
-The Compose stack starts these services:
+The `docker:up` command boots the base services (migrator, coordinator, and website). Runners are profile-gated and do not start by default. For full local development including runners, use:
+
+```sh
+pnpm run docker:up:full
+```
+
+> **Warning**: Starting runners without seeding first causes a 60s auth-backoff. Always run `pnpm run dev:seed-runners` before starting runners.
+
+The base `docker:up` stack starts these services:
 
 - `migrator` - runs `drizzle-kit migrate` and exits. Application services wait for it to finish successfully.
 - `coordinator` - HTTP control plane on <http://localhost:4100>. Accepts session/submission requests from the website and polls the submission queue.
-- `runner` - exposes the per-runner HTTP API on <http://localhost:4200>. Registers with the coordinator on boot and owns the Docker socket for launching problem containers.
 - `website` - serves the Next.js app on <http://localhost:3000>.
 
 Run migrations without starting the full stack with:
@@ -119,7 +126,8 @@ The following environment variables might be required
 - [`DOCKER_REGISTRY`](#docker_registry)
 - [`DATABASE_URL`](#database_url)
 - [`COORDINATOR_URL`](#coordinator_url)
-- [`COORDINATOR_TOKEN`](#coordinator_token)
+- [`WEBSITE_TOKEN`](#website_token)
+- [`ADMIN_EMAILS`](#admin_emails)
 - [`NEXTAUTH_URL`](#nextauth_url)
 - [`NEXTAUTH_SECRET`](#nextauth_secret)
 - [`DISCORD_CLIENT_ID`](#discord_client_id)
@@ -164,11 +172,13 @@ Token for the drizzle proxy.
 
 URL of the coordinator HTTP API. Used by the website to request interactive terminal sessions and to dispatch submission grading. For cloudflare deployment, this cannot be a fixed IP address.
 
-#### `COORDINATOR_TOKEN`
+#### `WEBSITE_TOKEN`
 
-Bearer token the website uses when calling the coordinator API.
+Bearer token used by the website when calling the coordinator API.
 
-#### `NEXTAUTH_URL`
+#### `ADMIN_EMAILS`
+
+Comma-separated list of email addresses with admin access to the website admin dashboard.
 
 #### `NEXTAUTH_SECRET`
 
@@ -199,6 +209,8 @@ Also see [Next.js Scripts](apps/website/README.md#scripts) and [Script Scripts](
 - [`docker:build`](#dockerbuild)
 - [`docker:migrate`](#dockermigrate)
 - [`docker:up`](#dockerup)
+- [`docker:up:full`](#dockerupfull)
+- [`dev:seed-runners`](#devseed-runners)
 - [`format:check`](#formatcheck)
 - [`format:write`](#formatwrite)
 - [`problems:new`](#problemsnew)
@@ -228,7 +240,15 @@ Runs the `migrator` Compose service once and removes the container after it exit
 
 #### `docker:up`
 
-Starts the local Docker Compose stack in the background. The `migrator` service runs first; `coordinator`, `runner`, and `website` start only after migrations complete successfully.
+Starts the local Docker Compose stack in the background. The `migrator` service runs first; `coordinator` and `website` start only after migrations complete successfully. Runners are not started (profile-gated).
+
+#### `docker:up:full`
+
+Starts the full Docker Compose stack including runners. Equivalent to running `docker:up`, then `dev:seed-runners`, then `docker compose --profile runners up -d runner runner-2`.
+
+#### `dev:seed-runners`
+
+Seeds the database with pre-created runner records. Runs `tsx scripts/dev-seed-runner.ts`. Must be executed before starting runners to avoid 60s auth-backoff.
 
 #### `format:check`
 

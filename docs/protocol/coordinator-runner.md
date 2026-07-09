@@ -202,7 +202,7 @@ CREATE TABLE cleanup_pending (
 
 **Coordinator router — `runners.*`**
 
-> `runners.register` was removed. Runners are created out-of-band by an admin via `admin.runners.create` (see the [`admin.runners.*`](#coordinator-router--adminrunners-website--admin-only) block below). Each runner receives its `RUNNER_ID` and `RUNNER_TOKEN` from that flow and boots with them already in its env; there is no first-boot self-registration path and no `COORDINATOR_REGISTRATION_TOKEN` on either side.
+> `runners.register` was removed. Runners are created out-of-band by an admin via `admin.runners.create` (see the [`admin.runners.*`](#coordinator-router--adminrunners-website--admin-only) block below). Each runner receives its `RUNNER_ID` and `RUNNER_TOKEN` from that flow and boots with them already in its env; there is no first-boot self-registration path — no shared bootstrap credential is needed on either side.
 
 ```ts
 // runners.heartbeat — auth: per-runner bearer

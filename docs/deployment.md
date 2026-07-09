@@ -277,6 +277,12 @@ The runner never logs the bearer value. Auth-blocked and cutover transitions are
 - **No dispatch loss inside the runner.** Because the runner drains in-flight work when it goes auth-blocked and buffers unpushed results in local SQLite (`accepted_job.push_acked = 0`), rotating during an active job does not lose the result — it will be pushed on the first successful heartbeat after cutover.
 - **Coordinator-side dispatch skip.** While the runner is auth-blocked, the coordinator's `runner-picker` skips it (revoked runners are filtered by the `WHERE revoked_at IS NULL` guard). Once the new token is in place and heartbeat resumes, the picker considers it again.
 
+#### Concurrent rotation (two admins)
+
+If two admins rotate the same runner simultaneously, the dashboard may show a `409 CONFLICT` error. The exact guidance shown in the UI is:
+
+Another admin rotated this runner's token while you were preparing this rotation (409 CONFLICT). Refresh the page and coordinate with the other admin before retrying: (1) if they already copied the winning token and deployed the runner, DO NOT retry — the runner is already reachable and retrying would invalidate the working token; (2) if the winning token was not captured (browser refreshed / walked away) or should be invalidated for policy reasons, rotate again to generate a fresh token. The other admin's plaintext token cannot be recovered from the dashboard — it was view-once.
+
 For scheduled key hygiene (compliance rotations), run rotate during a maintenance window and coordinate the runner-side `RUNNER_TOKEN` update within the same window; anything that dispatched to that runner before cutover is safe (buffered locally), anything that would dispatch during the gap is routed to a different active runner or waits in queue.
 
 ## Compose rollout

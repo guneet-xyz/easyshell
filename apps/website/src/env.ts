@@ -19,7 +19,9 @@ export const env = createEnv({
     GOOGLE_CLIENT_SECRET: z.string(),
 
     COORDINATOR_URL: z.string().url(),
-    COORDINATOR_TOKEN: z.string(),
+    WEBSITE_TOKEN: z.string(),
+
+    ADMIN_EMAILS: z.string().min(1),
 
     SMTP_HOST: z.string(),
     SMTP_USERNAME: z.string(),

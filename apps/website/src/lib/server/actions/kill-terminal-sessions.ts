@@ -38,7 +38,7 @@ export async function killTerminalSessions({
   if (updated.length > 0) {
     const client = createCoordinatorClient({
       url: env.COORDINATOR_URL,
-      token: env.COORDINATOR_TOKEN,
+      token: env.WEBSITE_TOKEN,
     })
     await Promise.allSettled(
       updated.map((s) =>

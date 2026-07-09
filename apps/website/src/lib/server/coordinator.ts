@@ -13,7 +13,7 @@ import { getProblemSlugFromId } from "@/lib/server/problems"
 
 const _cClient = createCoordinatorClient({
   url: env.COORDINATOR_URL,
-  token: env.COORDINATOR_TOKEN,
+  token: env.WEBSITE_TOKEN,
   correlationId: crypto.randomUUID(),
 })
 

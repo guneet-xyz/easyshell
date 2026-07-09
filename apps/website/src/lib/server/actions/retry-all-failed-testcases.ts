@@ -15,7 +15,7 @@ export async function retryAllFailedTestcases({
 
   const client = createCoordinatorClient({
     url: env.COORDINATOR_URL,
-    token: env.COORDINATOR_TOKEN,
+    token: env.WEBSITE_TOKEN,
   })
 
   const result = await client.submissions.retryAllFailedForSubmission.mutate({

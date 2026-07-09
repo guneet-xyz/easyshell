@@ -21,26 +21,6 @@ export const JobStatusSchema = z.enum([
 
 // ─── runners.* ───────────────────────────────────────────────────────────────
 
-export const RegisterRunnerInputSchema = z.object({
-  name: z.string().min(1).max(255),
-  public_url: z.string().url(),
-  region: z.string().max(64).optional(),
-  labels: z.record(z.string()).default({}),
-  version: z.string().max(64).optional(),
-  capabilities: z
-    .array(
-      z.object({
-        mode: ExecutionModeSchema,
-        concurrency: z.number().int().positive(),
-      }),
-    )
-    .min(1),
-})
-export const RegisterRunnerOutputSchema = z.object({
-  runner_id: z.string(),
-  runner_secret: z.string(),
-})
-
 export const HeartbeatInputSchema = z.object({
   capacity: z.object({
     session_used: z.number().int().nonnegative(),

@@ -108,8 +108,8 @@ export const terminalSessionsRouter = router({
         })
       })
 
-      const runnerClient = await createRunnerClientFromDb(runner.id)
       try {
+        const runnerClient = await createRunnerClientFromDb(runner.id)
         await runnerClient.terminalSessions.create.mutate({
           container_name: containerName,
           image: input.image,
@@ -188,7 +188,10 @@ export const terminalSessionsRouter = router({
       }
 
       const runnerRows = await db
-        .select({ status: runners.status })
+        .select({
+          status: runners.status,
+          revokedAt: runners.revokedAt,
+        })
         .from(runners)
         .where(eq(runners.id, route.runnerId))
         .limit(1)
@@ -203,6 +206,14 @@ export const terminalSessionsRouter = router({
           status: "error",
           type: "runner_unreachable",
           message: `runner ${route.runnerId} is ${runner?.status ?? "not found"}`,
+        }
+      }
+
+      if (runner.revokedAt) {
+        return {
+          status: "error",
+          type: "runner_unreachable",
+          message: `runner ${route.runnerId} is revoked`,
         }
       }
 

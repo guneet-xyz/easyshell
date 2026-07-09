@@ -1,6 +1,7 @@
 import { initTRPC } from "@trpc/server"
 
 import { type Context } from "./context"
+import { adminRouter } from "./routers/admin"
 import { jobsRouter } from "./routers/jobs"
 import { runnersRouter } from "./routers/runners"
 import { submissionsRouter } from "./routers/submissions"
@@ -14,6 +15,7 @@ const router = t.router
 const publicProcedure = t.procedure
 
 export const appRouter = router({
+  admin: adminRouter,
   runners: runnersRouter,
   jobs: jobsRouter,
   terminalSessions: terminalSessionsRouter,

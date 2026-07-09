@@ -88,7 +88,10 @@ export async function watchdogJobs(): Promise<void> {
   for (const job of staleJobs) {
     try {
       const runner = await db
-        .select({ status: runners.status })
+        .select({
+          status: runners.status,
+          revokedAt: runners.revokedAt,
+        })
         .from(runners)
         .where(eq(runners.id, job.runnerId))
         .limit(1)
@@ -103,6 +106,11 @@ export async function watchdogJobs(): Promise<void> {
           job.id,
           `runner ${job.runnerId} is ${runner?.status ?? "not found"}`,
         )
+        continue
+      }
+
+      if (runner.revokedAt) {
+        await markJobLost(job.id, `runner ${job.runnerId} is revoked`)
         continue
       }
 

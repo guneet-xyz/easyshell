@@ -134,12 +134,14 @@ export async function createRunnerClientFromDb(
       publicUrl: runners.publicUrl,
       secretCiphertext: runners.secretCiphertext,
       secretNonce: runners.secretNonce,
+      revokedAt: runners.revokedAt,
     })
     .from(runners)
     .where(eq(runners.id, runnerId))
     .limit(1)
   const runner = row[0]
   if (!runner) throw new Error(`Runner ${runnerId} not found`)
+  if (runner.revokedAt) throw new Error(`Runner ${runnerId} is revoked`)
   const secret = decryptSecret(runner.secretCiphertext, runner.secretNonce)
   return createRunnerClientFromCreds(runner.publicUrl, secret, runnerId)
 }

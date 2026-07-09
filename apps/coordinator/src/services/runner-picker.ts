@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm"
+import { and, eq, isNull, sql } from "drizzle-orm"
 
 import {
   runnerCapabilities,
@@ -52,7 +52,7 @@ export async function pickRunner(
       ),
     )
     .leftJoin(runnerHeartbeats, eq(runnerHeartbeats.runnerId, runners.id))
-    .where(eq(runners.status, "active"))
+    .where(and(eq(runners.status, "active"), isNull(runners.revokedAt)))
     .orderBy(sql`spare_capacity DESC`)
     .limit(1)
 

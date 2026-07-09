@@ -326,6 +326,10 @@ export const runners = createTable(
       mode: "date",
       withTimezone: true,
     }),
+    revokedAt: timestamp("revoked_at", {
+      mode: "date",
+      withTimezone: true,
+    }),
   },
   (t) => [index("idx_runner_status_last_seen").on(t.status, t.lastSeenAt)],
 )

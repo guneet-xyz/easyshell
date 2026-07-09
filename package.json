@@ -6,10 +6,12 @@
   "scripts": {
     "cache": "pnpm --filter @easyshell/problems run cache:website",
     "db:migrate": "infisical run --env=dev -- pnpm exec drizzle-kit migrate",
+    "dev:seed-runners": "infisical run --env=dev -- tsx scripts/dev-seed-runner.ts",
     "dev:website": "infisical run --env=dev -- pnpm --filter @easyshell/website run dev",
     "docker:build": "infisical run --env=dev -- docker compose build",
     "docker:migrate": "infisical run --env=dev -- docker compose run --rm migrator",
-    "docker:up": "infisical run --env=dev -- docker compose up -d",
+    "docker:up": "infisical run --env=dev -- docker compose up -d migrator coordinator website && echo '[note] runners are profile-gated; use pnpm run docker:up:full for a full local stack (see README.md).'",
+    "docker:up:full": "pnpm run docker:up && pnpm run dev:seed-runners && docker compose --profile runners up -d runner runner-2",
     "format:check": "pnpm exec prettier --check . && gofmt -l -s .",
     "format:write": "pnpm exec prettier --write . && gofmt -w -s .",
     "lint": "pnpm run lint:tsc && pnpm run lint:next",
@@ -21,6 +23,7 @@
     "test:watch": "pnpm -r --filter './apps/coordinator' --filter './apps/runner' exec vitest"
   },
   "devDependencies": {
+    "@easyshell/db": "workspace:*",
     "@ianvs/prettier-plugin-sort-imports": "^4.7.1",
     "drizzle-kit": "^0.31.9",
     "prettier": "^3.5.3",

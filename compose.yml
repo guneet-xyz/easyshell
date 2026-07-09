@@ -22,8 +22,7 @@ services:
         condition: service_completed_successfully
     environment:
       DATABASE_URL: ${DATABASE_URL}
-      COORDINATOR_TOKEN: token-coordinator
-      COORDINATOR_REGISTRATION_TOKEN: token-registration
+      WEBSITE_TOKEN: token-coordinator
       LOG_LEVEL: debug
       NODE_ENV: development
       MAX_ATTEMPTS: "3"
@@ -46,14 +45,16 @@ services:
       context: .
       dockerfile: ./apps/runner/Dockerfile
     container_name: easyshell-dev-runner
+    profiles: ["runners"]
     depends_on:
       coordinator:
         condition: service_healthy
     environment:
+      RUNNER_ID: dev-runner-1
+      RUNNER_TOKEN: dev-runner-token-1
       RUNNER_NAME: runner-1
       RUNNER_PUBLIC_URL: http://runner:4200
       COORDINATOR_URL: http://coordinator:4100
-      COORDINATOR_REGISTRATION_TOKEN: token-registration
       RUNNER_DB_PATH: /var/lib/easyshell-runner/runner.db
       WORKING_DIR: /tmp/easyshell
       LOG_LEVEL: debug
@@ -81,14 +82,16 @@ services:
       context: .
       dockerfile: ./apps/runner/Dockerfile
     container_name: easyshell-dev-runner-2
+    profiles: ["runners"]
     depends_on:
       coordinator:
         condition: service_healthy
     environment:
+      RUNNER_ID: dev-runner-2
+      RUNNER_TOKEN: dev-runner-token-2
       RUNNER_NAME: runner-2
       RUNNER_PUBLIC_URL: http://runner-2:4200
       COORDINATOR_URL: http://coordinator:4100
-      COORDINATOR_REGISTRATION_TOKEN: token-registration
       RUNNER_DB_PATH: /var/lib/easyshell-runner/runner.db
       WORKING_DIR: /tmp/easyshell
       LOG_LEVEL: debug
@@ -154,7 +157,8 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       COORDINATOR_URL: http://coordinator:4100
-      COORDINATOR_TOKEN: token-coordinator
+      WEBSITE_TOKEN: token-coordinator
+      ADMIN_EMAILS: "dev@localhost"
       SMTP_HOST: ${SMTP_HOST}
       SMTP_USERNAME: ${SMTP_USERNAME}
       SMTP_PASSWORD: ${SMTP_PASSWORD}

@@ -17,8 +17,7 @@ const COORDINATOR_PORT = 4199
 const RUNNER_PORT = 4299
 const COORDINATOR_URL = `http://localhost:${COORDINATOR_PORT}`
 const RUNNER_PUBLIC_URL = `http://localhost:${RUNNER_PORT}`
-const COORDINATOR_TOKEN = "test-token"
-const REGISTRATION_TOKEN = "test-reg-token"
+const WEBSITE_TOKEN = "test-token"
 const WORKING_DIR = "/tmp/easyshell-e2e"
 
 let pgContainer: StartedPostgreSqlContainer | undefined
@@ -42,85 +41,44 @@ async function waitForCoordinatorHealth(): Promise<void> {
   throw new Error(`coordinator health never became ready: ${String(lastErr)}`)
 }
 
-async function waitForRunnerRegistration(databaseUrl: string): Promise<string> {
+async function seedRunner(databaseUrl: string): Promise<{
+  runnerId: string
+  runnerToken: string
+}> {
   const { default: postgres } = await import("postgres")
+  const { createHash, randomBytes } = await import("node:crypto")
+
   const sql = postgres(databaseUrl, { max: 1 })
+
+  const runnerId = randomBytes(16).toString("hex")
+  const runnerToken = randomBytes(32).toString("hex")
+  const secretHash = createHash("sha256").update(runnerToken).digest("hex")
+  // Plaintext envelope — matches coordinator's secret.ts fallback when
+  // COORDINATOR_SECRET_KEY is unset (see apps/coordinator/src/services/secret.ts).
+  const secretCiphertext = Buffer.from(runnerToken, "utf8").toString("base64")
+  const secretNonce = "plaintext"
+
   try {
-    const deadline = Date.now() + 30_000
-    while (Date.now() < deadline) {
-      const rows = await sql<{ id: string }[]>`
-        SELECT id FROM easyshell_runner
-        WHERE status = 'active'
-        ORDER BY registered_at DESC
-        LIMIT 1
-      `
-      if (rows.length > 0 && rows[0]?.id) return rows[0].id
-      await new Promise((r) => setTimeout(r, 500))
-    }
-    throw new Error("runner never appeared in easyshell_runner table")
+    await sql`
+      INSERT INTO easyshell_runner (
+        id, name, public_url, secret_hash, secret_ciphertext, secret_nonce
+      ) VALUES (
+        ${runnerId}, ${"e2e-runner"}, ${RUNNER_PUBLIC_URL},
+        ${secretHash}, ${secretCiphertext}, ${secretNonce}
+      )
+    `
+    await sql`
+      INSERT INTO easyshell_runner_capability (runner_id, mode, concurrency)
+      VALUES
+        (${runnerId}, ${"submission"}, ${4}),
+        (${runnerId}, ${"session"}, ${64})
+    `
   } finally {
     await sql.end({ timeout: 5 })
   }
-}
 
-function bootstrapRunner(databaseUrl: string): Promise<{
-  runnerId: string
-  runnerSecret: string
-}> {
-  return new Promise((resolve, reject) => {
-    const proc = spawn("node", [path.join(ROOT, "apps/runner/runner.cjs")], {
-      env: {
-        ...process.env,
-        RUNNER_NAME: "e2e-runner",
-        RUNNER_PUBLIC_URL,
-        RUNNER_PORT: String(RUNNER_PORT),
-        COORDINATOR_URL,
-        COORDINATOR_REGISTRATION_TOKEN: REGISTRATION_TOKEN,
-        RUNNER_DB_PATH: ":memory:",
-        WORKING_DIR,
-        SUBMISSION_MAX_CONCURRENCY: "4",
-        SESSION_MAX_CONCURRENCY: "64",
-        LOG_LEVEL: "fatal",
-        NODE_ENV: "production",
-        DATABASE_URL: databaseUrl,
-      },
-      stdio: ["ignore", "pipe", "pipe"],
-    })
-
-    let stderr = ""
-    let stdout = ""
-    proc.stdout?.on("data", (b: Buffer) => {
-      stdout += b.toString()
-    })
-    proc.stderr?.on("data", (b: Buffer) => {
-      stderr += b.toString()
-    })
-
-    const timer = setTimeout(() => {
-      proc.kill("SIGKILL")
-      reject(
-        new Error(
-          `bootstrap runner timed out\nstderr:\n${stderr}\nstdout:\n${stdout}`,
-        ),
-      )
-    }, 30_000)
-
-    proc.on("exit", (code) => {
-      clearTimeout(timer)
-      const match = stderr.match(
-        /BOOTSTRAP-ME:\s+runner_id=(\S+)\s+runner_secret=(\S+)/,
-      )
-      if (!match) {
-        reject(
-          new Error(
-            `bootstrap runner exited (code=${String(code)}) without BOOTSTRAP-ME\nstderr:\n${stderr}\nstdout:\n${stdout}`,
-          ),
-        )
-        return
-      }
-      resolve({ runnerId: match[1]!, runnerSecret: match[2]! })
-    })
-  })
+  process.stdout.write(`e2e: seeded runner_id=${runnerId}\n`)
+  return { runnerId, runnerToken }
 }
 
 function spawnCoordinator(databaseUrl: string): ChildProcess {
@@ -131,8 +89,7 @@ function spawnCoordinator(databaseUrl: string): ChildProcess {
       env: {
         ...process.env,
         DATABASE_URL: databaseUrl,
-        COORDINATOR_TOKEN,
-        COORDINATOR_REGISTRATION_TOKEN: REGISTRATION_TOKEN,
+        WEBSITE_TOKEN,
         MAX_ATTEMPTS: "3",
         LOG_LEVEL: "fatal",
         NODE_ENV: "production",
@@ -154,18 +111,17 @@ function spawnCoordinator(databaseUrl: string): ChildProcess {
 function spawnRunner(
   databaseUrl: string,
   runnerId: string,
-  runnerSecret: string,
+  runnerToken: string,
 ): ChildProcess {
   const proc = spawn("node", [path.join(ROOT, "apps/runner/runner.cjs")], {
     env: {
       ...process.env,
       RUNNER_ID: runnerId,
-      RUNNER_SECRET: runnerSecret,
+      RUNNER_TOKEN: runnerToken,
       RUNNER_NAME: "e2e-runner",
       RUNNER_PUBLIC_URL,
       RUNNER_PORT: String(RUNNER_PORT),
       COORDINATOR_URL,
-      COORDINATOR_REGISTRATION_TOKEN: REGISTRATION_TOKEN,
       RUNNER_DB_PATH: ":memory:",
       WORKING_DIR,
       SUBMISSION_MAX_CONCURRENCY: "4",
@@ -249,19 +205,18 @@ export async function setup(): Promise<void> {
   coordinatorProcess = spawnCoordinator(databaseUrl)
   await waitForCoordinatorHealth()
 
-  // 4. Bootstrap runner (one-shot — exits 0 after registering).
-  const { runnerId, runnerSecret } = await bootstrapRunner(databaseUrl)
+  // 4. Seed a runner row directly (coordinator has no bootstrap endpoint).
+  const { runnerId, runnerToken } = await seedRunner(databaseUrl)
 
-  // 5. Spawn the long-lived runner with credentials and wait for heartbeat row.
-  runnerProcess = spawnRunner(databaseUrl, runnerId, runnerSecret)
-  await waitForRunnerRegistration(databaseUrl)
+  // 5. Spawn the long-lived runner with credentials.
+  runnerProcess = spawnRunner(databaseUrl, runnerId, runnerToken)
 
   // 6. Persist shared state for the test workers.
   fs.writeFileSync(
     STATE_PATH,
     JSON.stringify({
       coordinatorUrl: COORDINATOR_URL,
-      coordinatorToken: COORDINATOR_TOKEN,
+      coordinatorToken: WEBSITE_TOKEN,
       databaseUrl,
       runnerId,
     }),

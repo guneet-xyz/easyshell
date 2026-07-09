@@ -11,10 +11,9 @@ export const env = createEnv({
       .string()
       .default("{}")
       .transform((s) => JSON.parse(s) as Record<string, string>),
-    RUNNER_ID: z.string().optional(),
-    RUNNER_SECRET: z.string().optional(),
+    RUNNER_ID: z.string().min(1),
+    RUNNER_TOKEN: z.string().min(1),
     COORDINATOR_URL: z.string().url(),
-    COORDINATOR_REGISTRATION_TOKEN: z.string().min(1),
     DOCKER_REGISTRY: z.string().optional(),
     WORKING_DIR: z.string().default("/tmp/easyshell"),
     SUBMISSION_MAX_CONCURRENCY: z.coerce.number().int().positive().default(4),

@@ -10,7 +10,6 @@ import { getDb } from "./db/sqlite"
 import { env } from "./env"
 import { appRouter } from "./router"
 import { getCapacity } from "./services/capacity"
-import { bootstrap } from "./workers/bootstrap"
 import { heartbeatLoop } from "./workers/heartbeat"
 import { pushRetryLoop } from "./workers/push-retry"
 import { startReconciliation } from "./workers/reconciliation"
@@ -30,16 +29,13 @@ async function main(): Promise<void> {
   const db = getDb(env.RUNNER_DB_PATH)
   migrate(db)
 
-  // 1. Bootstrap — exits process if RUNNER_ID/RUNNER_SECRET are not set (first-boot registration).
-  await bootstrap()
-
-  // 2. Reconcile SQLite ↔ docker once before exposing capacity to the coordinator.
+  // Reconcile SQLite ↔ docker once before exposing capacity to the coordinator.
   await runRecovery()
 
-  // 3. Periodic 30s reconciliation sweep — non-blocking.
+  // Periodic 30s reconciliation sweep — non-blocking.
   startReconciliation()
 
-  // 4. Heartbeat loop — non-blocking. Reads live counters from services/capacity.ts.
+  // Heartbeat loop — non-blocking. Reads live counters from services/capacity.ts.
   heartbeatLoop(getCapacity).catch((err: unknown) => {
     log.error(
       { err: err instanceof Error ? err.message : String(err) },
@@ -47,8 +43,8 @@ async function main(): Promise<void> {
     )
   })
 
-  // 5. push-retry loop — non-blocking. Replays terminal job statuses to the
-  //    coordinator until acked. Exits cleanly if RUNNER_ID/RUNNER_SECRET missing.
+  // push-retry loop — non-blocking. Replays terminal job statuses to the
+  // coordinator until acked.
   pushRetryLoop().catch((err: unknown) => {
     log.error(
       { err: err instanceof Error ? err.message : String(err) },

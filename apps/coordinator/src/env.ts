@@ -5,8 +5,7 @@ import { z } from "zod"
 export const env = createEnv({
   server: {
     DATABASE_URL: z.string().url(),
-    COORDINATOR_TOKEN: z.string().min(1),
-    COORDINATOR_REGISTRATION_TOKEN: z.string().min(1),
+    WEBSITE_TOKEN: z.string().min(1),
     COORDINATOR_PORT: z.coerce.number().int().positive().default(4100),
     MAX_ATTEMPTS: z.coerce.number().int().positive().default(3),
     LOG_LEVEL: z

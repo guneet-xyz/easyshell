@@ -1,6 +1,6 @@
 import crypto from "node:crypto"
 import { type CreateHTTPContextOptions } from "@trpc/server/adapters/standalone"
-import { eq } from "drizzle-orm"
+import { and, eq, isNull } from "drizzle-orm"
 
 import { runners } from "@easyshell/db/schema"
 
@@ -34,13 +34,8 @@ export async function createContext(
   if (!bearer) return { actor: "unauth" }
 
   // Website token check (constant-time)
-  if (timingSafeEqual(bearer, env.COORDINATOR_TOKEN)) {
+  if (timingSafeEqual(bearer, env.WEBSITE_TOKEN)) {
     return { actor: "website" }
-  }
-
-  // Registration token check (for runners.register only)
-  if (timingSafeEqual(bearer, env.COORDINATOR_REGISTRATION_TOKEN)) {
-    return { actor: "runner" } // runnerId is undefined — register doesn't have one yet
   }
 
   // Per-runner secret check
@@ -48,7 +43,7 @@ export async function createContext(
     const row = await db
       .select({ id: runners.id, secretHash: runners.secretHash })
       .from(runners)
-      .where(eq(runners.id, runnerIdHeader))
+      .where(and(eq(runners.id, runnerIdHeader), isNull(runners.revokedAt)))
       .limit(1)
     const runner = row[0]
 

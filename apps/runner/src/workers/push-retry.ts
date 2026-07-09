@@ -6,24 +6,32 @@
 // Coordinator (push_acked=0), and replays them via jobs.reportResult.
 //
 // On success: marks push_acked=1.
-// On failure: bumps push_attempts and stamps last_push_at; the row will be
-//             retried on the next tick (the plan's exponential backoff with
-//             jitter is a future refinement — for T19 we keep the loop
-//             constant-rate and rely on bounded scan size).
+// On non-401 non-2xx failure: bumps push_attempts and stamps last_push_at;
+//   the row will be retried on the next tick.
+// On 401 (auth reject): stops the batch immediately, does NOT bump
+//   push_attempts on any row (401 says "your credential is bad", not "this
+//   row is broken"). Backoff cadence is driven by services/auth-state.
 //
 // The coordinator's tRPC AppRouter is NOT imported here. Cross-package type
 // import causes a circular dep (coordinator depends on runner's AppRouter
 // type via @easyshell/runner/client and vice versa). We follow the same
-// pattern used by bootstrap.ts / heartbeat.ts: typed inline cast on
+// pattern used by heartbeat.ts: typed inline cast on
 // `createTRPCClient<any>`.
 // ==========================================
 
-import { createTRPCClient, httpBatchLink } from "@trpc/client"
+import { createTRPCClient, httpBatchLink, TRPCClientError } from "@trpc/client"
 
 import { createLogger } from "@easyshell/logger"
 
 import { getDb } from "../db/sqlite"
 import { env } from "../env"
+import {
+  emitBlockedStillLog,
+  getBackoffMs,
+  onAuthReject,
+  onAuthSuccess,
+  onNonAuthError,
+} from "../services/auth-state"
 
 const log = createLogger("runner:push-retry")
 
@@ -70,12 +78,11 @@ type PendingRow = {
 
 let coordinatorClient: ReportResultClient | null = null
 
-function getCoordinatorClient(): ReportResultClient | null {
+function getCoordinatorClient(): ReportResultClient {
   if (coordinatorClient) return coordinatorClient
-  if (!env.RUNNER_ID || !env.RUNNER_SECRET) return null
 
   const runnerId = env.RUNNER_ID
-  const runnerSecret = env.RUNNER_SECRET
+  const runnerToken = env.RUNNER_TOKEN
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const raw = createTRPCClient<any>({
@@ -83,7 +90,7 @@ function getCoordinatorClient(): ReportResultClient | null {
       httpBatchLink({
         url: env.COORDINATOR_URL,
         headers: {
-          Authorization: `Bearer ${runnerSecret}`,
+          Authorization: `Bearer ${runnerToken}`,
           "x-runner-id": runnerId,
         },
       }),
@@ -91,6 +98,12 @@ function getCoordinatorClient(): ReportResultClient | null {
   })
   coordinatorClient = raw as unknown as ReportResultClient
   return coordinatorClient
+}
+
+function is401(err: unknown): boolean {
+  if (!(err instanceof TRPCClientError)) return false
+  const data = err.data as { httpStatus?: number; code?: string } | null
+  return data?.httpStatus === 401 || data?.code === "UNAUTHORIZED"
 }
 
 function rowToPayload(row: PendingRow): ReportResultPayload {
@@ -119,7 +132,6 @@ function rowToPayload(row: PendingRow): ReportResultPayload {
 
 async function pushOnce(): Promise<void> {
   const client = getCoordinatorClient()
-  if (!client) return
 
   const db = getDb(env.RUNNER_DB_PATH)
   const pending = db
@@ -144,8 +156,18 @@ async function pushOnce(): Promise<void> {
       db.prepare("UPDATE accepted_job SET push_acked=1 WHERE job_id=?").run(
         row.job_id,
       )
+      onAuthSuccess()
       log.info({ job_id: row.job_id }, "push.acked")
     } catch (err: unknown) {
+      if (is401(err)) {
+        // 401 aborts the batch: (a) do NOT bump push_attempts on this row
+        // (auth-backoff is a credential concern, not a per-row retry-exhaustion
+        // concern), (b) do NOT attempt subsequent rows (they'd all 401 too and
+        // would spuriously bump every row's push_attempts counter).
+        await onAuthReject()
+        return
+      }
+      onNonAuthError()
       db.prepare(
         "UPDATE accepted_job SET push_attempts=push_attempts+1, last_push_at=? WHERE job_id=?",
       ).run(Date.now(), row.job_id)
@@ -168,15 +190,12 @@ async function pushOnce(): Promise<void> {
  * network failure never crashes the loop.
  */
 export async function pushRetryLoop(): Promise<void> {
-  if (!env.RUNNER_ID || !env.RUNNER_SECRET) {
-    log.warn("runner.push-retry.skipped — RUNNER_ID or RUNNER_SECRET not set")
-    return
-  }
   log.info({ interval_ms: LOOP_INTERVAL_MS }, "runner.push-retry.loop-started")
 
   // eslint-disable-next-line no-constant-condition
   while (true) {
-    await new Promise((r) => setTimeout(r, LOOP_INTERVAL_MS))
+    await new Promise((r) => setTimeout(r, getBackoffMs(LOOP_INTERVAL_MS)))
+    await emitBlockedStillLog()
     try {
       await pushOnce()
     } catch (err: unknown) {

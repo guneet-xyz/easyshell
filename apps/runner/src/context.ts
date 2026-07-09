@@ -22,10 +22,7 @@ export function createContext(opts: CreateHTTPContextOptions): Context {
   const bearer = auth.startsWith("Bearer ") ? auth.slice(7) : null
   if (!bearer) return { actor: "unauth" }
 
-  // RUNNER_SECRET may not be set yet (bootstrap mode — first boot before registration)
-  if (!env.RUNNER_SECRET) return { actor: "unauth" }
-
-  if (timingSafeEqual(bearer, env.RUNNER_SECRET)) {
+  if (timingSafeEqual(bearer, env.RUNNER_TOKEN)) {
     return { actor: "coordinator" }
   }
 

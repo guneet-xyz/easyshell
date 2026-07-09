@@ -27,7 +27,7 @@ vi.mock("@easyshell/coordinator/client", () => ({
 vi.mock("@/env", () => ({
   env: {
     COORDINATOR_URL: "http://localhost:4100",
-    COORDINATOR_TOKEN: "tok",
+    WEBSITE_TOKEN: "tok",
   },
 }))
 

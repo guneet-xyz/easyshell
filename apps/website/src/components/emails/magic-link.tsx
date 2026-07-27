@@ -9,7 +9,7 @@ import {
   Section,
   Tailwind,
   Text,
-} from "@react-email/components"
+} from "react-email"
 
 export function MagicLink({ url }: { url: string }) {
   return (

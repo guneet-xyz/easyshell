@@ -201,12 +201,12 @@ export default async function Page({
         <Card className="flex aspect-square max-h-80 w-full items-center justify-center">
           <SubmissionsChart stats={submissionStats} />
         </Card>
-        <Card className="flex aspect-square max-h-80 w-full flex-col items-center justify-center font-clash-display">
+        <Card className="font-clash-display flex aspect-square max-h-80 w-full flex-col items-center justify-center">
           <div className="text-2xl">Badges</div>
           <div className="text-xl text-neutral-500">(coming soon)</div>
         </Card>
       </div>
-      <div className="mt-8 font-clash-display text-3xl font-semibold">
+      <div className="font-clash-display mt-8 text-3xl font-semibold">
         Recent Submissions
       </div>
       <div className="flex flex-col gap-2">

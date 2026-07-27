@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
+
 import "@/styles/globals.css"
 
 import { Navbar } from "./_components/navbar"
@@ -34,7 +35,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="flex h-screen flex-col font-geist dark:bg-neutral-900">
+      <body className="font-geist flex h-screen flex-col dark:bg-neutral-900">
         <ClientSideProviders>
           <ThemeProvider attribute="class" defaultTheme="dark">
             <SessionProvider>

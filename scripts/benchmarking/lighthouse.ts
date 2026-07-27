@@ -1,6 +1,7 @@
 import * as chromeLauncher from "chrome-launcher"
-import fs from "fs"
 import lighthouse from "lighthouse"
+
+import fs from "fs"
 
 const REPORTS_DIR = "reports"
 if (!fs.existsSync(REPORTS_DIR)) {

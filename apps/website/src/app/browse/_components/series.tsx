@@ -3,11 +3,11 @@
 import { TextBackground } from "@/components/backgrounds/text-background"
 import {
   Carousel,
-  type CarouselApi,
   CarouselContent,
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
+  type CarouselApi,
 } from "@/components/ui/carousel"
 import { Progress } from "@/components/ui/progress"
 import type { getUserSubmissionStats } from "@/lib/server/queries"

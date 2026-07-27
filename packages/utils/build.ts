@@ -7,9 +7,8 @@ import type { FsType } from "@easyshell/problems/schema"
 import { strToDate } from "."
 
 import { $ } from "execa"
-import { readdir } from "fs/promises"
-import { stat } from "fs/promises"
-import { readFile } from "fs/promises"
+
+import { readFile, readdir, stat } from "fs/promises"
 import { join } from "path"
 
 let _PROJECT_ROOT = process.env.PROJECT_ROOT

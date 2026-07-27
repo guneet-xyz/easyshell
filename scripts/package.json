@@ -9,10 +9,10 @@
     "@easyshell/submission-manager": "workspace:*",
     "@hono/node-server": "catalog:",
     "@types/autocannon": "^7.12.7",
-    "autocannon": "7.15.0",
-    "chrome-launcher": "^1.2.0",
+    "autocannon": "^7",
+    "chrome-launcher": "^1.2.1",
     "hono": "catalog:",
-    "lighthouse": "^12.6.0",
+    "lighthouse": "^12.8.2",
     "tsx": "catalog:"
   }
 }

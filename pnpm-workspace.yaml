@@ -1,0 +1,29 @@
+packages:
+  - apps/db-proxy
+  - apps/submission-manager
+  - apps/website
+  - packages/db
+  - packages/env
+  - packages/problems
+  - packages/utils
+  - scripts
+
+allowBuilds:
+  better-sqlite3: true
+  core-js: true
+  esbuild: true
+  protobufjs: true
+  sharp: true
+
+catalog:
+  "@auth/drizzle-adapter": ^1.7.4
+  "@hono/node-server": ^1.14.2
+  "@types/node": ^20.17.16
+  drizzle-kit: ^0.31.9
+  drizzle-orm: ^0.39.3
+  esbuild: ^0.27.3
+  execa: ^9.5.2
+  hono: ^4.7.10
+  tsx: ^4.19.4
+  zod: ^3.24.2
+  next-auth: ^5.0.0-beta.25

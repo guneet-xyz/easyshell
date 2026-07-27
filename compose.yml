@@ -5,7 +5,8 @@ services:
   submission-manager:
     build:
       context: .
-      dockerfile: ./apps/submission-manager/Dockerfile
+      dockerfile: Dockerfile
+      target: submission-manager
     container_name: easyshell-dev-submission-manager
     volumes:
       - /tmp/easyshell:/tmp/easyshell
@@ -21,7 +22,9 @@ services:
         condition: service_healthy
   session-manager:
     build:
-      context: ./apps/session-manager
+      context: .
+      dockerfile: Dockerfile
+      target: session-manager
     container_name: easyshell-dev-session-manager
     environment:
       TOKEN: token
@@ -34,11 +37,13 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
   db:
     container_name: easyshell-dev-db
-    image: postgres:17
+    image: postgres:18-alpine
     environment:
       POSTGRES_PASSWORD: password
+      POSTGRES_USER: easyshell
+      POSTGRES_DB: easyshell
     volumes:
-      - ./data/postgres:/var/lib/postgresql/data
+      - ./data/postgres:/var/lib/postgresql
     restart: always
     ports:
       - 5432:5432
@@ -47,10 +52,11 @@ services:
   db-proxy:
     build:
       context: .
-      dockerfile: ./apps/db-proxy/Dockerfile
+      dockerfile: Dockerfile
+      target: db-proxy
     container_name: easyshell-dev-db-proxy
     environment:
-      DATABASE_URL: postgres://postgres:password@db/easyshell
+      DATABASE_URL: postgres://easyshell:password@db/easyshell
       TOKEN: token
     networks:
       - easyshell
@@ -67,7 +73,8 @@ services:
   website:
     build:
       context: .
-      dockerfile: ./apps/website/Dockerfile
+      dockerfile: Dockerfile
+      target: website
       args:
         POSTHOG_KEY: ${POSTHOG_KEY}
         POSTHOG_HOST: ${POSTHOG_HOST}

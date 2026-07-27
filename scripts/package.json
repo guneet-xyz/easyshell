@@ -6,13 +6,13 @@
     "session-manager": "bun ./session-manager/autocannon.ts"
   },
   "devDependencies": {
-    "@easyshell/submission-manager": "0.1.0",
-    "@hono/node-server": "^1.14.2",
+    "@easyshell/submission-manager": "workspace:*",
+    "@hono/node-server": "catalog:",
     "@types/autocannon": "^7.12.7",
     "autocannon": "7.15.0",
     "chrome-launcher": "^1.2.0",
-    "hono": "^4.7.10",
+    "hono": "catalog:",
     "lighthouse": "^12.6.0",
-    "tsx": "^4.19.4"
+    "tsx": "catalog:"
   }
 }

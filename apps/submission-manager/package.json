@@ -9,13 +9,14 @@
     "start": "node submission-manager.cjs"
   },
   "dependencies": {
-    "@easyshell/env": "0.1.0",
-    "@easyshell/utils": "0.1.0",
-    "execa": "^9.5.2"
+    "@easyshell/env": "workspace:*",
+    "@easyshell/utils": "workspace:*",
+    "execa": "catalog:"
   },
   "devDependencies": {
-    "@easyshell/problems": "0.1.0",
-    "@types/node": "^20.17.16",
-    "tsx": "^4.19.3"
+    "@easyshell/problems": "workspace:*",
+    "@types/node": "catalog:",
+    "esbuild": "catalog:",
+    "tsx": "catalog:"
   }
 }

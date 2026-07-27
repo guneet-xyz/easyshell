@@ -2,7 +2,7 @@ import {
   ProblemConfigSchema,
   ProblemInfo,
   ProblemInfoSchema,
-} from "@easyshell/problems/schema"
+} from "../schema"
 import {
   PROBLEMS_DIR,
   PROJECT_ROOT,

@@ -11,7 +11,6 @@ RUN corepack enable
 
 WORKDIR /src
 
-COPY apps/db-proxy/package.json apps/db-proxy/package.json
 COPY apps/submission-manager/package.json apps/submission-manager/package.json
 COPY apps/website/package.json apps/website/package.json
 COPY packages/db/package.json packages/db/package.json
@@ -33,15 +32,6 @@ RUN apk add --no-cache bash jq
 
 FROM build-deps AS build
 COPY . .
-
-FROM build AS build-db-proxy
-WORKDIR /src/apps/db-proxy
-ENV PROJECT_ROOT=/src
-RUN pnpm run build
-
-FROM node-curl AS db-proxy
-COPY --from=build-db-proxy /src/apps/db-proxy/db-proxy.cjs /app/db-proxy.cjs
-ENTRYPOINT ["node", "/app/db-proxy.cjs"]
 
 FROM build AS build-submission-manager
 WORKDIR /src/apps/submission-manager

@@ -12,15 +12,13 @@ export const env = createEnv({
 
     ...(process.env.APP === "submission-manager"
       ? {
-          DRIZZLE_PROXY_URL: z.string().url(),
-          DRIZZLE_PROXY_TOKEN: z.string(),
+          DATABASE_URL: z.string().url(),
         }
       : {}),
 
     ...(process.env.APP === "website"
       ? {
-          DRIZZLE_PROXY_URL: z.string().url(),
-          DRIZZLE_PROXY_TOKEN: z.string(),
+          DATABASE_URL: z.string().url(),
 
           NEXTAUTH_SECRET: z.string(),
           NEXTAUTH_URL: z.string().url(),

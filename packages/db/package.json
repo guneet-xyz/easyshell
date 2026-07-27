@@ -5,9 +5,11 @@
   "dependencies": {
     "@auth/drizzle-adapter": "catalog:",
     "drizzle-orm": "catalog:",
-    "next-auth": "catalog:"
+    "next-auth": "catalog:",
+    "pg": "^8.22.0"
   },
   "devDependencies": {
+    "@types/pg": "^8.20.0",
     "drizzle-kit": "catalog:"
   }
 }

@@ -1,5 +1,5 @@
 import { env } from "@easyshell/env"
-import { getProblemInfo, getProblems } from "@easyshell/problems"
+import { getProblemInfo, getProblems } from ".."
 import { PROBLEMS_DIR, PROJECT_ROOT } from "@easyshell/utils/build"
 
 import { RunParallelStuff, Task } from "./_utils"

@@ -15,11 +15,9 @@ services:
       - easyshell
     environment:
       APP: submission-manager
-      DRIZZLE_PROXY_URL: http://db-proxy:8008
-      DRIZZLE_PROXY_TOKEN: token
+      DATABASE_URL: postgres://easyshell:password@db/easyshell
     depends_on:
-      db-proxy:
-        condition: service_healthy
+      - db
   session-manager:
     build:
       context: .
@@ -49,27 +47,6 @@ services:
       - 5432:5432
     networks:
       - easyshell
-  db-proxy:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: db-proxy
-    container_name: easyshell-dev-db-proxy
-    environment:
-      DATABASE_URL: postgres://easyshell:password@db/easyshell
-      TOKEN: token
-    networks:
-      - easyshell
-    ports:
-      - 8008:8008
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8008/health"]
-      interval: 1s
-      timeout: 500ms
-      retries: 3
-    depends_on:
-      db:
-        condition: service_started
   website:
     build:
       context: .
@@ -82,8 +59,7 @@ services:
     environment:
       APP: website
       AUTH_TRUST_HOST: true
-      DRIZZLE_PROXY_URL: http://db-proxy:8008
-      DRIZZLE_PROXY_TOKEN: token
+      DATABASE_URL: postgres://easyshell:password@db/easyshell
       NEXTAUTH_SECRET: secret
       NEXTAUTH_URL: http://localhost:3000
       DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
@@ -105,5 +81,4 @@ services:
       timeout: 500ms
       retries: 3
     depends_on:
-      db-proxy:
-        condition: service_healthy
+      - db

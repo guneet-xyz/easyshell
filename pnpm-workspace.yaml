@@ -1,5 +1,4 @@
 packages:
-  - apps/db-proxy
   - apps/submission-manager
   - apps/website
   - packages/db

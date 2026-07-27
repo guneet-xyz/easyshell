@@ -99,14 +99,6 @@ If you are using a registry, then make sure you are already logged in.
 
 Database connection string.
 
-### `DRIZZLE_PROXY_URL`
-
-URL of the drizzle proxy.
-
-### `DRIZZLE_PROXY_TOKEN`
-
-Token for the drizzle proxy.
-
 #### `SESSION_MANAGER_URL`
 
 URL of the session manager. For cloudflare deployment, this cannot be a fixed IP address.

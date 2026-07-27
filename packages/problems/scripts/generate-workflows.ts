@@ -1,8 +1,8 @@
 import { PROBLEMS_DIR, PROJECT_ROOT } from "@easyshell/utils/build"
 
 import { $ } from "execa"
-import { readdir } from "fs/promises"
-import { writeFile } from "fs/promises"
+
+import { readdir, writeFile } from "fs/promises"
 
 const WORKFLOWS_DIR = ".github/workflows"
 

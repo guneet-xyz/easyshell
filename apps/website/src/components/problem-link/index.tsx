@@ -30,7 +30,7 @@ export function ProblemLinkBase({
         prefetch={true}
         href={`/problems/${slug}`}
         className={cn(
-          "ml-1 inline w-fit space-x-1 rounded-md border px-2 py-1 whitespace-nowrap shadow-xs",
+          "shadow-xs ml-1 inline w-fit space-x-1 whitespace-nowrap rounded-md border px-2 py-1",
           {
             "bg-green-100": difficulty === "easy",
             "border-orange-400 bg-orange-100 shadow-orange-400 dark:border-orange-600 dark:bg-orange-900 dark:shadow-orange-600":
@@ -40,7 +40,7 @@ export function ProblemLinkBase({
         )}
       >
         <span
-          className={cn("inline font-geist-mono text-xs font-medium", {
+          className={cn("font-geist-mono inline text-xs font-medium", {
             "text-orange-600 dark:text-orange-400": difficulty === "medium",
           })}
         >

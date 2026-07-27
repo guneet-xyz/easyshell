@@ -6,10 +6,9 @@ import { PROBLEMS_DIR } from "@easyshell/utils/build"
 
 import { ProblemConfigSchema } from "./schema"
 
-import { stat } from "fs/promises"
-import { readFile } from "fs/promises"
-import { readdir } from "fs/promises"
 import { z } from "zod"
+
+import { readFile, readdir, stat } from "fs/promises"
 
 const PROBLEMS_IMPORT_DIR = "./data/problems"
 

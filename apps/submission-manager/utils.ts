@@ -3,10 +3,10 @@ import { env } from "@easyshell/env"
 import { getProblemInfo } from "./problems"
 
 import { execa } from "execa"
-import { mkdir } from "fs"
-import { writeFile } from "fs/promises"
-import { readFile } from "fs/promises"
 import { z } from "zod"
+
+import { mkdir } from "fs"
+import { readFile, writeFile } from "fs/promises"
 
 export const WORKING_DIR = `${env.WORKING_DIR}/submission-manager`
 

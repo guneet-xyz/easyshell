@@ -1,8 +1,9 @@
 import autocannon, { Options, Request } from "autocannon"
 import { execa } from "execa"
+import { getProblemInfo, getProblems } from "packages/problems"
+
 import { existsSync, mkdirSync } from "fs"
 import { writeFile } from "fs/promises"
-import { getProblemInfo, getProblems } from "packages/problems"
 
 const REPORTS_DIR = "reports"
 

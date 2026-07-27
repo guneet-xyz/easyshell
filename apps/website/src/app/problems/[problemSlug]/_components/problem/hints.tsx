@@ -11,7 +11,7 @@ import { getProblemHintBody, getProblemHintCount } from "@/lib/server/problems"
 export function Wrapper({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-4 mt-6 border-t">
-      <h2 className="mt-6 mb-2 text-xl font-bold">Hints</h2>
+      <h2 className="mb-2 mt-6 text-xl font-bold">Hints</h2>
       {children}
     </div>
   )

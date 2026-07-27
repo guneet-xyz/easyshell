@@ -40,7 +40,7 @@ export function CollapsibleProblemPanel({
         >
           <PiCaretDoubleRightDuotone />
           <PiCaretDoubleRightDuotone />
-          <p className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rotate-90 font-clash-display font-semibold text-nowrap">
+          <p className="font-clash-display absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-90 text-nowrap font-semibold">
             <p>View Problem</p>
           </p>
         </div>

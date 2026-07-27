@@ -47,7 +47,7 @@ export function PastSubmissions({
             height={50}
             alt="arrow-pointing-to-prompt"
             unoptimized
-            className="absolute top-8 left-0 z-[-1] -translate-x-[30%] -translate-y-full scale-75 lg:-translate-x-1/2 lg:scale-100"
+            className="absolute left-0 top-8 z-[-1] -translate-x-[30%] -translate-y-full scale-75 lg:-translate-x-1/2 lg:scale-100"
           />
         </div>
       </div>

@@ -13,7 +13,7 @@
     "pg": "^8.15.6"
   },
   "devDependencies": {
-    "esbuild": "catalog:",
-    "@types/express": "^5.0.1"
+    "@types/express": "^5.0.1",
+    "esbuild": "catalog:"
   }
 }

@@ -147,7 +147,7 @@ export function FsDiff({
           </EasyTooltip>
         </div>
         <div className="overflow-x-auto p-4">
-          <p className="font-geist-mono text-sm whitespace-pre">
+          <p className="font-geist-mono whitespace-pre text-sm">
             {diff.map((token, idx) => (
               <span
                 key={idx}
@@ -193,7 +193,7 @@ function Container({
           >
             <PiSidebar
               className={cn(
-                "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-opacity",
+                "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transition-opacity",
                 {
                   "opacity-100": tab === "diff",
                   "opacity-0": tab === "files",
@@ -203,7 +203,7 @@ function Container({
             />
             <PiSidebarDuotone
               className={cn(
-                "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-opacity",
+                "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transition-opacity",
                 {
                   "opacity-0": tab === "diff",
                   "opacity-100": tab === "files",

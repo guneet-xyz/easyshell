@@ -11,6 +11,7 @@ import { getProblemSlugFromId } from "./problems"
 import { WORKING_DIR, runSubmissionAndGetOutput } from "./utils"
 
 import { and, eq, sql } from "drizzle-orm"
+
 import { mkdir } from "fs/promises"
 
 if (env.APP !== "submission-manager")

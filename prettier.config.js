@@ -1,14 +1,24 @@
-/** @type {import('prettier').Config & import('prettier-plugin-tailwindcss').PluginOptions & import('@trivago/prettier-plugin-sort-imports').PluginConfig}*/
+/** @type {import('prettier').Config & import('prettier-plugin-tailwindcss').PluginOptions & import('@ianvs/prettier-plugin-sort-imports').PrettierConfig } **/
 const config = {
   plugins: [
-    "@trivago/prettier-plugin-sort-imports",
+    "@ianvs/prettier-plugin-sort-imports",
     "prettier-plugin-packagejson",
     "prettier-plugin-tailwindcss",
   ],
   semi: false,
-  importOrder: ["^@easyshell", "^@/(.*)$", "^[./]", ""],
-  importOrderSeparation: true,
-  importOrderSortSpecifiers: true,
+  importOrder: [
+    "^@easyshell",
+    "",
+    "^@/",
+    "",
+    "^[.]",
+    "",
+    "<THIRD_PARTY_MODULES>",
+    "",
+    "<BUILTIN_MODULES>",
+  ],
+  importOrderCaseSensitive: true,
+  importOrderTypeScriptVersion: "5.0.0",
   tailwindStylesheet: "./apps/website/src/styles/globals.css",
 }
 

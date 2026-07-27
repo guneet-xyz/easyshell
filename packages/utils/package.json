@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "execa": "^9.5.2"
+    "execa": "catalog:"
   },
   "devDependencies": {
-    "@types/node": "^20.17.16"
+    "@types/node": "catalog:"
   }
 }

@@ -8,11 +8,12 @@
     "start": "node db-proxy.cjs"
   },
   "dependencies": {
-    "@hono/node-server": "^1.14.1",
-    "hono": "^4.7.8",
+    "@hono/node-server": "catalog:",
+    "hono": "catalog:",
     "pg": "^8.15.6"
   },
   "devDependencies": {
+    "esbuild": "catalog:",
     "@types/express": "^5.0.1"
   }
 }

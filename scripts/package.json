@@ -2,17 +2,20 @@
   "name": "@easyshell/scripts",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "session-manager": "bun ./session-manager/autocannon.ts"
+    "generate-workflows": "tsx ./generate-workflows.ts",
+    "problems:build": "tsx ./problems/build.ts",
+    "problems:new": "tsx ./problems/new.ts",
+    "problems:push": "tsx ./problems/push.ts",
+    "problems:test": "tsx ./problems/test.ts"
   },
   "devDependencies": {
+    "@easyshell/data": "workspace:*",
+    "@easyshell/env": "workspace:*",
     "@easyshell/submission-manager": "workspace:*",
-    "@hono/node-server": "catalog:",
-    "@types/autocannon": "^7.12.7",
-    "autocannon": "^7",
-    "chrome-launcher": "^1.2.1",
-    "hono": "catalog:",
-    "lighthouse": "^12.8.2",
+    "@easyshell/utils": "workspace:*",
+    "execa": "catalog:",
     "tsx": "catalog:"
   }
 }

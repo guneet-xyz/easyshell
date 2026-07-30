@@ -26,6 +26,7 @@ const config = {
     ]
   },
   skipTrailingSlashRedirect: true,
+  allowedDevOrigins: ["daedalus"],
 }
 
 const withMDX = createMDX({})

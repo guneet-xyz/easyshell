@@ -32,12 +32,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22.14.0
-      - run: npm ci
+      - run: corepack enable
+        name: Enable corepack
+      - run: pnpm install --frozen-lockfile
         name: Install dependencies
-      - run: npm run cache:website
-        working-directory: ./packages/problems
-      - run: npm run cache:submission-manager
-        working-directory: ./packages/problems
+      - run: pnpm --filter @easyshell/data run generate
+        # generate: produces both website + submission-manager bundles
       - run: npm run lint:tsc
         name: Check TypeScript types
       - run: npm run lint:next

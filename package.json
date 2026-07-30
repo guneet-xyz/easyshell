@@ -6,7 +6,7 @@
   "main": "scripts/index.ts",
   "workspaces": [
     "packages/db",
-    "packages/problems",
+    "packages/data",
     "packages/utils",
     "packages/env",
     "apps/website",
@@ -14,18 +14,23 @@
     "scripts"
   ],
   "scripts": {
-    "cache": "cd packages/problems && npm run cache:website && npm run cache:submission-manager",
-    "format:check": "npx prettier --check . && gofmt -l -s .",
-    "format:write": "npx prettier --write . && gofmt -w -s .",
-    "lint": "npm run lint:tsc && npm run lint:next",
-    "lint:next": "cd apps/website && npm run lint",
-    "lint:tsc": "npx tsc --noEmit"
+    "format:check": "prettier --check . && gofmt -l -s .",
+    "format:write": "prettier --write . && gofmt -w -s .",
+    "lint": "eslint . && tsc --noEmit"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.2",
     "@ianvs/prettier-plugin-sort-imports": "^4.7.1",
+    "drizzle-kit": "catalog:",
+    "eslint": "^9.39.2",
+    "eslint-config-next": "^16.1.6",
+    "eslint-plugin-drizzle": "^0.2.3",
+    "globals": "^16.5.0",
     "prettier": "^3.9.6",
     "prettier-plugin-packagejson": "^2.5.22",
     "prettier-plugin-tailwindcss": "^0.6.14",
-    "tsx": "catalog:"
+    "tsx": "catalog:",
+    "typescript": "5.7.3",
+    "typescript-eslint": "^8.54.0"
   }
 }

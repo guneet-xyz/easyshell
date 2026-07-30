@@ -1,0 +1,99 @@
+---
+title: Grep Version
+type: editorial
+---
+
+## Motivation
+
+The problem asks you to find a particular file and extract a string from it. Parsing the output of a command is a fairly common task that you will find yourself doing very often when you primarily use the command line.
+
+The objective was to challenge the user in the following ways:
+
+- Basics of command chaining
+- Basics of `find`
+- Basics of regex and `grep`
+
+## Solution
+
+The problem can be divided into the following steps:
+
+1. Finding `__about__.py`
+2. Reading the contents of `__about__.py`
+3. Extracting the version string
+
+### Step 1: Finding `__about__.py`
+
+The first step is trivial. Any of the following strategies will work:
+
+Using `find` with the `-name` option
+
+```bash
+find . -name __about__.py
+```
+
+Using `find` with `grep`. Although this is not the most efficient way to do it, it is a good exercise in using `grep`.
+
+```bash
+find . | grep '\/__about__.py$'
+```
+
+### Step 2: Reading the contents of `__about__.py`
+
+This isn't so much as just reading the contents, but passing the contents to grep.
+
+This is usually done in one of two ways.
+
+Using `cat` to read the file and then piping it to `grep`
+
+```bash
+cat "$(find <options>)" | grep <options>
+```
+
+> Notice the use of `"` around the `find` command. This is important because it allows the shell to interpret the output of the `find` command as a single argument, even if it contains spaces or special characters.
+
+Passing the file path to `grep` directly
+
+```bash
+grep <options> "$(find <options>)"
+```
+
+### Step 3: Extracting the version string
+
+This is the real meat of the problem. Let's refer to the problem constraints
+
+> The version will always be defined in the format `__version__ = "X.Y.Z"` (X, Y, Z are numeric values which can be of different length)
+
+and
+
+> There are no other variables or strings in the file that match this pattern.
+
+We can use a simple regex to extract the version string.
+
+- `\d` would match any digit.
+- `\d+` would match one or more digits.
+- `\.` would match a literal dot.
+
+So the final regex we use is `\d+\.\d+\.\d+`
+
+> Note: This would not work if there are other variables or strings in the file that match this pattern. In that case, we would need to use a more complex regex to match the version string.
+
+We will also make use of the following options for `grep`:
+
+- `-o` show only the matching string (it would show the entire line otherwise)
+- `-P` use Perl-compatible regex (PCRE) which allows us to use the `\d` shorthand for digits. (You will almost always require this flag when dealing with even slightly complex regex patterns)
+
+Hence the `grep` command would look something like this
+
+```bash
+grep -oP '\d+\.\d+\.\d+'
+```
+
+You would use this in conjunction with the previous commands.
+
+### Final Command
+
+The final command would look something like this
+
+```bash
+find . -name __about__.py | grep -oP '\d+\.\d+\.\d+'
+```

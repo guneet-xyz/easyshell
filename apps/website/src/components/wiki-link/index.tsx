@@ -2,7 +2,6 @@ import { EasyTooltip } from "@/components/ui/tooltip"
 import type { getWikiMetadata } from "@/lib/server/actions/get-wiki-metadata"
 import { cn } from "@/lib/utils"
 
-import moment from "moment"
 import Link from "next/link"
 
 export function WikiLinkBase({
@@ -23,8 +22,7 @@ export function WikiLinkBase({
             <div className="font-clash-display text-2xl font-bold">
               {metadata.title}
             </div>
-            <div className="font-clash-display flex justify-between text-xs text-neutral-500">
-              <div>{moment(metadata.lastEdited).format("MMMM Do YYYY")}</div>
+            <div className="font-clash-display flex justify-end text-xs text-neutral-500">
               <div>{metadata.type === "editorial" ? "EDITORIAL" : null}</div>
             </div>
           </div>

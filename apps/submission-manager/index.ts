@@ -1,3 +1,4 @@
+import { getProblemSlugFromId } from "@easyshell/data/problems"
 import { db } from "@easyshell/db"
 import {
   submissionTestcaseQueue,
@@ -7,7 +8,6 @@ import {
 import { env } from "@easyshell/env"
 import { sleep } from "@easyshell/utils"
 
-import { getProblemSlugFromId } from "./problems"
 import { WORKING_DIR, runSubmissionAndGetOutput } from "./utils"
 
 import { and, eq, sql } from "drizzle-orm"
@@ -85,7 +85,7 @@ async function processQueueItem(
   )[0]?.problemId
   if (!problemId) throw new Error("Submission not found")
 
-  const problemSlug = await getProblemSlugFromId(problemId)
+  const problemSlug = getProblemSlugFromId(problemId)
 
   const { startedAt, finishedAt, output, passed } =
     await runSubmissionAndGetOutput({

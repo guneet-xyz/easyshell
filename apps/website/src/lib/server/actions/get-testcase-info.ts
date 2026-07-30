@@ -48,9 +48,7 @@ export async function getTestcaseInfo({
 
   const submission = await getSubmissionInfo({ submissionId })
 
-  const problemSlug = await getProblemSlugFromId(
-    submission.submission.problemId,
-  )
+  const problemSlug = getProblemSlugFromId(submission.submission.problemId)
 
   const problem = await getProblemInfo(problemSlug)
   const testcase = problem.testcases.find((t) => t.id === testcaseId)

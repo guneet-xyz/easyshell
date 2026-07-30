@@ -1,0 +1,19 @@
+{
+  "name": "@easyshell/data",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "tsx ./scripts/generate.ts"
+  },
+  "dependencies": {
+    "@easyshell/env": "workspace:*",
+    "@easyshell/utils": "workspace:*",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "execa": "catalog:",
+    "gray-matter": "^4.0.3"
+  }
+}

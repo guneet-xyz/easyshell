@@ -4,17 +4,17 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "prebuild": "pnpm run --filter @easyshell/data generate",
     "build": "SKIP_ENV_VALIDATION=1 next build",
-    "cache": "cd ../../packages/problems && npm run cache:website",
     "dev": "next dev",
-    "lint": "eslint",
+    "lint": "eslint --config ../../eslint.config.mjs .",
     "start": "next start"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "catalog:",
+    "@easyshell/data": "workspace:*",
     "@easyshell/db": "workspace:*",
     "@easyshell/env": "workspace:*",
-    "@easyshell/problems": "workspace:*",
     "@mdx-js/loader": "^3.1.0",
     "@mdx-js/react": "^3.1.0",
     "@next/mdx": "16.1.6",

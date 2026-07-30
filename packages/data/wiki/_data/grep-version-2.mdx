@@ -1,0 +1,88 @@
+---
+title: Grep Version 2
+type: editorial
+---
+
+## Motivation
+
+This is a follow-up to a previous problem, <ProblemLink slug="grep-version" /> which covered very basic `grep` usage. This problem expands on that and adds a few other regex tricks to the mix.
+
+The objective was to challenge the user in the following ways:
+
+- Basics of command chaining
+- Basics of `find`
+- Basic `grep` options
+- Regex (lookaheads & lookbehinds)
+
+## Solution
+
+The problem can be divided into the following steps:
+
+1. Finding `__about__.py`
+2. Reading the contents of `__about__.py`
+3. Extracting the version string
+
+The first two steps are identical to the previous problem. Please refer to <WikiLink slug="grep-version" /> for more details.
+
+### Step 3: Extracting the version string
+
+According to the constraints, there can be multiple places where the declaration happens. So let's first focus on identifying the correct declaration.
+
+First let's refer to the constraints.
+
+> The version will always be declared in the variable called `__version__`.
+
+This gives us a starting expression of
+
+```regex
+__version__ = .*
+```
+
+The spaces around `=`, if any, are not important. So we can use `\s*` to match any number of spaces.
+
+```regex
+__version__\s*=\s*.*
+```
+
+> The `__version__` variable could occur in comments or in strings. You need to ignore these occurrences.
+> The `__version__` variable could be assigned within a `if __name__ == "__main__":` block. So don't rely on indentation to find the correct declaration.
+
+In summary, if there is anything before the `__version__` variable, we need to ignore it. This can be done by explicitly matching only spaces before the `__version__` variable.
+
+```regex
+^\s*__version__\s*=\s*.*
+```
+
+If we use this regex, we will get all correct declarations of the `__version__` variable. However we only need the last one!
+We can use `tail` with the `-n` option to get the last line of the output.
+
+```bash
+cat "$(find <options>)" | grep -P '^\s*__version__\s*=\s*.*' | tail -n 1
+```
+
+Now that we have the last declaration, we need to extract the version string from it.
+
+> The version can follow any format, example - `"1.0.0"`, `1.0.0`, `1.0.0-alpha`, `1.0.0-rc.1`, `1.0.0+build.1`, `1.0.0-alpha+001`, etc.
+
+So simply we need to extract anything within the quotes. We can make use of lookaheads and lookbehinds to do this. These are regex features that let us target ahead of behind our intended match
+
+A positive lookbehind - `(?<=...)`
+A negative lookbehind - `(?<!...)`
+A positive lookahead - `(?=...)`
+A negative lookahead - `(?!...)`
+
+In our case, we need to use a positive lookbehind and a positive lookahead. The regex would look like this:
+
+```regex
+(?<=['"])(.*)(?=['"])
+```
+
+This regex will match anything between the quotes. We can use `grep` with the `-o` option to only print the matching part of the line.
+
+This gives us the final command, which would look something like this
+
+```bash
+cat "$(find <options>)" | grep -P '^\s*__version__\s*=\s*.*' | tail -n 1 | grep -oP '(?<=["'\''])(.*)(?=["'\''])'
+```
+
+Notice how we escape `'` in the expression.

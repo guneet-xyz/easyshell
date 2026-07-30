@@ -2,7 +2,6 @@ import { Footer } from "@/components/footer"
 import { Card } from "@/components/ui/card"
 import { getWikiPages } from "@/lib/server/wiki"
 
-import moment from "moment"
 import Link from "next/link"
 
 export const metadata = {
@@ -41,24 +40,16 @@ function WikiPageCard({
   page: Awaited<ReturnType<typeof getWikiPages>>[number]
 }) {
   if (page.type === "editorial") {
-    return (
-      <WikiEditorialCard
-        title={page.title}
-        slug={page.slug}
-        lastEdited={page.lastEdited}
-      />
-    )
+    return <WikiEditorialCard title={page.title} slug={page.slug} />
   }
   return null
 }
 
 async function WikiEditorialCard({
   title,
-  lastEdited,
   slug,
 }: {
   title: string
-  lastEdited: Date
   slug: string
 }) {
   return (
@@ -66,8 +57,7 @@ async function WikiEditorialCard({
       <Card className="flex w-full flex-col gap-4 border p-4 transition-colors hover:bg-neutral-100/60 dark:hover:bg-neutral-950/60">
         <div className="flex flex-col justify-center">
           <div className="font-clash-display text-4xl font-bold">{title}</div>
-          <div className="font-clash-display flex justify-between text-neutral-500">
-            <div>{moment(lastEdited).format("MMMM Do YYYY")}</div>
+          <div className="font-clash-display flex justify-end text-neutral-500">
             <div>{"EDITORIAL"}</div>
           </div>
         </div>

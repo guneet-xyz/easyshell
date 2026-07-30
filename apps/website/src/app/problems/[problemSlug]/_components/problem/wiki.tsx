@@ -1,6 +1,5 @@
 import { getWikiPages } from "@/lib/server/wiki"
 
-import moment from "moment"
 import Link from "next/link"
 
 export async function ProblemRelatedWiki({ slug }: { slug: string }) {
@@ -38,8 +37,7 @@ function WikiPage({
       className="flex flex-col rounded-md border bg-neutral-100 p-2 shadow transition-colors hover:bg-neutral-200/80 dark:bg-neutral-800 dark:hover:bg-neutral-700/50"
     >
       <div className="font-clash-display font-semibold">{page.title}</div>
-      <div className="font-clash-display flex justify-between text-xs text-neutral-500">
-        <div>{moment(page.lastEdited).format("MMMM Do YYYY")}</div>
+      <div className="font-clash-display flex justify-end text-xs text-neutral-500">
         <div>{page.type === "editorial" ? "EDITORIAL" : null}</div>
       </div>
     </Link>

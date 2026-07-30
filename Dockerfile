@@ -15,7 +15,7 @@ COPY apps/submission-manager/package.json apps/submission-manager/package.json
 COPY apps/website/package.json apps/website/package.json
 COPY packages/db/package.json packages/db/package.json
 COPY packages/env/package.json packages/env/package.json
-COPY packages/problems/package.json packages/problems/package.json
+COPY packages/data/package.json packages/data/package.json
 COPY packages/utils/package.json packages/utils/package.json
 COPY scripts/package.json scripts/package.json
 
@@ -36,7 +36,6 @@ COPY . .
 FROM build AS build-submission-manager
 WORKDIR /src/apps/submission-manager
 ENV PROJECT_ROOT=/src
-RUN pnpm run cache
 RUN pnpm run build
 
 FROM node AS submission-manager
@@ -51,7 +50,6 @@ ARG POSTHOG_HOST
 ENV NEXT_PUBLIC_POSTHOG_KEY=$POSTHOG_KEY
 ENV POSTHOG_HOST=$POSTHOG_HOST
 ENV PROJECT_ROOT=/src
-RUN pnpm run cache
 RUN pnpm run build
 
 FROM node-curl AS website
@@ -91,4 +89,3 @@ EXPOSE 4000
 COPY --from=build-session-manager /src/session-manager /session-manager
 
 ENTRYPOINT ["/session-manager"]
-

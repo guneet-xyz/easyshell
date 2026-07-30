@@ -1,6 +1,5 @@
+import { getProblem } from "@easyshell/data/problems"
 import { env } from "@easyshell/env"
-
-import { getProblemInfo } from "./problems"
 
 import { execa } from "execa"
 import { z } from "zod"
@@ -35,7 +34,7 @@ export async function runSubmissionAndGetOutput({
   input: string
   suffix: string
 }) {
-  const problem = await getProblemInfo(problemSlug)
+  const problem = getProblem(problemSlug)
 
   const containerName = `easyshell-${problemSlug}-${testcaseId}-${suffix}`
 

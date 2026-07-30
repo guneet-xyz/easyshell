@@ -1,6 +1,6 @@
 "use client"
 
-import type { FsType } from "@easyshell/problems/schema"
+import type { FsType } from "@easyshell/data/problems/schema"
 
 import { Button } from "@/components/ui/button"
 import { EasyTooltip } from "@/components/ui/tooltip"

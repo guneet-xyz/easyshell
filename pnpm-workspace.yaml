@@ -3,7 +3,7 @@ packages:
   - apps/website
   - packages/db
   - packages/env
-  - packages/problems
+  - packages/data
   - packages/utils
   - scripts
 

@@ -12,7 +12,11 @@
     "noUncheckedIndexedAccess": true,
     "checkJs": true,
     /* Bundled projects */
-    "lib": ["dom", "dom.iterable", "ES2023"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "ES2023"
+    ],
     "noEmit": true,
     "module": "esnext",
     "moduleResolution": "bundler",
@@ -25,8 +29,18 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./apps/website/src/*"]
+      "@/*": [
+        "./apps/website/src/*"
+      ]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx", "**/*.cjs", "**/*.js"]
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.cjs",
+    "**/*.js"
+  ],
+  "exclude": [
+    "apps/submission-manager/submission-manager.cjs"
+  ]
 }

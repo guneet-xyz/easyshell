@@ -28,16 +28,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22.14.0
-      - run: npm ci
+      - run: corepack enable
+        name: Enable corepack
+      - run: pnpm install --frozen-lockfile
         name: Install dependencies
-      - run: npm run build ${{ inputs.problem }}
+      - run: pnpm tsx scripts/problems/build.ts ${{ inputs.problem }}
         name: build
-        working-directory: ./packages/problems
-      - run: npm run test ${{ inputs.problem }}
+      - run: pnpm tsx scripts/problems/test.ts ${{ inputs.problem }}
         name: test
-        working-directory: ./packages/problems
-      - run: npm run push ${{ inputs.problem }}
+      - run: pnpm tsx scripts/problems/push.ts ${{ inputs.problem }}
         name: push
-        working-directory: ./packages/problems
         env:
           DOCKER_REGISTRY: ${{ vars.DOCKER_REGISTRY }}

@@ -16,7 +16,7 @@ export async function newSubmission({
   const user = (await auth())?.user
   if (!user) return null
 
-  const problemSlug = await getProblemSlugFromId(problemId)
+  const problemSlug = getProblemSlugFromId(problemId)
 
   const submissionId = (
     await db

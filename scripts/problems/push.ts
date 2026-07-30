@@ -1,6 +1,7 @@
 import { getProblemConfig, getProblemSlugs } from "@easyshell/data/problems"
-import { env } from "@easyshell/env"
 import { RunParallelStuff, Task } from "@easyshell/utils/build"
+
+import { env } from "../env"
 
 import { $ } from "execa"
 

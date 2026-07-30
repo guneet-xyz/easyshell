@@ -5,7 +5,6 @@ import {
   submissionTestcases,
   submissions,
 } from "@easyshell/db/schema"
-import { env } from "@easyshell/env"
 import { sleep } from "@easyshell/utils"
 
 import { WORKING_DIR, runSubmissionAndGetOutput } from "./utils"
@@ -13,11 +12,6 @@ import { WORKING_DIR, runSubmissionAndGetOutput } from "./utils"
 import { and, eq, sql } from "drizzle-orm"
 
 import { mkdir } from "fs/promises"
-
-if (env.APP !== "submission-manager")
-  throw new Error(
-    "The APP environment variable must be set to 'submission-manager'",
-  )
 
 async function getQueueItem() {
   const item = db.$with("item").as(

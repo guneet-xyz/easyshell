@@ -12,10 +12,11 @@
   },
   "devDependencies": {
     "@easyshell/data": "workspace:*",
-    "@easyshell/env": "workspace:*",
     "@easyshell/submission-manager": "workspace:*",
     "@easyshell/utils": "workspace:*",
+    "@t3-oss/env-core": "catalog:",
     "execa": "catalog:",
-    "tsx": "catalog:"
+    "tsx": "catalog:",
+    "zod": "catalog:"
   }
 }

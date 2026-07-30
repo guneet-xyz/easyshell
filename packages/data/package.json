@@ -7,7 +7,6 @@
     "generate": "tsx ./scripts/generate.ts"
   },
   "dependencies": {
-    "@easyshell/env": "workspace:*",
     "@easyshell/utils": "workspace:*",
     "zod": "catalog:"
   },

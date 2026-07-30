@@ -9,8 +9,8 @@
     "start": "node submission-manager.cjs"
   },
   "dependencies": {
-    "@easyshell/env": "workspace:*",
     "@easyshell/utils": "workspace:*",
+    "@t3-oss/env-core": "catalog:",
     "drizzle-orm": "catalog:",
     "execa": "catalog:"
   },

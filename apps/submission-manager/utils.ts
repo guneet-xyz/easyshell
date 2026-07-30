@@ -1,5 +1,6 @@
 import { getProblem } from "@easyshell/data/problems"
-import { env } from "@easyshell/env"
+
+import { env } from "./env"
 
 import { execa } from "execa"
 import { z } from "zod"

@@ -1,8 +1,8 @@
 "use client"
 
+import { authClient } from "@/lib/client"
 import { cn } from "@/lib/utils"
 
-import { signIn } from "next-auth/react"
 import {
   PiDiscordLogo,
   PiDiscordLogoDuotone,
@@ -52,7 +52,7 @@ export function ProviderCard({ provider, connected }: ProviderCardProps) {
           })
           return
         }
-        await signIn(provider)
+        await authClient.signIn.social({ provider: provider })
       }}
     >
       {connected ? icons[provider].connected : icons[provider].disconnected}

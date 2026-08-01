@@ -30,7 +30,7 @@ export function SettingsNameImage({
   username: _username,
   name: _name,
 }: {
-  image?: string
+  image?: string | null
   username: string
   name: string
 }) {

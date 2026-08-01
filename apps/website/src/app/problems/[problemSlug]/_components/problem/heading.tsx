@@ -1,5 +1,5 @@
 import { AlternativeProblemStatus } from "@/components/problem-status"
-import { auth } from "@/lib/server/auth"
+import { getAuthSession } from "@/lib/server/auth"
 import {
   getProblemDifficulty,
   getProblemInfo,
@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils"
 import { ProblemBookmark } from "./bookmark"
 
 export async function ProblemHeading({ slug }: { slug: string }) {
-  const session = await auth()
+  const session = await getAuthSession()
   const user = session?.user
   const { id, title, description } = await getProblemInfo(slug)
   const isBookmarked = user

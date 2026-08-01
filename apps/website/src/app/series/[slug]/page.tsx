@@ -1,13 +1,14 @@
 import { AlternativeProblemStatus } from "@/components/problem-status"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { auth } from "@/lib/server/auth"
+import { getAuthSession } from "@/lib/server/auth"
 import { getProblemStatus, getPublicProblemInfo } from "@/lib/server/problems"
 import { getUserSubmissionStats } from "@/lib/server/queries"
 import { getSeries } from "@/lib/server/series"
 import { getPathname } from "@/lib/server/utils"
 import { cn } from "@/lib/utils"
 
+import { type Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { PiPlayDuotone } from "react-icons/pi"
@@ -16,7 +17,7 @@ export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string }>
-}) {
+}): Promise<Metadata> {
   const { slug } = await params
   const series = await getSeries(slug)
   return {
@@ -36,7 +37,7 @@ export default async function Page({
     notFound()
   }
 
-  const session = await auth()
+  const session = await getAuthSession()
   const userId = session?.user.id
   const problems = Array.from(
     new Set(series.sections.map((s) => s.problems).flat()),

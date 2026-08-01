@@ -3,7 +3,7 @@
 import { lower, users } from "@easyshell/db/schema"
 
 import { db } from "@/db"
-import { auth, isUsernameValid } from "@/lib/server/auth"
+import { getAuthSession, isUsernameValid } from "@/lib/server/auth"
 
 import { eq } from "drizzle-orm"
 
@@ -11,7 +11,7 @@ export async function changeUsername(username: string): Promise<{
   success: boolean
   message: string
 }> {
-  const user = (await auth())?.user
+  const user = (await getAuthSession())?.user
   if (!user) return { success: false, message: "Not logged in." }
 
   if (username === user.username)

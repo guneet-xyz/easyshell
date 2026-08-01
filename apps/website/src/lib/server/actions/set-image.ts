@@ -3,7 +3,7 @@
 import { images, users } from "@easyshell/db/schema"
 
 import { db } from "@/db"
-import { auth } from "@/lib/server/auth"
+import { getAuthSession } from "@/lib/server/auth"
 
 import { encode } from "base64-arraybuffer"
 import { count, eq } from "drizzle-orm"
@@ -28,7 +28,7 @@ export async function setUserImage(file: File): Promise<{
       }
     }
 
-    const userId = (await auth())?.user.id
+    const userId = (await getAuthSession())?.user.id
     if (!userId) return { success: false, message: "Not authenticated." }
 
     const imageBlob = await file.arrayBuffer()

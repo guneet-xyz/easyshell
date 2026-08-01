@@ -3,7 +3,7 @@
 import { terminalSessions } from "@easyshell/db/schema"
 
 import { db } from "@/db"
-import { auth } from "@/lib/server/auth"
+import { getAuthSession } from "@/lib/server/auth"
 import { getProblemSlugFromId } from "@/lib/server/problems"
 import {
   insertTerminalSessionLog,
@@ -37,7 +37,7 @@ export async function submitTerminalSessionCommand({
         }
     ))
 > {
-  const user = (await auth())?.user
+  const user = (await getAuthSession())?.user
   if (!user) return { status: "error", type: "not-authenticated" }
 
   const terminalSession = await db

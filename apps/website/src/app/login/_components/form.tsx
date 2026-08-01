@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
+import { authClient } from "@/lib/client"
 import { cn } from "@/lib/utils"
 
-import { signIn } from "next-auth/react"
 import { useState } from "react"
 import {
   PiDiscordLogo,
@@ -35,7 +35,10 @@ export function LoginForm({ callback }: { callback: string }) {
             className="group flex items-center gap-2 hover:bg-gray-200 dark:hover:bg-neutral-200 dark:hover:text-black"
             variant="secondary"
             onClick={async () => {
-              await signIn("google", { callbackUrl: callback })
+              await authClient.signIn.social({
+                provider: "google",
+                callbackURL: callback,
+              })
             }}
           >
             <div className="relative h-8 w-6">
@@ -48,7 +51,10 @@ export function LoginForm({ callback }: { callback: string }) {
             className="group flex items-center gap-2 hover:bg-gray-200 dark:hover:bg-neutral-200 dark:hover:text-black"
             variant="secondary"
             onClick={async () => {
-              await signIn("github", { callbackUrl: callback })
+              await authClient.signIn.social({
+                provider: "github",
+                callbackURL: callback,
+              })
             }}
           >
             <div className="relative h-8 w-6">
@@ -61,7 +67,10 @@ export function LoginForm({ callback }: { callback: string }) {
             className="group flex items-center gap-4 hover:bg-gray-200 dark:hover:bg-neutral-200 dark:hover:text-black"
             variant="secondary"
             onClick={async () => {
-              await signIn("discord", { callbackUrl: callback })
+              await authClient.signIn.social({
+                provider: "discord",
+                callbackURL: callback,
+              })
             }}
           >
             <div className="relative h-8 w-6">
@@ -99,10 +108,6 @@ export function LoginForm({ callback }: { callback: string }) {
                 toast.error("Please enter a valid email address.")
                 return
               }
-              await signIn("resend", {
-                email: parsedEmail.data,
-                callbackUrl: callback,
-              })
             }}
           >
             <div className="relative h-8 w-6">

@@ -1,24 +1,12 @@
-import {
-  accounts,
-  lower,
-  sessions,
-  users,
-  verificationTokens,
-} from "@easyshell/db/schema"
+import { lower, users, type User } from "@easyshell/db/schema"
 
-import { MagicLink } from "@/components/emails/magic-link"
 import { db } from "@/db"
 import { env } from "@/env"
-import { getResend } from "@/lib/server/resend"
 
-import { DrizzleAdapter } from "@auth/drizzle-adapter"
+import { User as NewUser, betterAuth } from "better-auth"
+import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { count, eq } from "drizzle-orm"
-import NextAuth, { type DefaultSession } from "next-auth"
-import { type Adapter } from "next-auth/adapters"
-import DiscordProvider from "next-auth/providers/discord"
-import GithubProvider from "next-auth/providers/github"
-import GoogleProvider from "next-auth/providers/google"
-import Resend from "next-auth/providers/resend"
+import { headers } from "next/headers"
 
 // =============================== Helper Utilities ===============================
 
@@ -129,40 +117,20 @@ async function generateAnonymousName(): Promise<string> {
 /**
  * Attempts to fix missing fields for user. Safe to use on a good user.
  */
-async function fixUser(userId: string) {
-  const user = (
-    await db.select().from(users).where(eq(users.id, userId)).limit(1)
-  )[0]!
-
+async function fixUserBeforeCreation(user: NewUser): Promise<User> {
   let name = user.name ?? user.email.split("@")[0]!
   const validName = await isNameValid(name)
   if (!validName.valid) {
     name = await generateAnonymousName()
   }
 
-  let username = user.username
-  const validUsername =
-    username !== null &&
-    (await isUsernameValid({ username: username, checkUnique: false })).valid
-  if (!validUsername) username = await generateValidUsername(name)
-
-  if (username !== user.username || name !== user.name) {
-    await db
-      .update(users)
-      .set({
-        name: name,
-        username: username,
-      })
-      .where(eq(users.id, user.id))
-  }
+  const username = await generateValidUsername(name)
 
   return {
-    id: user.id,
-    email: user.email,
+    ...user,
     name: name,
     username: username!,
-    image: user.image ?? undefined,
-    joinedAt: user.joinedAt,
+    image: user.image ?? null,
   }
 }
 
@@ -181,9 +149,7 @@ export async function getUserById(userId: string) {
   )[0]
 
   if (!user) return null
-
-  const fixedUser = await fixUser(user.id)
-  return fixedUser
+  return user
 }
 
 /**
@@ -192,9 +158,7 @@ export async function getUserById(userId: string) {
 export async function getUserByUsername(username: string) {
   const user = (
     await db
-      .select({
-        id: users.id,
-      })
+      .select()
       .from(users)
       .where(eq(lower(users.username), username.toLowerCase()))
       .limit(1)
@@ -202,104 +166,51 @@ export async function getUserByUsername(username: string) {
 
   if (!user) return null
 
-  const fixedUser = await fixUser(user.id)
-  return fixedUser
+  return user
 }
 
 // ================================ Auth Configuration ===============================
 
-declare module "next-auth" {
-  interface Session extends DefaultSession {
-    user: {
-      id: string
-      name: string
-      username: string
-      image?: string
-    } & DefaultSession["user"]
-  }
-
-  interface User {
-    username?: string | null
-  }
-}
-
-export const { auth, handlers, signIn, signOut } = NextAuth({
-  pages: {
-    signIn: "/login",
-    signOut: "/logout",
-    error: "/error/auth",
-    verifyRequest: "/verify-request",
-  },
-  callbacks: {
-    session: async (ctx) => {
-      const { session } = ctx
-      if (
-        !session.user ||
-        !session.user.name ||
-        !session.user.username ||
-        !(await isNameValid(session.user.name)).valid ||
-        !(
-          await isUsernameValid({
-            username: session.user.username,
-            checkUnique: false,
-          })
-        ).valid
-      ) {
-        return {
-          ...session,
-          user: await fixUser(session.user.id),
-        }
-      }
-      return session
-    },
-  },
-  events: {
-    async createUser(event) {
-      // TODO: send welcome email
-      const { user } = event
-      if (!user.id) return
-      await fixUser(user.id)
-    },
-    async updateUser() {
-      // TODO: send alert email
-    },
-    async linkAccount() {
-      // TODO: send alert email
-    },
-  },
-  adapter: DrizzleAdapter(db, {
-    usersTable: users,
-    accountsTable: accounts,
-    sessionsTable: sessions,
-    verificationTokensTable: verificationTokens,
-  }) as Adapter,
-  providers: [
-    DiscordProvider({
-      clientId: env.DISCORD_CLIENT_ID,
-      clientSecret: env.DISCORD_CLIENT_SECRET,
-      allowDangerousEmailAccountLinking: true,
-    }),
-    GithubProvider({
+export const auth = betterAuth({
+  database: drizzleAdapter(db, {
+    provider: "pg",
+  }),
+  socialProviders: {
+    github: {
       clientId: env.GITHUB_CLIENT_ID,
       clientSecret: env.GITHUB_CLIENT_SECRET,
-      allowDangerousEmailAccountLinking: true,
-    }),
-    GoogleProvider({
+    },
+    discord: {
+      clientId: env.DISCORD_CLIENT_ID,
+      clientSecret: env.DISCORD_CLIENT_SECRET,
+    },
+    google: {
       clientId: env.GOOGLE_CLIENT_ID,
       clientSecret: env.GOOGLE_CLIENT_SECRET,
-      allowDangerousEmailAccountLinking: true,
-    }),
-    Resend({
-      async sendVerificationRequest(params) {
-        const { identifier, url } = params
-        const resend = getResend()
-        await resend.emails.send({
-          from: "no-reply@easyshell.sh",
-          to: identifier,
-          subject: `Sign-In to EasyShell`,
-          react: MagicLink({ url }),
-        })
+    },
+  },
+  user: {
+    additionalFields: {
+      username: {
+        type: "string",
+        required: true,
+        input: false,
       },
-    }),
-  ],
+    },
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => {
+          return { data: await fixUserBeforeCreation(user) }
+        },
+      },
+    },
+  },
 })
+
+export async function getAuthSession() {
+  return auth.api.getSession({
+    headers: await headers(),
+  })
+}

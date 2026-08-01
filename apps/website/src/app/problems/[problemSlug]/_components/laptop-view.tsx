@@ -1,5 +1,5 @@
 import { ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
-import { auth } from "@/lib/server/auth"
+import { getAuthSession } from "@/lib/server/auth"
 import { getPublicTestcaseInfo } from "@/lib/server/problems"
 import { getUserSubmissions } from "@/lib/server/queries"
 
@@ -19,7 +19,7 @@ export async function LaptopView({
   problemId: number
   problemSlug: string
 }) {
-  const session = await auth()
+  const session = await getAuthSession()
   const user = session?.user
 
   const testcases = await getPublicTestcaseInfo(problemSlug)

@@ -12,7 +12,7 @@ import {
 
 import { SubmissionsChart } from "./_components/submission-chart"
 
-import { desc, eq, min, sql } from "drizzle-orm"
+import { desc, eq, min } from "drizzle-orm"
 import moment from "moment"
 import { Metadata } from "next"
 import { notFound, redirect } from "next/navigation"
@@ -47,10 +47,7 @@ async function getRecentlySolved(userId: string) {
       .with(user_submissions)
       .select({
         submissionId: user_submissions.submissionId,
-        passed:
-          sql<boolean>`cast(${min(sql`cast(${submissionTestcases.passed} as int)`)} as boolean)`.as(
-            "passed",
-          ),
+        passed: min(submissionTestcases.passed),
       })
       .from(submissionTestcases)
       .innerJoin(
@@ -94,10 +91,7 @@ export async function getSubmissionStats(userId: string) {
       .with(user_submissions)
       .select({
         problemId: user_submissions.problemId,
-        passed:
-          sql<boolean>`cast(${min(sql`cast(${submissionTestcases.passed} as int)`)} as boolean)`.as(
-            "passed",
-          ),
+        passed: min(submissionTestcases.passed),
       })
       .from(submissionTestcases)
       .innerJoin(
@@ -117,7 +111,7 @@ export async function getSubmissionStats(userId: string) {
 
   const solved_problems = await Promise.all(
     user_distinct_problems.map(async ({ problemId }) => {
-      const problemSlug = await getProblemSlugFromId(problemId)
+      const problemSlug = getProblemSlugFromId(problemId)
       const { difficulty } = await getPublicProblemInfo(problemSlug)
       return {
         problemId,
@@ -170,7 +164,7 @@ export default async function Page({
   const recentlySolved = await Promise.all(
     (await getRecentlySolved(user.id)).map(async (rs) => ({
       ...rs,
-      problemSlug: await getProblemSlugFromId(rs.problemId),
+      problemSlug: getProblemSlugFromId(rs.problemId),
     })),
   )
 
@@ -193,7 +187,7 @@ export default async function Page({
             </div>
           </div>
           <div className="font-clash-display text-sm text-neutral-500 dark:text-neutral-500">
-            Joined {moment(user.joinedAt).fromNow()}
+            Joined {moment(user.createdAt).fromNow()}
           </div>
         </div>
       </Card>

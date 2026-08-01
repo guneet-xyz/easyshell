@@ -1,4 +1,4 @@
-import { auth } from "@/lib/server/auth"
+import { getAuthSession } from "@/lib/server/auth"
 import { getUserBookmarks } from "@/lib/server/bookmarks"
 import {
   getAllTags,
@@ -17,7 +17,7 @@ export const metadata = {
 }
 
 export default async function Page() {
-  const session = await auth()
+  const session = await getAuthSession()
   const user = session?.user
   const submission_stats = user ? await getUserSubmissionStats(user.id) : null
 

@@ -1,42 +1,36 @@
 {
-  "id": "095f39b1-0e45-481e-86fc-9ad29562acd3",
+  "id": "917ffee9-28e2-494f-bebb-9c68aff90264",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.easyshell_account": {
-      "name": "easyshell_account",
+    "public.account": {
+      "name": "account",
       "schema": "",
       "columns": {
-        "user_id": {
-          "name": "user_id",
-          "type": "varchar(255)",
-          "primaryKey": false,
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
           "notNull": true
         },
-        "type": {
-          "name": "type",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "provider": {
-          "name": "provider",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "provider_account_id": {
-          "name": "provider_account_id",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "refresh_token": {
-          "name": "refresh_token",
+        "account_id": {
+          "name": "account_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
+        },
+        "provider_id": {
+          "name": "provider_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
         },
         "access_token": {
           "name": "access_token",
@@ -44,21 +38,9 @@
           "primaryKey": false,
           "notNull": false
         },
-        "expires_at": {
-          "name": "expires_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "token_type": {
-          "name": "token_type",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "scope": {
-          "name": "scope",
-          "type": "varchar(255)",
+        "refresh_token": {
+          "name": "refresh_token",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -68,16 +50,47 @@
           "primaryKey": false,
           "notNull": false
         },
-        "session_state": {
-          "name": "session_state",
-          "type": "varchar(255)",
+        "access_token_expires_at": {
+          "name": "access_token_expires_at",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false
+        },
+        "refresh_token_expires_at": {
+          "name": "refresh_token_expires_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scope": {
+          "name": "scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "password": {
+          "name": "password",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
         }
       },
       "indexes": {
-        "account_user_id_idx": {
-          "name": "account_user_id_idx",
+        "account_userId_idx": {
+          "name": "account_userId_idx",
           "columns": [
             {
               "expression": "user_id",
@@ -93,29 +106,24 @@
         }
       },
       "foreignKeys": {
-        "easyshell_account_user_id_easyshell_user_id_fk": {
-          "name": "easyshell_account_user_id_easyshell_user_id_fk",
-          "tableFrom": "easyshell_account",
-          "tableTo": "easyshell_user",
+        "account_user_id_user_id_fk": {
+          "name": "account_user_id_user_id_fk",
+          "tableFrom": "account",
+          "tableTo": "user",
           "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "easyshell_account_provider_provider_account_id_pk": {
-          "name": "easyshell_account_provider_provider_account_id_pk",
-          "columns": ["provider", "provider_account_id"]
-        }
-      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.easyshell_bookmark": {
-      "name": "easyshell_bookmark",
+    "public.bookmark": {
+      "name": "bookmark",
       "schema": "",
       "columns": {
         "user_id": {
@@ -149,10 +157,10 @@
         }
       },
       "foreignKeys": {
-        "easyshell_bookmark_user_id_easyshell_user_id_fk": {
-          "name": "easyshell_bookmark_user_id_easyshell_user_id_fk",
-          "tableFrom": "easyshell_bookmark",
-          "tableTo": "easyshell_user",
+        "bookmark_user_id_user_id_fk": {
+          "name": "bookmark_user_id_user_id_fk",
+          "tableFrom": "bookmark",
+          "tableTo": "user",
           "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
@@ -160,8 +168,8 @@
         }
       },
       "compositePrimaryKeys": {
-        "easyshell_bookmark_user_id_problem_id_pk": {
-          "name": "easyshell_bookmark_user_id_problem_id_pk",
+        "bookmark_user_id_problem_id_pk": {
+          "name": "bookmark_user_id_problem_id_pk",
           "columns": ["user_id", "problem_id"]
         }
       },
@@ -170,8 +178,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.easyshell_images": {
-      "name": "easyshell_images",
+    "public.images": {
+      "name": "images",
       "schema": "",
       "columns": {
         "id": {
@@ -181,7 +189,7 @@
           "notNull": true,
           "identity": {
             "type": "byDefault",
-            "name": "easyshell_images_id_seq",
+            "name": "images_id_seq",
             "schema": "public",
             "increment": "1",
             "startWith": "1",
@@ -219,10 +227,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "easyshell_images_uploaded_by_easyshell_user_id_fk": {
-          "name": "easyshell_images_uploaded_by_easyshell_user_id_fk",
-          "tableFrom": "easyshell_images",
-          "tableTo": "easyshell_user",
+        "images_uploaded_by_user_id_fk": {
+          "name": "images_uploaded_by_user_id_fk",
+          "tableFrom": "images",
+          "tableTo": "user",
           "columnsFrom": ["uploaded_by"],
           "columnsTo": ["id"],
           "onDelete": "no action",
@@ -231,8 +239,8 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "easyshell_images_name_unique": {
-          "name": "easyshell_images_name_unique",
+        "images_name_unique": {
+          "name": "images_name_unique",
           "nullsNotDistinct": false,
           "columns": ["name"]
         }
@@ -241,32 +249,63 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.easyshell_session": {
-      "name": "easyshell_session",
+    "public.session": {
+      "name": "session",
       "schema": "",
       "columns": {
-        "session_token": {
-          "name": "session_token",
-          "type": "varchar(255)",
+        "id": {
+          "name": "id",
+          "type": "text",
           "primaryKey": true,
           "notNull": true
         },
-        "user_id": {
-          "name": "user_id",
-          "type": "varchar(255)",
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true
         },
-        "expires": {
-          "name": "expires",
-          "type": "timestamp with time zone",
+        "token": {
+          "name": "token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ip_address": {
+          "name": "ip_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_agent": {
+          "name": "user_agent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         }
       },
       "indexes": {
-        "session_user_id_idx": {
-          "name": "session_user_id_idx",
+        "session_userId_idx": {
+          "name": "session_userId_idx",
           "columns": [
             {
               "expression": "user_id",
@@ -282,24 +321,30 @@
         }
       },
       "foreignKeys": {
-        "easyshell_session_user_id_easyshell_user_id_fk": {
-          "name": "easyshell_session_user_id_easyshell_user_id_fk",
-          "tableFrom": "easyshell_session",
-          "tableTo": "easyshell_user",
+        "session_user_id_user_id_fk": {
+          "name": "session_user_id_user_id_fk",
+          "tableFrom": "session",
+          "tableTo": "user",
           "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "session_token_unique": {
+          "name": "session_token_unique",
+          "nullsNotDistinct": false,
+          "columns": ["token"]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.easyshell_submission_testcase_queue": {
-      "name": "easyshell_submission_testcase_queue",
+    "public.submission_testcase_queue": {
+      "name": "submission_testcase_queue",
       "schema": "",
       "columns": {
         "submission_id": {
@@ -326,8 +371,8 @@
       "foreignKeys": {
         "submission_testcase_queue_fk": {
           "name": "submission_testcase_queue_fk",
-          "tableFrom": "easyshell_submission_testcase_queue",
-          "tableTo": "easyshell_submissions",
+          "tableFrom": "submission_testcase_queue",
+          "tableTo": "submissions",
           "columnsFrom": ["submission_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
@@ -340,8 +385,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.easyshell_submission_testcase": {
-      "name": "easyshell_submission_testcase",
+    "public.submission_testcase": {
+      "name": "submission_testcase",
       "schema": "",
       "columns": {
         "submission_id": {
@@ -403,8 +448,8 @@
       "foreignKeys": {
         "submission_testcase_submission_id_fk": {
           "name": "submission_testcase_submission_id_fk",
-          "tableFrom": "easyshell_submission_testcase",
-          "tableTo": "easyshell_submissions",
+          "tableFrom": "submission_testcase",
+          "tableTo": "submissions",
           "columnsFrom": ["submission_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
@@ -412,8 +457,8 @@
         }
       },
       "compositePrimaryKeys": {
-        "easyshell_submission_testcase_submission_id_testcase_id_pk": {
-          "name": "easyshell_submission_testcase_submission_id_testcase_id_pk",
+        "submission_testcase_submission_id_testcase_id_pk": {
+          "name": "submission_testcase_submission_id_testcase_id_pk",
           "columns": ["submission_id", "testcase_id"]
         }
       },
@@ -422,8 +467,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.easyshell_submissions": {
-      "name": "easyshell_submissions",
+    "public.submissions": {
+      "name": "submissions",
       "schema": "",
       "columns": {
         "id": {
@@ -433,7 +478,7 @@
           "notNull": true,
           "identity": {
             "type": "byDefault",
-            "name": "easyshell_submissions_id_seq",
+            "name": "submissions_id_seq",
             "schema": "public",
             "increment": "1",
             "startWith": "1",
@@ -471,10 +516,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "easyshell_submissions_user_id_easyshell_user_id_fk": {
-          "name": "easyshell_submissions_user_id_easyshell_user_id_fk",
-          "tableFrom": "easyshell_submissions",
-          "tableTo": "easyshell_user",
+        "submissions_user_id_user_id_fk": {
+          "name": "submissions_user_id_user_id_fk",
+          "tableFrom": "submissions",
+          "tableTo": "user",
           "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
@@ -487,8 +532,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.easyshell_terminal_session_log": {
-      "name": "easyshell_terminal_session_log",
+    "public.terminal_session_log": {
+      "name": "terminal_session_log",
       "schema": "",
       "columns": {
         "id": {
@@ -498,7 +543,7 @@
           "notNull": true,
           "identity": {
             "type": "byDefault",
-            "name": "easyshell_terminal_session_log_id_seq",
+            "name": "terminal_session_log_id_seq",
             "schema": "public",
             "increment": "1",
             "startWith": "1",
@@ -565,8 +610,8 @@
       "foreignKeys": {
         "terminal_session_log_session_id_fk": {
           "name": "terminal_session_log_session_id_fk",
-          "tableFrom": "easyshell_terminal_session_log",
-          "tableTo": "easyshell_terminal_session",
+          "tableFrom": "terminal_session_log",
+          "tableTo": "terminal_session",
           "columnsFrom": ["session_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
@@ -579,8 +624,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.easyshell_terminal_session": {
-      "name": "easyshell_terminal_session",
+    "public.terminal_session": {
+      "name": "terminal_session",
       "schema": "",
       "columns": {
         "id": {
@@ -590,7 +635,7 @@
           "notNull": true,
           "identity": {
             "type": "byDefault",
-            "name": "easyshell_terminal_session_id_seq",
+            "name": "terminal_session_id_seq",
             "schema": "public",
             "increment": "1",
             "startWith": "1",
@@ -656,10 +701,10 @@
         }
       },
       "foreignKeys": {
-        "easyshell_terminal_session_user_id_easyshell_user_id_fk": {
-          "name": "easyshell_terminal_session_user_id_easyshell_user_id_fk",
-          "tableFrom": "easyshell_terminal_session",
-          "tableTo": "easyshell_user",
+        "terminal_session_user_id_user_id_fk": {
+          "name": "terminal_session_user_id_user_id_fk",
+          "tableFrom": "terminal_session",
+          "tableTo": "user",
           "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
@@ -672,112 +717,136 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.easyshell_user": {
-      "name": "easyshell_user",
+    "public.user": {
+      "name": "user",
       "schema": "",
       "columns": {
         "id": {
           "name": "id",
-          "type": "varchar(255)",
+          "type": "text",
           "primaryKey": true,
           "notNull": true
         },
         "name": {
           "name": "name",
-          "type": "varchar(255)",
+          "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "username": {
           "name": "username",
-          "type": "varchar(255)",
+          "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "email": {
           "name": "email",
-          "type": "varchar(255)",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
         "email_verified": {
           "name": "email_verified",
-          "type": "timestamp with time zone",
+          "type": "boolean",
           "primaryKey": false,
-          "notNull": false,
-          "default": "CURRENT_TIMESTAMP"
+          "notNull": true,
+          "default": false
         },
         "image": {
           "name": "image",
-          "type": "varchar(255)",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "joined_at": {
-          "name": "joined_at",
-          "type": "timestamp with time zone",
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "user_username_unique": {
+          "name": "user_username_unique",
+          "nullsNotDistinct": false,
+          "columns": ["username"]
+        },
+        "user_email_unique": {
+          "name": "user_email_unique",
+          "nullsNotDistinct": false,
+          "columns": ["email"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.verification": {
+      "name": "verification",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "identifier": {
+          "name": "identifier",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "value": {
+          "name": "value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
         }
       },
       "indexes": {
-        "idx_email": {
-          "name": "idx_email",
+        "verification_identifier_idx": {
+          "name": "verification_identifier_idx",
           "columns": [
             {
-              "expression": "email",
+              "expression": "identifier",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             }
           ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_email_lower": {
-          "name": "idx_email_lower",
-          "columns": [
-            {
-              "expression": "lower(\"email\")",
-              "asc": true,
-              "isExpression": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_username": {
-          "name": "idx_username",
-          "columns": [
-            {
-              "expression": "username",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_username_lower": {
-          "name": "idx_username_lower",
-          "columns": [
-            {
-              "expression": "lower(\"username\")",
-              "asc": true,
-              "isExpression": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
+          "isUnique": false,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -785,42 +854,6 @@
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.easyshell_verification_token": {
-      "name": "easyshell_verification_token",
-      "schema": "",
-      "columns": {
-        "identifier": {
-          "name": "identifier",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "token": {
-          "name": "token",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "expires": {
-          "name": "expires",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {
-        "easyshell_verification_token_identifier_token_pk": {
-          "name": "easyshell_verification_token_identifier_token_pk",
-          "columns": ["identifier", "token"]
-        }
-      },
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},

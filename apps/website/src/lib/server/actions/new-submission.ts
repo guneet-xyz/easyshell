@@ -3,7 +3,7 @@
 import { submissionTestcaseQueue, submissions } from "@easyshell/db/schema"
 
 import { db } from "@/db"
-import { auth } from "@/lib/server/auth"
+import { getAuthSession } from "@/lib/server/auth"
 import { getProblemInfo, getProblemSlugFromId } from "@/lib/server/problems"
 
 export async function newSubmission({
@@ -13,7 +13,7 @@ export async function newSubmission({
   problemId: number
   input: string
 }) {
-  const user = (await auth())?.user
+  const user = (await getAuthSession())?.user
   if (!user) return null
 
   const problemSlug = getProblemSlugFromId(problemId)

@@ -12,7 +12,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { auth } from "@/lib/server/auth"
+import { getAuthSession } from "@/lib/server/auth"
 
 import { ThemeToggle } from "./theme-toggle"
 
@@ -109,7 +109,7 @@ function LinkWrapper({
 }
 
 async function User({ drawer }: { drawer?: boolean }) {
-  const user = (await auth())?.user
+  const user = (await getAuthSession())?.user
   if (user)
     return (
       <div className="flex w-full flex-col">

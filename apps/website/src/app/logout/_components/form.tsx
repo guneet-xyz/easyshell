@@ -2,8 +2,8 @@
 
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { authClient } from "@/lib/client"
 
-import { signOut } from "next-auth/react"
 import Link from "next/link"
 
 export function LogoutForm() {
@@ -18,7 +18,7 @@ export function LogoutForm() {
         <Button
           variant={"destructive"}
           onClick={async () => {
-            await signOut()
+            await authClient.signOut()
           }}
         >
           Log Out

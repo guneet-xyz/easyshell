@@ -19,12 +19,12 @@
     "lint": "eslint . && tsc --noEmit"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.2",
+    "@eslint/js": "^9.39.5",
     "@ianvs/prettier-plugin-sort-imports": "^4.7.1",
     "drizzle-kit": "catalog:",
     "drizzle-orm": "catalog:",
-    "eslint": "^9.39.2",
-    "eslint-config-next": "^16.1.6",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.2.12",
     "eslint-plugin-drizzle": "^0.2.3",
     "globals": "^16.5.0",
     "prettier": "^3.9.6",
@@ -32,6 +32,6 @@
     "prettier-plugin-tailwindcss": "^0.6.14",
     "tsx": "catalog:",
     "typescript": "5.7.3",
-    "typescript-eslint": "^8.54.0"
+    "typescript-eslint": "^8.65.0"
   }
 }

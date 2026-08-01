@@ -1,4 +1,4 @@
-import { relations, sql } from "drizzle-orm"
+import { InferSelectModel, relations, sql } from "drizzle-orm"
 import {
   AnyPgColumn,
   boolean,
@@ -7,126 +7,116 @@ import {
   integer,
   jsonb,
   pgEnum,
-  pgTableCreator,
+  pgTable,
   primaryKey,
   text,
   timestamp,
-  uniqueIndex,
   varchar,
 } from "drizzle-orm/pg-core"
-import { type AdapterAccount } from "next-auth/adapters"
 
 export function lower(col: AnyPgColumn) {
   return sql`lower(${col})`
 }
 
-/**
- * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
- * database instance for multiple projects.
- *
- * @see https://orm.drizzle.team/docs/goodies#multi-project-schema
- */
-export const createTable = pgTableCreator((name) => `easyshell_${name}`)
+// --- Auth
 
-export const users = createTable(
-  "user",
+export const users = pgTable("user", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  username: text("username").notNull().unique(),
+  email: text("email").notNull().unique(),
+  emailVerified: boolean("email_verified").default(false).notNull(),
+  image: text("image"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+})
+
+export type User = InferSelectModel<typeof users>
+
+export const sessions = pgTable(
+  "session",
   {
-    id: varchar("id", { length: 255 })
+    id: text("id").primaryKey(),
+    expiresAt: timestamp("expires_at").notNull(),
+    token: text("token").notNull().unique(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    userId: text("user_id")
       .notNull()
-      .primaryKey()
-      .$defaultFn(() => crypto.randomUUID()),
-    name: varchar("name", { length: 255 }),
-    username: varchar("username", { length: 255 }),
-    email: varchar("email", { length: 255 }).notNull(),
-    emailVerified: timestamp("email_verified", {
-      mode: "date",
-      withTimezone: true,
-    }).default(sql`CURRENT_TIMESTAMP`),
-    image: varchar("image", { length: 255 }),
-    joinedAt: timestamp("joined_at", { mode: "date", withTimezone: true })
-      .notNull()
-      .defaultNow(),
+      .references(() => users.id, { onDelete: "cascade" }),
   },
-  (t) => [
-    uniqueIndex("idx_email").on(t.email),
-    uniqueIndex("idx_email_lower").on(lower(t.email)),
-    uniqueIndex("idx_username").on(t.username),
-    uniqueIndex("idx_username_lower").on(lower(t.username)),
-  ],
+  (table) => [index("session_userId_idx").on(table.userId)],
 )
 
-export const usersRelations = relations(users, ({ many }) => ({
+export const accounts = pgTable(
+  "account",
+  {
+    id: text("id").primaryKey(),
+    accountId: text("account_id").notNull(),
+    providerId: text("provider_id").notNull(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    idToken: text("id_token"),
+    accessTokenExpiresAt: timestamp("access_token_expires_at"),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
+    scope: text("scope"),
+    password: text("password"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [index("account_userId_idx").on(table.userId)],
+)
+
+export const verification = pgTable(
+  "verification",
+  {
+    id: text("id").primaryKey(),
+    identifier: text("identifier").notNull(),
+    value: text("value").notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [index("verification_identifier_idx").on(table.identifier)],
+)
+
+export const userRelations = relations(users, ({ many }) => ({
+  sessions: many(sessions),
   accounts: many(accounts),
 }))
 
-export const accounts = createTable(
-  "account",
-  {
-    userId: varchar("user_id", { length: 255 })
-      .notNull()
-      .references(() => users.id),
-    type: varchar("type", { length: 255 })
-      .$type<AdapterAccount["type"]>()
-      .notNull(),
-    provider: varchar("provider", { length: 255 }).notNull(),
-    providerAccountId: varchar("provider_account_id", {
-      length: 255,
-    }).notNull(),
-    refresh_token: text("refresh_token"),
-    access_token: text("access_token"),
-    expires_at: integer("expires_at"),
-    token_type: varchar("token_type", { length: 255 }),
-    scope: varchar("scope", { length: 255 }),
-    id_token: text("id_token"),
-    session_state: varchar("session_state", { length: 255 }),
-  },
-  (account) => [
-    primaryKey({
-      columns: [account.provider, account.providerAccountId],
-    }),
-    index("account_user_id_idx").on(account.userId),
-  ],
-)
-
-export const accountsRelations = relations(accounts, ({ one }) => ({
-  user: one(users, { fields: [accounts.userId], references: [users.id] }),
+export const sessionRelations = relations(sessions, ({ one }) => ({
+  user: one(users, {
+    fields: [sessions.userId],
+    references: [users.id],
+  }),
 }))
 
-export const sessions = createTable(
-  "session",
-  {
-    sessionToken: varchar("session_token", { length: 255 })
-      .notNull()
-      .primaryKey(),
-    userId: varchar("user_id", { length: 255 })
-      .notNull()
-      .references(() => users.id),
-    expires: timestamp("expires", {
-      mode: "date",
-      withTimezone: true,
-    }).notNull(),
-  },
-  (session) => [index("session_user_id_idx").on(session.userId)],
-)
-
-export const sessionsRelations = relations(sessions, ({ one }) => ({
-  user: one(users, { fields: [sessions.userId], references: [users.id] }),
+export const accountRelations = relations(accounts, ({ one }) => ({
+  user: one(users, {
+    fields: [accounts.userId],
+    references: [users.id],
+  }),
 }))
 
-export const verificationTokens = createTable(
-  "verification_token",
-  {
-    identifier: varchar("identifier", { length: 255 }).notNull(),
-    token: varchar("token", { length: 255 }).notNull(),
-    expires: timestamp("expires", {
-      mode: "date",
-      withTimezone: true,
-    }).notNull(),
-  },
-  (vt) => [primaryKey({ columns: [vt.identifier, vt.token] })],
-)
+// ---
 
-export const terminalSessions = createTable(
+export const terminalSessions = pgTable(
   "terminal_session",
   {
     id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
@@ -147,7 +137,7 @@ export const terminalSessions = createTable(
   (ts) => [index("terminal_session_user_id_idx").on(ts.userId)],
 )
 
-export const terminalSessionLogs = createTable(
+export const terminalSessionLogs = pgTable(
   "terminal_session_log",
   {
     id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
@@ -174,7 +164,7 @@ export const terminalSessionLogs = createTable(
   ],
 )
 
-export const submissions = createTable("submissions", {
+export const submissions = pgTable("submissions", {
   id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
   userId: varchar("user_id", { length: 255 })
     .notNull()
@@ -186,7 +176,7 @@ export const submissions = createTable("submissions", {
     .defaultNow(),
 })
 
-export const submissionTestcases = createTable(
+export const submissionTestcases = pgTable(
   "submission_testcase",
   {
     submissionId: integer("submission_id").notNull(),
@@ -222,7 +212,7 @@ export const queueItemStatus = pgEnum("queue_item_status", [
   "finished",
 ])
 
-export const submissionTestcaseQueue = createTable(
+export const submissionTestcaseQueue = pgTable(
   "submission_testcase_queue",
   {
     submissionId: integer("submission_id").notNull(),
@@ -238,7 +228,7 @@ export const submissionTestcaseQueue = createTable(
   ],
 )
 
-export const bookmarks = createTable(
+export const bookmarks = pgTable(
   "bookmark",
   {
     userId: varchar("user_id", { length: 255 })
@@ -254,7 +244,7 @@ export const bookmarks = createTable(
   ],
 )
 
-export const images = createTable("images", {
+export const images = pgTable("images", {
   id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
   name: varchar("name", { length: 255 }).notNull().unique(),
   base64: text("base64").notNull(),

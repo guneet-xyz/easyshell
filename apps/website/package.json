@@ -11,7 +11,6 @@
     "start": "next start"
   },
   "dependencies": {
-    "@auth/drizzle-adapter": "catalog:",
     "@easyshell/data": "workspace:*",
     "@easyshell/db": "workspace:*",
     "@mdx-js/loader": "^3.1.0",
@@ -33,6 +32,7 @@
     "@radix-ui/react-tooltip": "^1.2.0",
     "@t3-oss/env-core": "catalog:",
     "base64-arraybuffer": "^1.0.2",
+    "better-auth": "^1.6.25",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "diff": "^8.0.3",
@@ -43,7 +43,6 @@
     "lucide-react": "^0.441.0",
     "moment": "^2.30.1",
     "next": "^16.2.12",
-    "next-auth": "catalog:",
     "next-mdx-remote": "^5.0.0",
     "next-themes": "^0.4.6",
     "posthog-js": "^1",

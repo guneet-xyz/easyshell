@@ -3,9 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@auth/drizzle-adapter": "catalog:",
     "drizzle-orm": "catalog:",
-    "next-auth": "catalog:",
     "pg": "^8.22.0"
   },
   "devDependencies": {

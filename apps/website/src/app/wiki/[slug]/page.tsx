@@ -4,13 +4,14 @@ import { getWikiFull, getWikiMetadata } from "@/lib/server/wiki"
 
 import { Markdown } from "./_components/markdown"
 
+import { type Metadata } from "next"
 import { notFound } from "next/navigation"
 
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string }>
-}) {
+}): Promise<Metadata> {
   const { slug } = await params
   const metadata = await getWikiMetadata(slug)
   if (!metadata)

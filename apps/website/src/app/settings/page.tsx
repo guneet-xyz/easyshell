@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { auth } from "@/lib/server/auth"
+import { getAuthSession } from "@/lib/server/auth"
 import { getUserProviders } from "@/lib/server/queries"
 import { getPathname } from "@/lib/server/utils"
 
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 }
 
 export default async function Page() {
-  const user = (await auth())?.user
+  const user = (await getAuthSession())?.user
   if (!user) {
     const pathname = await getPathname()
     redirect(`/login?callback=${pathname}`)

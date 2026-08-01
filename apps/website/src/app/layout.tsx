@@ -4,7 +4,6 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import "@/styles/globals.css"
 
 import { Navbar } from "./_components/navbar"
-import { SessionProvider } from "./_components/session-provider"
 import { ClientSideProviders } from "./client-side-providers"
 
 import { GeistMono } from "geist/font/mono"
@@ -36,13 +35,11 @@ export default function RootLayout({
       <body className="font-geist flex h-screen flex-col dark:bg-neutral-900">
         <ClientSideProviders>
           <ThemeProvider attribute="class" defaultTheme="dark">
-            <SessionProvider>
-              <Toaster />
-              <TooltipProvider>
-                <Navbar />
-                <div className="grow">{children}</div>
-              </TooltipProvider>
-            </SessionProvider>
+            <Toaster />
+            <TooltipProvider>
+              <Navbar />
+              <div className="grow">{children}</div>
+            </TooltipProvider>
           </ThemeProvider>
         </ClientSideProviders>
       </body>

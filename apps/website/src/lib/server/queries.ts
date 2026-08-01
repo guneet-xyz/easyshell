@@ -97,7 +97,7 @@ export async function isProblemBookmarked({
 export async function getUserProviders(userId: string) {
   const results = await db
     .select({
-      provider: accounts.provider,
+      provider: accounts.providerId,
     })
     .from(accounts)
     .where(eq(accounts.userId, userId))
@@ -177,7 +177,7 @@ export async function getUserSubmissionStats(
 
   const result_map: Record<string, "solved" | "attempted"> = {}
   for (const { problemId, passed } of result) {
-    const slug = await getProblemSlugFromId(problemId)
+    const slug = getProblemSlugFromId(problemId)
     result_map[slug] = passed ? "solved" : "attempted"
   }
 

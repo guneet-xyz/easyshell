@@ -1,11 +1,11 @@
-import { auth } from "@/lib/server/auth"
+import { getAuthSession } from "@/lib/server/auth"
 
 import { LogoutForm } from "./_components/form"
 
 import { redirect } from "next/navigation"
 
 export default async function Page() {
-  const loggedOut = (await auth())?.user === undefined
+  const loggedOut = (await getAuthSession())?.user === undefined
   if (loggedOut) {
     redirect("/")
   }

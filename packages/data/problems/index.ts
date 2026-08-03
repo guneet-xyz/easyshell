@@ -1,6 +1,13 @@
-import data from './generated'
-import dataConfig from './generated.config'
-import { GeneratedProblemConfigData, GeneratedProblemConfigDataSchema, GeneratedProblemData, GeneratedProblemDataSchema, Problem, ProblemConfig } from './schema'
+import data from "./generated"
+import dataConfig from "./generated.config"
+import {
+  GeneratedProblemConfigData,
+  GeneratedProblemConfigDataSchema,
+  GeneratedProblemData,
+  GeneratedProblemDataSchema,
+  Problem,
+  ProblemConfig,
+} from "./schema"
 
 const parsedData = GeneratedProblemDataSchema.parse(data)
 const parsedDataConfig = GeneratedProblemConfigDataSchema.parse(dataConfig)

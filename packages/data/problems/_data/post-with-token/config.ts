@@ -1,8 +1,6 @@
 import type { ProblemConfig } from "../../schema"
 
-import { writeFile } from "fs/promises"
-import { readFile } from "fs/promises"
-import { cp } from "fs/promises"
+import { cp, readFile, writeFile } from "fs/promises"
 
 async function testcaseConfig({
   id,

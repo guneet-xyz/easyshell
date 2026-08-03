@@ -1,6 +1,5 @@
 **/node_modules
-apps/website/.open-next
-apps/website/.next
-apps/website/.vercel
-data
-
+/apps/website/.open-next
+/apps/website/.next
+/apps/website/.vercel
+/data

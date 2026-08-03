@@ -1,5 +1,6 @@
-import type { ProblemConfig } from "../../schema"
 import { getFs, testcaseDir } from "@easyshell/utils/build"
+
+import type { ProblemConfig } from "../../schema"
 
 const SLUG = "count-files"
 

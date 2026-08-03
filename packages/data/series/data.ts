@@ -1,4 +1,4 @@
-import { Series } from "./schema";
+import { Series } from "./schema"
 
 export const SeriesList: Array<Series> = [
   {

@@ -1,5 +1,8 @@
-import { generateProblemsData, generateProblemConfigData} from "../problems/generate";
-import { generateWikiData } from "../wiki/generate";
+import {
+  generateProblemConfigData,
+  generateProblemsData,
+} from "../problems/generate"
+import { generateWikiData } from "../wiki/generate"
 
 async function main() {
   await generateProblemConfigData()
@@ -11,4 +14,3 @@ main().catch((err) => {
   console.error(err)
   process.exit(1)
 })
-

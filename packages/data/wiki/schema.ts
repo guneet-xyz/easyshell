@@ -2,13 +2,13 @@ import z from "zod"
 
 export const WikiFrontmatterSchema = z.object({
   title: z.string(),
-  type: z.enum(["editorial"])
+  type: z.enum(["editorial"]),
 })
 
 export const WikiSchema = WikiFrontmatterSchema.extend({
   id: z.string(),
   body: z.string(),
-  lastEdited: z.number()
+  lastEdited: z.number(),
 })
 
 export type Wiki = z.infer<typeof WikiSchema>

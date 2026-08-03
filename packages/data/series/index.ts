@@ -1,4 +1,4 @@
-import { SeriesList } from "./data";
+import { SeriesList } from "./data"
 
 export function getSeries() {
   return SeriesList

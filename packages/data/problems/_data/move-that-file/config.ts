@@ -1,5 +1,6 @@
-import type { FsType, ProblemConfig } from "../../schema"
 import { PROBLEMS_DIR, getFs } from "@easyshell/utils/build"
+
+import type { FsType, ProblemConfig } from "../../schema"
 
 const SLUG = "move-that-file"
 

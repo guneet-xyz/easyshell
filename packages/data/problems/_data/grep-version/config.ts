@@ -1,8 +1,8 @@
+import { testcaseDir } from "@easyshell/utils/build"
+
 import type { ProblemConfig } from "../../schema"
 
-import { readFile } from "fs/promises"
-import { readdir } from "fs/promises"
-import { testcaseDir } from "@easyshell/utils/build"
+import { readFile, readdir } from "fs/promises"
 import { join } from "path"
 
 const SLUG = "grep-version"

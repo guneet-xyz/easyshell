@@ -27,13 +27,7 @@ import { BsGearWideConnected } from "react-icons/bs"
 import { PiCaretLeftFill } from "react-icons/pi"
 import { toast } from "sonner"
 
-export function SubmitPrompt({
-  problemId,
-  problemSlug,
-}: {
-  problemId: number
-  problemSlug: string
-}) {
+export function SubmitPrompt({ problemId }: { problemId: string }) {
   const pathname = usePathname()
   const router = useRouter()
   const posthog = usePostHog()
@@ -47,7 +41,7 @@ export function SubmitPrompt({
   async function handleSubmit() {
     setSubmitting(true)
     posthog.capture("submission", {
-      problemSlug,
+      problemId,
     })
     const resp = await newSubmission({
       problemId,

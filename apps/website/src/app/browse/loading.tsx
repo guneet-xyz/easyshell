@@ -14,7 +14,7 @@ export default async function Page() {
       </div>
       <div className="mt-4 flex gap-4">
         {allSeries.map((series) => (
-          <SeriesCardSkeleton key={series.slug} series={series} />
+          <SeriesCardSkeleton key={series.id} series={series} />
         ))}
       </div>
       <div className="font-clash-display mt-4 text-2xl font-semibold">

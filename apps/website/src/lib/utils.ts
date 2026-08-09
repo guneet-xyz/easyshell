@@ -42,3 +42,7 @@ export function max(...numbers: number[]): number {
 
 export const HTTP_STATUS_LOCKED = 423
 export const HTTP_STATUS_INTERNAL_SERVER_ERROR = 500
+
+export function strCmp(a: string, b: string, order: "asc" | "desc") {
+  return order === "asc" ? a.localeCompare(b) : b.localeCompare(a)
+}

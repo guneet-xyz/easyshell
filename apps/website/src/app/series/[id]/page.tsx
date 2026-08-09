@@ -16,12 +16,12 @@ import { PiPlayDuotone } from "react-icons/pi"
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>
+  params: Promise<{ id: string }>
 }): Promise<Metadata> {
-  const { slug } = await params
-  const series = await getSeries(slug)
+  const { id } = await params
+  const series = await getSeries(id)
   return {
-    title: `series - ${slug}`,
+    title: `series - ${id}`,
     description: series?.description,
   }
 }
@@ -29,10 +29,10 @@ export async function generateMetadata({
 export default async function Page({
   params,
 }: {
-  params: Promise<{ slug: string }>
+  params: Promise<{ id: string }>
 }) {
-  const { slug } = await params
-  const series = await getSeries(slug)
+  const { id } = await params
+  const series = await getSeries(id)
   if (!series) {
     notFound()
   }
@@ -64,7 +64,7 @@ export default async function Page({
                 </div>
                 <div className="flex flex-col items-center justify-center gap-2 p-2">
                   {section.problems.map((p) => (
-                    <Problem key={p} slug={p} userId={userId} />
+                    <Problem key={p} id={p} userId={userId} />
                   ))}
                 </div>
               </div>
@@ -149,7 +149,7 @@ async function ProgressColumn({
           </div>
           <Link
             prefetch={true}
-            href={`/problems/${next_problem_info.slug}`}
+            href={`/problems/${next_problem_info.id}`}
             className={cn(
               "mt-2 flex w-full justify-between gap-4 rounded-xl border px-4 py-2 transition-colors",
               {
@@ -175,7 +175,7 @@ async function ProgressColumn({
                 {next_problem_info.title}
               </div>
               <div className="font-geist-mono whitespace-nowrap text-xs">
-                {next_problem_info.slug}
+                {next_problem_info.id}
               </div>
             </div>
             <div className="flex flex-col items-end justify-between">
@@ -199,14 +199,14 @@ async function ProgressColumn({
   )
 }
 
-async function Problem({ slug, userId }: { slug: string; userId?: string }) {
-  const { id, title, difficulty } = await getPublicProblemInfo(slug)
-  const status = userId ? await getProblemStatus(slug, userId) : undefined
+async function Problem({ id, userId }: { id: string; userId?: string }) {
+  const { title, difficulty } = await getPublicProblemInfo(id)
+  const status = userId ? await getProblemStatus(id, userId) : undefined
 
   return (
     <Link
       prefetch={true}
-      href={`/problems/${slug}`}
+      href={`/problems/${id}`}
       className={cn(
         "w-120 group flex items-center justify-between overflow-hidden rounded-xl px-4 py-2 shadow",
         "relative border border-b-4",
@@ -235,7 +235,7 @@ async function Problem({ slug, userId }: { slug: string; userId?: string }) {
       <div className="flex flex-col">
         <div className="font-clash-display text-xl font-medium">{title}</div>
         <div className="font-geist-mono flex gap-2 text-xs">
-          <span className="dark:text-neutral-400">{slug}</span>
+          <span className="dark:text-neutral-400">{id}</span>
           <span
             className={cn({
               "text-red-500": difficulty === "hard",

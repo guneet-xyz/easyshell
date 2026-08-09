@@ -13,7 +13,7 @@ export function ProblemBookmark({
   isBookmarked,
   className,
 }: {
-  problemId: number
+  problemId: string
   isBookmarked: boolean
   className?: string
 }) {

@@ -16,8 +16,8 @@ const wikiComponents: typeof customComponents = {
   ol: ({ children }) => (
     <ol className="list-inside list-decimal pl-4">{children}</ol>
   ),
-  ProblemLink: ({ slug }: { slug: string }) => <ProblemLink slug={slug} />,
-  WikiLink: ({ slug }: { slug: string }) => <WikiLink slug={slug} />,
+  ProblemLink: ({ id }: { id: string }) => <ProblemLink id={id} />,
+  WikiLink: ({ id }: { id: string }) => <WikiLink id={id} />,
 }
 
 export default function MarkdownClient({

@@ -1,7 +1,7 @@
 import z from "zod"
 
 export const SeriesSchema = z.object({
-  slug: z.string(),
+  id: z.string(),
   name: z.string(),
   image: z.string(),
   description: z.string(),

@@ -28,19 +28,19 @@ export default async function Page() {
         return {
           ...info,
           status: submission_stats
-            ? submission_stats.problems[info.slug]
+            ? submission_stats.problems[info.id]
             : undefined,
         }
       }),
     )
-  ).sort((a, b) => a.id - b.id)
+  ).sort((a, b) => a.id.localeCompare(b.id))
   const tags = await getAllTags()
   const allSeries = await getAllSeries()
 
   const user_bookmarks = user ? await getUserBookmarks(user.id) : []
   const user_attempted = submission_stats
     ? Object.keys(submission_stats.problems).filter(
-        (slug) => submission_stats.problems[slug] === "attempted",
+        (id) => submission_stats.problems[id] === "attempted",
       )
     : []
 

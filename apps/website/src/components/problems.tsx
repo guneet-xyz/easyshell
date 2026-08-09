@@ -51,7 +51,7 @@ function Problem({
 }) {
   return (
     <Link
-      href={`/problems/${info.slug}`}
+      href={`/problems/${info.id}`}
       className="group flex cursor-pointer divide-x text-xs transition-all *:p-2 hover:bg-gray-100 lg:text-base dark:bg-neutral-950 dark:opacity-75 dark:hover:bg-black dark:hover:opacity-100"
       prefetch={true}
     >
@@ -65,7 +65,7 @@ function Problem({
         </div>
         {showTags && (
           <div className="flex items-center justify-between px-2">
-            <div className="text-xs text-neutral-400">{info.slug}</div>
+            <div className="text-xs text-neutral-400">{info.id}</div>
             <div className="flex items-center gap-2">
               {info.tags.map((t) => (
                 <Badge className="px-2 py-0 text-xs" key={t}>

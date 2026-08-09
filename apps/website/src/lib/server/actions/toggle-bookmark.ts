@@ -8,7 +8,7 @@ import { isProblemBookmarked } from "@/lib/server/queries"
 
 import { and, eq } from "drizzle-orm"
 
-export async function toggleBookmark(problemId: number): Promise<{
+export async function toggleBookmark(problemId: string): Promise<{
   newBookmarkState: boolean
 } | null> {
   const userId = (await getAuthSession())?.user.id

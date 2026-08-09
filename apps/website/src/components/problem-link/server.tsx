@@ -4,19 +4,19 @@ import { getProblemDifficulty, getProblemStatus } from "@/lib/server/problems"
 import { ProblemLinkBase } from "."
 
 export async function ProblemLink({
-  slug,
+  id,
   className,
 }: {
-  slug: string
+  id: string
   className?: string
 }) {
   const userId = (await getAuthSession())?.user.id
-  const difficulty = await getProblemDifficulty(slug)
-  const status = userId ? await getProblemStatus(slug, userId) : undefined
+  const difficulty = await getProblemDifficulty(id)
+  const status = userId ? await getProblemStatus(id, userId) : undefined
 
   return (
     <ProblemLinkBase
-      slug={slug}
+      id={id}
       difficulty={difficulty}
       status={status}
       className={className}

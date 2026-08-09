@@ -12,10 +12,10 @@ import { FaCheck, FaXmark } from "react-icons/fa6"
 import { ImSpinner3 } from "react-icons/im"
 
 export function PastSubmissions({
-  problemSlug,
+  problemId,
   pastSubmissions,
 }: {
-  problemSlug: string
+  problemId: string
   pastSubmissions: Awaited<ReturnType<typeof getUserSubmissions>>
 }) {
   const router = useRouter()
@@ -60,7 +60,7 @@ export function PastSubmissions({
         <Link
           prefetch={true}
           key={submission.id}
-          href={`/problems/${problemSlug}?tab=submissions&submission=${submission.id}`}
+          href={`/problems/${problemId}?tab=submissions&submission=${submission.id}`}
           className={cn(
             "flex items-center gap-2 rounded border p-2 transition-colors",
             {

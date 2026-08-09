@@ -22,8 +22,7 @@ async function testcaseConfig({
 }
 
 const config: ProblemConfig = {
-  id: 19,
-  slug: SLUG,
+  id: SLUG,
   title: "Count Files",
   description: `Count every file (including hidden ones) in the current directory and below.`,
   difficulty: "easy",

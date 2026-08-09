@@ -25,8 +25,7 @@ async function testcaseConfig({
 }
 
 const config: ProblemConfig = {
-  id: 20,
-  slug: SLUG,
+  id: SLUG,
   title: "Count Lines",
   description: `Count the number of lines in a file`,
   difficulty: "easy",

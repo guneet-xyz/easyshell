@@ -1,4 +1,3 @@
-import { getProblemSlugFromId } from "@easyshell/data/problems"
 import { db } from "@easyshell/db"
 import {
   submissionTestcaseQueue,
@@ -79,11 +78,9 @@ async function processQueueItem(
   )[0]?.problemId
   if (!problemId) throw new Error("Submission not found")
 
-  const problemSlug = getProblemSlugFromId(problemId)
-
   const { startedAt, finishedAt, output, passed } =
     await runSubmissionAndGetOutput({
-      problemSlug,
+      problemId,
       testcaseId: item.testcaseId,
       input: item.input,
       suffix: `submission-${item.submissionId}`,

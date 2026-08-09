@@ -34,8 +34,7 @@ async function testcaseConfig({
 }
 
 const config: ProblemConfig = {
-  id: 15,
-  slug: SLUG,
+  id: SLUG,
   title: "Grep Version",
   description: `Print the version of your python package.`,
   difficulty: "medium",

@@ -38,8 +38,7 @@ RUN go build -C /src/daemon -o /daemon
 }
 
 const config: ProblemConfig = {
-  id: 10,
-  slug: SLUG,
+  id: SLUG,
   title: "Get it Curl",
   description: `Dig up the freshest hot take.`,
   difficulty: "medium",

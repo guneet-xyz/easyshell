@@ -10,10 +10,10 @@ import { notFound } from "next/navigation"
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>
+  params: Promise<{ id: string }>
 }): Promise<Metadata> {
-  const { slug } = await params
-  const metadata = await getWikiMetadata(slug)
+  const { id } = await params
+  const metadata = await getWikiMetadata(id)
   if (!metadata)
     return {
       title: "easyshell - not found",
@@ -21,19 +21,19 @@ export async function generateMetadata({
 
   if (metadata.type === "editorial")
     return {
-      title: `editorial - ${slug}`,
+      title: `editorial - ${id}`,
     }
 
-  return { title: `wiki - ${slug}` }
+  return { title: `wiki - ${id}` }
 }
 
 export default async function Page({
   params,
 }: {
-  params: Promise<{ slug: string }>
+  params: Promise<{ id: string }>
 }) {
-  const { slug } = await params
-  const metadata = await getWikiFull(slug)
+  const { id } = await params
+  const metadata = await getWikiFull(id)
   if (!metadata) notFound()
 
   return (
@@ -47,7 +47,7 @@ export default async function Page({
             <div>{metadata.type === "editorial" ? "EDITORIAL" : null}</div>
           </div>
         </div>
-        {metadata.type === "editorial" ? <SpoilerWarning slug={slug} /> : null}
+        {metadata.type === "editorial" ? <SpoilerWarning id={id} /> : null}
         <div>
           <Markdown source={metadata.body} />
         </div>
@@ -57,7 +57,7 @@ export default async function Page({
   )
 }
 
-export async function SpoilerWarning({ slug }: { slug: string }) {
+export async function SpoilerWarning({ id }: { id: string }) {
   return (
     <div className="mb-4 bg-neutral-100 px-4 py-2 text-center dark:bg-neutral-800">
       <span className="font-clash-display font-semibold text-neutral-700 dark:text-neutral-300">
@@ -66,7 +66,7 @@ export async function SpoilerWarning({ slug }: { slug: string }) {
       <span className="font-clash-display text-neutral-700 dark:text-neutral-300">
         {`This wiki page contains spoilers for the problem `}
       </span>
-      <ProblemLink slug={slug} />
+      <ProblemLink id={id} />
     </div>
   )
 }

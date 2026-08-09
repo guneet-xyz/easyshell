@@ -5,7 +5,6 @@ import { terminalSessionLogs, terminalSessions } from "@easyshell/db/schema"
 
 import { db } from "@/db"
 import { env } from "@/env"
-import { getProblemSlugFromId } from "@/lib/server/problems"
 import {
   HTTP_STATUS_INTERNAL_SERVER_ERROR,
   HTTP_STATUS_LOCKED,
@@ -23,12 +22,9 @@ export async function runTerminalSession({
   testcaseId: string
   sessionId: number
 }) {
-  const problemSlug = await getProblemSlugFromId(parseInt(problemId))
-  if (!problemSlug) throw new Error("Problem not found")
-
   await sessionManagerCreate({
-    image: `easyshell-${problemSlug}-${testcaseId}`,
-    container_name: `easyshell-${problemSlug}-${testcaseId}-session-${sessionId}`,
+    image: `easyshell-${problemId}-${testcaseId}`,
+    container_name: `easyshell-${problemId}-${testcaseId}-session-${sessionId}`,
   })
 }
 
@@ -38,7 +34,7 @@ export async function getTerminalSession({
   testcaseId,
 }: {
   userId: string
-  problemId: number
+  problemId: string
   testcaseId: number
 }) {
   let session = await getActiveTerminalSession({
@@ -70,7 +66,7 @@ export async function createTerminalSession({
   testcaseId,
 }: {
   userId: string
-  problemId: number
+  problemId: string
   testcaseId: number
 }) {
   const sessionId = await insertTerminalSession({
@@ -80,7 +76,7 @@ export async function createTerminalSession({
   })
 
   await runTerminalSession({
-    problemId: problemId.toString(),
+    problemId: problemId,
     testcaseId: testcaseId.toString(),
     sessionId: sessionId,
   })
@@ -92,11 +88,9 @@ export async function getActiveTerminalSession({
   testcaseId,
 }: {
   userId: string
-  problemId: number
+  problemId: string
   testcaseId: number
 }) {
-  const problemSlug = await getProblemSlugFromId(problemId)
-
   const session = await db
     .select()
     .from(terminalSessions)
@@ -112,7 +106,7 @@ export async function getActiveTerminalSession({
 
   if (!session[0]) return null
 
-  const container_name = `easyshell-${problemSlug}-${testcaseId}-session-${session[0].id}`
+  const container_name = `easyshell-${problemId}-${testcaseId}-session-${session[0].id}`
   const isRunning = await sessionManagerIsRunning(container_name)
 
   if (isRunning) return session[0]
@@ -152,7 +146,7 @@ export async function insertTerminalSession({
   testcaseId,
 }: {
   userId: string
-  problemId: number
+  problemId: string
   testcaseId: number
 }) {
   const inserted = await db

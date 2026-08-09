@@ -17,8 +17,8 @@ export function Wrapper({ children }: { children: React.ReactNode }) {
   )
 }
 
-export async function ProblemHints({ slug }: { slug: string }) {
-  const hintCount = await getProblemHintCount(slug)
+export async function ProblemHints({ id }: { id: string }) {
+  const hintCount = await getProblemHintCount(id)
   if (hintCount === 0)
     return (
       <Wrapper>
@@ -31,7 +31,7 @@ export async function ProblemHints({ slug }: { slug: string }) {
     Array.from({ length: hintCount }).map(async (_, hint) => {
       return {
         hint: hint + 1,
-        node: <Markdown source={await getProblemHintBody(slug, hint + 1)} />,
+        node: <Markdown source={await getProblemHintBody(id, hint + 1)} />,
       }
     }),
   )

@@ -28,8 +28,7 @@ async function testcaseConfig({
 }
 
 const config: ProblemConfig = {
-  id: 22,
-  slug: SLUG,
+  id: SLUG,
   title: "CSV to JSON",
   description: `Extract a CSV column and convert it to JSON.`,
   difficulty: "medium",

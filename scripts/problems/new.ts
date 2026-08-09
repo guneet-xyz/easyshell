@@ -1,7 +1,5 @@
-import { getProblemConfig, getProblemSlugs } from "@easyshell/data/problems"
+import { getProblemIds } from "@easyshell/data/problems"
 import { PROBLEMS_DIR } from "@easyshell/utils/build"
-
-import { max } from "@/lib/utils"
 
 import { mkdir, writeFile } from "fs/promises"
 
@@ -28,8 +26,7 @@ async function testcaseConfig({
 }
 
 const config: ProblemConfig = {
-  id: __ID__,
-  slug: "__SLUG__",
+  id: "__ID__",
   title: "__TITLE__",
   description: \`description\`,
   difficulty: "easy",
@@ -65,7 +62,7 @@ Problem statement here.
 async function main() {
   const args = process.argv.slice(2)
   if (args.length < 1) {
-    console.error("Provide a problem slug")
+    console.error("Provide a problem id")
     process.exit(1)
   }
   if (args.length > 1) {
@@ -73,36 +70,32 @@ async function main() {
     process.exit(1)
   }
 
-  const slug = args[0]!
+  const id = args[0]!
 
-  if (!slug.match(/^[a-z0-9-]+$/)) {
-    console.error("Invalid slug")
+  if (!id.match(/^[a-z0-9-]+$/)) {
+    console.error("Invalid id")
     process.exit(1)
   }
 
-  const problems = getProblemSlugs()
-  if (problems.includes(slug)) {
-    console.error(`Problem ${slug} already exists`)
+  const problems = getProblemIds()
+  if (problems.includes(id)) {
+    console.error(`Problem ${id} already exists`)
     process.exit(1)
   }
 
-  const id =
-    max(...(await Promise.all(problems.map((p) => getProblemConfig(p).id)))) + 1
-
-  const title = slug
+  const title = id
 
   let config = CONFIG_TEMPLATE
-  config = config.replace("__ID__", id.toString())
-  config = config.replace("__SLUG__", slug)
+  config = config.replace("__ID__", id)
   config = config.replace("__TITLE__", title)
 
-  const PROBLEM_DIR = `${PROBLEMS_DIR}/${slug}`
+  const PROBLEM_DIR = `${PROBLEMS_DIR}/${id}`
   await mkdir(PROBLEM_DIR, { recursive: true })
 
   await writeFile(`${PROBLEM_DIR}/config.ts`, config)
   await writeFile(`${PROBLEM_DIR}/page.md`, PAGE_TEMPLATE)
 
-  console.log(`Created Problem : ${slug}`)
+  console.log(`Created Problem : ${id}`)
 }
 
 await main()

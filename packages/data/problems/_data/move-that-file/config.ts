@@ -29,8 +29,7 @@ async function testcaseConfig({
 }
 
 const config: ProblemConfig = {
-  id: 4,
-  slug: "move-that-file",
+  id: "move-that-file",
   title: "Move That File",
   description: `Move a file from one location to another—because sometimes, things just need to be somewhere else. 🚀`,
   difficulty: "easy",

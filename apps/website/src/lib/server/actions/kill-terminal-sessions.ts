@@ -11,7 +11,7 @@ export async function killTerminalSessions({
   problemId,
   testcaseId,
 }: {
-  problemId: number
+  problemId: string
   testcaseId: number
 }) {
   const user = (await getAuthSession())?.user

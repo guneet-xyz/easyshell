@@ -7,12 +7,12 @@ import Link from "next/link"
 export function ProblemLinkBase({
   status,
   difficulty,
-  slug,
+  id,
   className,
 }: {
   status?: "solved" | "attempted"
   difficulty?: "easy" | "medium" | "hard"
-  slug: string
+  id: string
   className?: string
 }) {
   return (
@@ -28,7 +28,7 @@ export function ProblemLinkBase({
     >
       <Link
         prefetch={true}
-        href={`/problems/${slug}`}
+        href={`/problems/${id}`}
         className={cn(
           "shadow-xs ml-1 inline w-fit space-x-1 whitespace-nowrap rounded-md border px-2 py-1",
           {
@@ -44,7 +44,7 @@ export function ProblemLinkBase({
             "text-orange-600 dark:text-orange-400": difficulty === "medium",
           })}
         >
-          {slug}
+          {id}
         </span>
         <AlternativeProblemStatus
           status={status}

@@ -8,17 +8,11 @@ import { Submissions } from "./submissions"
 import { ProblemPageTabs } from "./tabs"
 import { TestcaseTabs } from "./testcases/tabs"
 
-export async function MobileView({
-  problemId,
-  problemSlug,
-}: {
-  problemId: number
-  problemSlug: string
-}) {
+export async function MobileView({ problemId }: { problemId: string }) {
   const session = await getAuthSession()
   const user = session?.user
 
-  const testcases = await getPublicTestcaseInfo(problemSlug)
+  const testcases = await getPublicTestcaseInfo(problemId)
   const testcaseIds = testcases.map((testcase) => testcase.id)
   const submissions = user
     ? await getUserSubmissions({ problemId, userId: user.id })
@@ -30,17 +24,13 @@ export async function MobileView({
           {
             title: "Problem",
             value: "problem",
-            content: <Problem slug={problemSlug} />,
+            content: <Problem id={problemId} />,
           },
           {
             title: "Testcases",
             value: "testcases",
             content: user ? (
-              <TestcaseTabs
-                problemId={problemId}
-                problemSlug={problemSlug}
-                testcases={testcaseIds}
-              />
+              <TestcaseTabs problemId={problemId} testcases={testcaseIds} />
             ) : (
               <LoginToProceed />
             ),
@@ -51,7 +41,6 @@ export async function MobileView({
             content: submissions ? (
               <Submissions
                 problemId={problemId}
-                problemSlug={problemSlug}
                 pastSubmissions={submissions}
               />
             ) : (

@@ -4,7 +4,6 @@ import { terminalSessions } from "@easyshell/db/schema"
 
 import { db } from "@/db"
 import { getAuthSession } from "@/lib/server/auth"
-import { getProblemSlugFromId } from "@/lib/server/problems"
 import {
   insertTerminalSessionLog,
   sessionManagerExec,
@@ -55,9 +54,7 @@ export async function submitTerminalSessionCommand({
     throw new Error("Session not found")
   }
 
-  const problemSlug = getProblemSlugFromId(terminalSession[0].problemId)
-
-  const container_name = `easyshell-${problemSlug}-${terminalSession[0].testcaseId}-session-${sessionId}`
+  const container_name = `easyshell-${terminalSession[0].problemId}-${terminalSession[0].testcaseId}-session-${sessionId}`
 
   const startedAt = new Date()
   const execResponse = await sessionManagerExec({

@@ -23,8 +23,7 @@ async function testcaseConfig({
 }
 
 const config: ProblemConfig = {
-  id: 2,
-  slug: SLUG,
+  id: SLUG,
   title: "Read a File",
   description: `Bring the contents of any file right into your terminal view. No GUIs allowed! 🖥️`,
   difficulty: "easy",

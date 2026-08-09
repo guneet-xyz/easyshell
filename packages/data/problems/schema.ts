@@ -25,8 +25,7 @@ export const TestcaseConfigSchema = z.object({
 
 export const ProblemConfigSchema = z
   .object({
-    id: z.number(),
-    slug: z.string().refine((val) => RegExp(/^[a-z0-9\-]*[a-z0-9]$/).test(val)),
+    id: z.string().refine((val) => RegExp(/^[a-z0-9\-]*[a-z0-9]$/).test(val)),
     title: z
       .string()
       .nonempty()

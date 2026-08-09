@@ -10,15 +10,15 @@ import { cn } from "@/lib/utils"
 
 import { ProblemBookmark } from "./bookmark"
 
-export async function ProblemHeading({ slug }: { slug: string }) {
+export async function ProblemHeading({ id }: { id: string }) {
   const session = await getAuthSession()
   const user = session?.user
-  const { id, title, description } = await getProblemInfo(slug)
+  const { title, description } = await getProblemInfo(id)
   const isBookmarked = user
     ? await isProblemBookmarked({ userId: user.id, problemId: id })
     : false
-  const difficulty = await getProblemDifficulty(slug)
-  const status = user ? await getProblemStatus(slug, user.id) : undefined
+  const difficulty = await getProblemDifficulty(id)
+  const status = user ? await getProblemStatus(id, user.id) : undefined
   return (
     <div
       className={cn(
@@ -37,7 +37,7 @@ export async function ProblemHeading({ slug }: { slug: string }) {
         <p className="text-6xl font-black">#{id}</p>
         <div className="flex grow flex-col">
           <h1 className="text-xl font-bold">{title}</h1>
-          <p className="font-mono text-sm text-neutral-500">{slug}</p>
+          <p className="font-mono text-sm text-neutral-500">{id}</p>
         </div>
         <div className="flex items-center">
           <AlternativeProblemStatus

@@ -65,7 +65,7 @@ export function SeriesCarousel({
     >
       <CarouselContent className="pb-6">
         {allSeries.map((series) => (
-          <CarouselItem key={series.slug} className="basis-auto">
+          <CarouselItem key={series.id} className="basis-auto">
             <SeriesCard
               series={series}
               num_solved={
@@ -112,11 +112,11 @@ function SeriesCard({
   )
   return (
     <Link
-      href={`/series/${series.slug}`}
-      key={series.slug}
+      href={`/series/${series.id}`}
+      key={series.id}
       className="flex w-60 flex-col overflow-hidden rounded-xl border shadow-lg transition-colors hover:bg-neutral-50 dark:bg-neutral-950/75 dark:hover:bg-black"
     >
-      <TextBackground text={series.slug} className="h-18" />
+      <TextBackground text={series.id} className="h-18" />
       <div className="flex flex-col px-4 py-2">
         <div className="flex items-center justify-between">
           <div className="font-clash-display font-semibold">{series.name}</div>
@@ -143,8 +143,8 @@ export function SeriesCardSkeleton({
 }) {
   return (
     <Link
-      href={`/series/${series.slug}`}
-      key={series.slug}
+      href={`/series/${series.id}`}
+      key={series.id}
       className="flex w-60 flex-col overflow-hidden rounded-xl border transition-colors hover:bg-neutral-50 dark:bg-neutral-950"
     >
       <div className="h-18 animate-pulse bg-neutral-100 dark:bg-stone-900"></div>

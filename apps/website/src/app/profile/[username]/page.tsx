@@ -4,11 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card } from "@/components/ui/card"
 import { db } from "@/db"
 import { getUserByUsername } from "@/lib/server/auth"
-import {
-  getProblemSlugFromId,
-  getProblems,
-  getPublicProblemInfo,
-} from "@/lib/server/problems"
+import { getProblems, getPublicProblemInfo } from "@/lib/server/problems"
 
 import { SubmissionsChart } from "./_components/submission-chart"
 
@@ -111,11 +107,9 @@ export async function getSubmissionStats(userId: string) {
 
   const solved_problems = await Promise.all(
     user_distinct_problems.map(async ({ problemId }) => {
-      const problemSlug = getProblemSlugFromId(problemId)
-      const { difficulty } = await getPublicProblemInfo(problemSlug)
+      const { difficulty } = await getPublicProblemInfo(problemId)
       return {
         problemId,
-        problemSlug,
         difficulty,
       }
     }),
@@ -164,7 +158,6 @@ export default async function Page({
   const recentlySolved = await Promise.all(
     (await getRecentlySolved(user.id)).map(async (rs) => ({
       ...rs,
-      problemSlug: getProblemSlugFromId(rs.problemId),
     })),
   )
 
@@ -217,7 +210,7 @@ export default async function Page({
               )}
             </div>
             <div className="font-geist-mono text-sm md:text-base">
-              {rs.problemSlug}
+              {rs.problemId}
             </div>
             <div className="ml-auto text-xs text-neutral-500 md:text-sm">
               {moment(rs.submittedAt).fromNow()}

@@ -8,10 +8,10 @@ import { ProblemLinkBase } from "."
 import { useEffect, useState } from "react"
 
 export function ProblemLink({
-  slug,
+  id,
   className,
 }: {
-  slug: string
+  id: string
   className?: string
 }) {
   const [difficulty, setDifficulty] = useState<
@@ -23,14 +23,14 @@ export function ProblemLink({
 
   useEffect(() => {
     void (async () => {
-      setDifficulty(await getProblemDifficulty(slug))
-      setStatus(await getProblemStatus(slug))
+      setDifficulty(await getProblemDifficulty(id))
+      setStatus(await getProblemStatus(id))
     })()
-  }, [slug])
+  }, [id])
 
   return (
     <ProblemLinkBase
-      slug={slug}
+      id={id}
       difficulty={difficulty}
       status={status}
       className={className}

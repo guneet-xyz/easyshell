@@ -26,7 +26,7 @@ export default async function Page() {
       </div>
       <div className="flex w-2/3 flex-col gap-4">
         {pages.map((page) => (
-          <WikiPageCard key={page.slug} page={page} />
+          <WikiPageCard key={page.id} page={page} />
         ))}
       </div>
       <Footer className="mt-auto" />
@@ -40,20 +40,14 @@ function WikiPageCard({
   page: Awaited<ReturnType<typeof getWikiPages>>[number]
 }) {
   if (page.type === "editorial") {
-    return <WikiEditorialCard title={page.title} slug={page.slug} />
+    return <WikiEditorialCard title={page.title} id={page.id} />
   }
   return null
 }
 
-async function WikiEditorialCard({
-  title,
-  slug,
-}: {
-  title: string
-  slug: string
-}) {
+async function WikiEditorialCard({ title, id }: { title: string; id: string }) {
   return (
-    <Link href={`/wiki/${slug}`} prefetch={true}>
+    <Link href={`/wiki/${id}`} prefetch={true}>
       <Card className="flex w-full flex-col gap-4 border p-4 transition-colors hover:bg-neutral-100/60 dark:hover:bg-neutral-950/60">
         <div className="flex flex-col justify-center">
           <div className="font-clash-display text-4xl font-bold">{title}</div>

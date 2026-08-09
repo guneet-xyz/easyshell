@@ -4,19 +4,19 @@ export async function getAllSeries() {
   return getGeneratedSeries()
 }
 
-export async function getSeriesForProblem(problemSlug: string) {
+export async function getSeriesForProblem(problemId: string) {
   const series = getGeneratedSeries()
     .filter((s) =>
-      s.sections.some((section) => section.problems.includes(problemSlug)),
+      s.sections.some((section) => section.problems.includes(problemId)),
     )
     .map((s) => ({
-      slug: s.slug,
+      id: s.id,
       name: s.name,
     }))
   return series
 }
 
-export async function getSeries(slug: string) {
-  const series = getGeneratedSeries().find((s) => s.slug === slug)
+export async function getSeries(id: string) {
+  const series = getGeneratedSeries().find((s) => s.id === id)
   return series ?? null
 }

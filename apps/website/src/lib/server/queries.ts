@@ -9,7 +9,6 @@ import {
 } from "@easyshell/db/schema"
 
 import { db } from "@/db"
-import { getProblemSlugFromId } from "@/lib/server/problems"
 
 import { and, desc, eq, sql } from "drizzle-orm"
 
@@ -17,7 +16,7 @@ export async function getUserSubmissions({
   problemId,
   userId,
 }: {
-  problemId: number
+  problemId: string
   userId: string
 }) {
   const past_submissions = await Promise.all(
@@ -81,7 +80,7 @@ export async function isProblemBookmarked({
   problemId,
   userId,
 }: {
-  problemId: number
+  problemId: string
   userId: string
 }) {
   const result = await db
@@ -177,8 +176,7 @@ export async function getUserSubmissionStats(
 
   const result_map: Record<string, "solved" | "attempted"> = {}
   for (const { problemId, passed } of result) {
-    const slug = getProblemSlugFromId(problemId)
-    result_map[slug] = passed ? "solved" : "attempted"
+    result_map[problemId] = passed ? "solved" : "attempted"
   }
 
   return {

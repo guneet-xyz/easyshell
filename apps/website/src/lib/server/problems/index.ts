@@ -1,4 +1,4 @@
-import { getProblem, getProblemSlugs } from "@easyshell/data/problems"
+import { getProblem, getProblemIds } from "@easyshell/data/problems"
 import type { Problem } from "@easyshell/data/problems/schema"
 
 import { getUserSubmissionStats } from "@/lib/server/queries"
@@ -9,16 +9,13 @@ export async function getProblemInfo(problem: string): Promise<Problem> {
 }
 
 export async function getProblems() {
-  return getProblemSlugs()
+  return getProblemIds()
 }
 
-export { getProblemSlugFromId } from "@easyshell/data/problems"
-
-export async function getPublicProblemInfo(slug: string) {
-  const info = getProblem(slug)
+export async function getPublicProblemInfo(id: string) {
+  const info = getProblem(id)
   return {
     id: info.id,
-    slug: info.slug,
     title: info.title,
     description: info.description,
     difficulty: info.difficulty,
@@ -26,8 +23,8 @@ export async function getPublicProblemInfo(slug: string) {
   }
 }
 
-export async function getPublicTestcaseInfo(slug: string) {
-  const info = getProblem(slug)
+export async function getPublicTestcaseInfo(id: string) {
+  const info = getProblem(id)
   return info.testcases.map((tc) => ({
     id: tc.id,
     expected_stdout: tc.expected_stdout,
@@ -37,39 +34,39 @@ export async function getPublicTestcaseInfo(slug: string) {
   }))
 }
 
-export async function getProblemBody(slug: string): Promise<string> {
-  return getProblem(slug).body
+export async function getProblemBody(id: string): Promise<string> {
+  return getProblem(id).body
 }
 
 export async function getProblemHintBody(
-  slug: string,
+  id: string,
   hint: number,
 ): Promise<string> {
-  const hintBody = getProblem(slug).hints[hint - 1]
+  const hintBody = getProblem(id).hints[hint - 1]
   if (hintBody === undefined) throw new Error("Hint not found")
   return hintBody
 }
 
-export async function getProblemHintCount(slug: string): Promise<number> {
-  return getProblem(slug).hints.length
+export async function getProblemHintCount(id: string): Promise<number> {
+  return getProblem(id).hints.length
 }
 
-export async function getProblemDifficulty(slug: string) {
-  const info = await getProblemInfo(slug)
+export async function getProblemDifficulty(id: string) {
+  const info = await getProblemInfo(id)
   return info.difficulty
 }
 
-export async function getProblemStatus(slug: string, userId: string) {
+export async function getProblemStatus(id: string, userId: string) {
   const stats = await getUserSubmissionStats(userId)
-  return stats.problems[slug]
+  return stats.problems[id]
 }
 
-export async function getProblemMetadata(slug: string): Promise<{
+export async function getProblemMetadata(id: string): Promise<{
   tags: Array<string>
-  series: Array<{ slug: string; name: string }>
+  series: Array<{ id: string; name: string }>
 }> {
-  const tags = (await getProblemInfo(slug)).tags
-  const series = await getSeriesForProblem(slug)
+  const tags = (await getProblemInfo(id)).tags
+  const series = await getSeriesForProblem(id)
 
   return {
     tags,

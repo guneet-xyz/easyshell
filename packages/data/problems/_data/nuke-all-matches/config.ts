@@ -27,8 +27,7 @@ async function testcaseConfig({
 }
 
 const config: ProblemConfig = {
-  id: 9,
-  slug: SLUG,
+  id: SLUG,
   title: "Nuke All Matches",
   description: `Some files are just junk, and they’re everywhere! Find them all and wipe them out. 💥`,
   difficulty: "easy",

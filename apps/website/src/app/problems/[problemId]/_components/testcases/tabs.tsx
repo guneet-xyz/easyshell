@@ -9,11 +9,9 @@ import { Suspense, useEffect } from "react"
 
 export function TestcaseTabs({
   problemId,
-  problemSlug,
   testcases,
 }: {
-  problemId: number
-  problemSlug: string
+  problemId: string
   testcases: number[]
 }) {
   const pathname = usePathname()
@@ -46,11 +44,7 @@ export function TestcaseTabs({
       </Tabs>
       <div className="grow p-2">
         <Suspense fallback={<div>Loading</div>}>
-          <TestcaseTerminal
-            problemId={problemId}
-            problemSlug={problemSlug}
-            testcase={testcase}
-          />
+          <TestcaseTerminal problemId={problemId} testcase={testcase} />
         </Suspense>
       </div>
     </div>

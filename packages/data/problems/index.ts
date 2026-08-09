@@ -16,28 +16,22 @@ export function getProblems(): GeneratedProblemData {
   return parsedData
 }
 
-export function getProblem(slug: string): Problem {
-  const problem = parsedData.find((p) => p.slug === slug)
+export function getProblem(id: string): Problem {
+  const problem = parsedData.find((p) => p.id === id)
   if (!problem) throw new Error("Problem not found")
   return problem
 }
 
-export function getProblemSlugFromId(id: number): string {
-  const problem = parsedData.find((p) => p.id === id)
-  if (!problem) throw new Error("Problem not found")
-  return problem.slug
-}
-
-export function getProblemSlugs(): Array<string> {
-  return parsedData.map((p) => p.slug)
+export function getProblemIds(): Array<string> {
+  return parsedData.map((p) => p.id)
 }
 
 export function getProblemConfigs(): GeneratedProblemConfigData {
   return parsedDataConfig
 }
 
-export function getProblemConfig(slug: string): ProblemConfig {
-  const problem = parsedDataConfig.find((p) => p.slug === slug)
+export function getProblemConfig(id: string): ProblemConfig {
+  const problem = parsedDataConfig.find((p) => p.id === id)
   if (!problem) throw new Error("Problem not found")
   return problem
 }

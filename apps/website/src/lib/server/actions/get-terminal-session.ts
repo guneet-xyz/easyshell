@@ -7,7 +7,7 @@ export async function getTerminalSession({
   problemId,
   testcaseId,
 }: {
-  problemId: number
+  problemId: string
   testcaseId: number
 }) {
   const user = (await getAuthSession())?.user

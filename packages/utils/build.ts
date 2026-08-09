@@ -48,8 +48,8 @@ export async function getFs(
   return fs
 }
 
-export function testcaseDir(problemSlug: string, testcaseId: number): string {
-  return `${PROBLEMS_DIR}/${problemSlug}/testcases/${testcaseId}`
+export function testcaseDir(problemId: string, testcaseId: number): string {
+  return `${PROBLEMS_DIR}/${problemId}/testcases/${testcaseId}`
 }
 
 export async function lastModified(path: string): Promise<number> {

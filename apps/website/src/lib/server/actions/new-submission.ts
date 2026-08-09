@@ -4,19 +4,17 @@ import { submissionTestcaseQueue, submissions } from "@easyshell/db/schema"
 
 import { db } from "@/db"
 import { getAuthSession } from "@/lib/server/auth"
-import { getProblemInfo, getProblemSlugFromId } from "@/lib/server/problems"
+import { getProblemInfo } from "@/lib/server/problems"
 
 export async function newSubmission({
   problemId,
   input,
 }: {
-  problemId: number
+  problemId: string
   input: string
 }) {
   const user = (await getAuthSession())?.user
   if (!user) return null
-
-  const problemSlug = getProblemSlugFromId(problemId)
 
   const submissionId = (
     await db
@@ -33,7 +31,7 @@ export async function newSubmission({
     throw new Error("Failed to create submission")
   }
 
-  const problem = await getProblemInfo(problemSlug)
+  const problem = await getProblemInfo(problemId)
   // TODO: parallelize this
   for (const testcase of problem.testcases) {
     await db.insert(submissionTestcaseQueue).values({

@@ -4,8 +4,8 @@ import { getProblemMetadata } from "@/lib/server/problems"
 
 import Link from "next/link"
 
-export async function ProblemAbout({ slug }: { slug: string }) {
-  const { tags, series } = await getProblemMetadata(slug)
+export async function ProblemAbout({ id }: { id: string }) {
+  const { tags, series } = await getProblemMetadata(id)
   return (
     <div className="mx-4 mt-8 border-t dark:text-gray-300">
       <div className="mb-4 mt-6 text-xl font-bold">About this problem</div>
@@ -26,7 +26,7 @@ export async function ProblemAbout({ slug }: { slug: string }) {
 
             <div className="flex items-center gap-4 border-l border-neutral-300 px-4 pb-2 pt-1 dark:border-neutral-700">
               {series.map((s) => (
-                <Link key={s.slug} href={`/series/${s.slug}`} prefetch={true}>
+                <Link key={s.id} href={`/series/${s.id}`} prefetch={true}>
                   <Badge>{s.name}</Badge>
                 </Link>
               ))}

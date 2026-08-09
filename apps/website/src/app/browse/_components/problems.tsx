@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import type { getPublicProblemInfo } from "@/lib/server/problems"
-import { cn } from "@/lib/utils"
+import { cn, strCmp } from "@/lib/utils"
 
 import { useMemo, useState } from "react"
 import {
@@ -59,7 +59,7 @@ export function ProblemList({
     return problems
       .filter(
         (problem) =>
-          (problem.slug
+          (problem.id
             .toLowerCase()
             .replaceAll("-", "")
             .includes(
@@ -96,7 +96,7 @@ export function ProblemList({
             difficulties.indexOf(a.difficulty)
           )
         }
-        return sortOptions.id === "asc" ? a.id - b.id : b.id - a.id
+        return strCmp(a.id, b.id, sortOptions.id)
       })
   }, [filter, problems, sortOptions])
 

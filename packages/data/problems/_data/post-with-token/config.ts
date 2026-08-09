@@ -38,8 +38,7 @@ RUN go build -C /src/daemon -o /daemon
 }
 
 const config: ProblemConfig = {
-  id: 12,
-  slug: "post-with-token",
+  id: "post-with-token",
   title: "Make a POST Request using an Auth Token",
   difficulty: "medium",
   description: `Your boss is mad! Do it again and do it right.`,

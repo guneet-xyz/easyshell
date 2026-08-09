@@ -123,7 +123,7 @@ export const terminalSessions = pgTable(
     userId: varchar("user_id", { length: 255 })
       .notNull()
       .references(() => users.id),
-    problemId: integer("problem_id").notNull(),
+    problemId: varchar("problem_id", { length: 64 }).notNull(),
     testcaseId: integer("testcase_id").notNull(),
     createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
       .notNull()
@@ -169,7 +169,7 @@ export const submissions = pgTable("submissions", {
   userId: varchar("user_id", { length: 255 })
     .notNull()
     .references(() => users.id),
-  problemId: integer("problem_id").notNull(),
+  problemId: varchar("problem_id", { length: 64 }).notNull(),
   input: text("input").notNull(),
   submittedAt: timestamp("submitted_at", { mode: "date", withTimezone: true })
     .notNull()
@@ -234,7 +234,7 @@ export const bookmarks = pgTable(
     userId: varchar("user_id", { length: 255 })
       .notNull()
       .references(() => users.id),
-    problemId: integer("problem_id").notNull(),
+    problemId: varchar("problem_id", { length: 64 }).notNull(),
   },
   (bookmark) => [
     index("bookmark_user_id_idx").on(bookmark.userId),

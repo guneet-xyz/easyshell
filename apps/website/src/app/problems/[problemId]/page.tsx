@@ -1,5 +1,5 @@
 import { DesktopContainer, MobileContainer } from "@/components/media"
-import { getProblemInfo, getProblems } from "@/lib/server/problems"
+import { getProblems } from "@/lib/server/problems"
 
 import { LaptopView } from "./_components/laptop-view"
 import { MobileView } from "./_components/mobile-view"
@@ -10,36 +10,34 @@ import type { Metadata } from "next"
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ problemSlug: string }>
+  params: Promise<{ problemId: string }>
 }): Promise<Metadata> {
-  const { problemSlug } = await params
+  const { problemId } = await params
   return {
-    title: `easyshell - ${problemSlug}`,
+    title: `easyshell - ${problemId}`,
   }
 }
 
 export default async function Page({
   params,
 }: {
-  params: Promise<{ problemSlug: string }>
+  params: Promise<{ problemId: string }>
 }) {
-  const { problemSlug } = await params
+  const { problemId } = await params
 
-  const valid = (await getProblems()).includes(problemSlug)
+  const valid = (await getProblems()).includes(problemId)
 
   if (!valid) {
     return <ProblemNotFound />
   }
 
-  const { id: problemId } = await getProblemInfo(problemSlug)
-
   return (
     <>
       <DesktopContainer>
-        <LaptopView problemSlug={problemSlug} problemId={problemId} />
+        <LaptopView problemId={problemId} />
       </DesktopContainer>
       <MobileContainer>
-        <MobileView problemSlug={problemSlug} problemId={problemId} />
+        <MobileView problemId={problemId} />
       </MobileContainer>
     </>
   )

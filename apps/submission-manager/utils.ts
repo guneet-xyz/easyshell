@@ -25,19 +25,19 @@ const OutputJsonSchema = z.object({
 })
 
 export async function runSubmissionAndGetOutput({
-  problemSlug,
+  problemId,
   testcaseId,
   input,
   suffix,
 }: {
-  problemSlug: string
+  problemId: string
   testcaseId: number
   input: string
   suffix: string
 }) {
-  const problem = getProblem(problemSlug)
+  const problem = getProblem(problemId)
 
-  const containerName = `easyshell-${problemSlug}-${testcaseId}-${suffix}`
+  const containerName = `easyshell-${problemId}-${testcaseId}-${suffix}`
 
   const inputFileName = `${containerName}.sh`
   const outputFileName = `${containerName}.json`
@@ -45,7 +45,7 @@ export async function runSubmissionAndGetOutput({
   const inputFilePath = `${WORKING_DIR}/inputs/${containerName}.sh`
   const outputFilePath = `${WORKING_DIR}/outputs/${containerName}.json`
 
-  const image = `easyshell-${problemSlug}-${testcaseId}`
+  const image = `easyshell-${problemId}-${testcaseId}`
 
   await writeFile(inputFilePath, input)
   await writeFile(outputFilePath, "")

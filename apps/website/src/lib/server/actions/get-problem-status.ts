@@ -3,10 +3,10 @@
 import { getAuthSession } from "@/lib/server/auth"
 import { getProblemStatus as _getProblemStatus } from "@/lib/server/problems"
 
-export async function getProblemStatus(slug: string) {
+export async function getProblemStatus(id: string) {
   const userId = (await getAuthSession())?.user.id
   if (!userId) return undefined
 
-  const status = await _getProblemStatus(slug, userId)
+  const status = await _getProblemStatus(id, userId)
   return status
 }

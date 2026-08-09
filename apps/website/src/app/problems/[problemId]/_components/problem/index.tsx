@@ -5,16 +5,16 @@ import { ProblemHeading } from "./heading"
 import { ProblemHints } from "./hints"
 import { ProblemRelatedWiki } from "./wiki"
 
-export function Problem({ slug }: { slug: string }) {
+export function Problem({ id }: { id: string }) {
   return (
     <div className="h-[calc(100vh-80px)] py-2 dark:bg-neutral-900">
-      <ProblemHeading slug={slug} />
+      <ProblemHeading id={id} />
       <div className="h-[calc(100vh-220px)] overflow-y-scroll">
-        <ProblemEditorial slug={slug} />
-        <ProblemBody slug={slug} />
-        <ProblemHints slug={slug} />
-        <ProblemAbout slug={slug} />
-        <ProblemRelatedWiki slug={slug} />
+        <ProblemEditorial id={id} />
+        <ProblemBody id={id} />
+        <ProblemHints id={id} />
+        <ProblemAbout id={id} />
+        <ProblemRelatedWiki id={id} />
       </div>
     </div>
   )

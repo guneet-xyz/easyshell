@@ -20,11 +20,9 @@ const PromptSettingsContextProvider = dynamic(
 
 export function Submissions({
   problemId,
-  problemSlug,
   pastSubmissions,
 }: {
-  problemId: number
-  problemSlug: string
+  problemId: string
   pastSubmissions: Awaited<ReturnType<typeof getUserSubmissions>>
 }) {
   const searchParams = useSearchParams()
@@ -37,10 +35,10 @@ export function Submissions({
       <Suspense fallback={<div>Loading</div>}>
         <div className="flex h-full flex-col gap-4">
           <PromptSettingsContextProvider>
-            <SubmitPrompt problemId={problemId} problemSlug={problemSlug} />
+            <SubmitPrompt problemId={problemId} />
           </PromptSettingsContextProvider>
           <PastSubmissions
-            problemSlug={problemSlug}
+            problemId={problemId}
             pastSubmissions={pastSubmissions}
           />
         </div>

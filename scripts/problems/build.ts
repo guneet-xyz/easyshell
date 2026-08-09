@@ -1,4 +1,4 @@
-import { getProblemConfig, getProblemSlugs } from "@easyshell/data/problems"
+import { getProblemConfig, getProblemIds } from "@easyshell/data/problems"
 import {
   PROBLEMS_DIR,
   PROJECT_ROOT,
@@ -157,7 +157,7 @@ async function main() {
   const args = process.argv.slice(2)
   if (args.length === 0) {
     console.error(
-      "Provide a problem slug to build. Provide 'all' to build all problems.",
+      "Provide a problem id to build. Provide 'all' to build all problems.",
     )
     process.exit(1)
   }
@@ -169,7 +169,7 @@ async function main() {
 
   const build_tasks: Array<Task> = []
 
-  const problems = getProblemSlugs()
+  const problems = getProblemIds()
   if (arg === "all") {
     await init()
     for (const problem of problems)

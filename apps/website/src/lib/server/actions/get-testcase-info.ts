@@ -3,7 +3,7 @@
 import { submissionTestcases, submissions } from "@easyshell/db/schema"
 
 import { db } from "@/db"
-import { getProblemInfo, getProblemSlugFromId } from "@/lib/server/problems"
+import { getProblemInfo } from "@/lib/server/problems"
 
 import { getSubmissionInfo } from "./get-submission-info"
 
@@ -48,9 +48,7 @@ export async function getTestcaseInfo({
 
   const submission = await getSubmissionInfo({ submissionId })
 
-  const problemSlug = getProblemSlugFromId(submission.submission.problemId)
-
-  const problem = await getProblemInfo(problemSlug)
+  const problem = await getProblemInfo(submission.submission.problemId)
   const testcase = problem.testcases.find((t) => t.id === testcaseId)
   if (!testcase)
     throw new Error("CRITITCAL: Testcase not found (This should not happen)")

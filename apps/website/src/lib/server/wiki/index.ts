@@ -2,7 +2,7 @@ import { getWikis } from "@easyshell/data/wiki"
 
 export async function getWikiPages() {
   return getWikis().map((wiki) => ({
-    slug: wiki.id.replace(/\.mdx$/, ""),
+    id: wiki.id.replace(/\.mdx$/, ""),
     title: wiki.title,
     type: wiki.type,
     body: wiki.body,
@@ -10,8 +10,8 @@ export async function getWikiPages() {
   }))
 }
 
-export async function getWikiMetadata(slug: string) {
-  const page = (await getWikiPages()).find((wiki) => wiki.slug === slug)
+export async function getWikiMetadata(id: string) {
+  const page = (await getWikiPages()).find((wiki) => wiki.id === id)
   if (!page) return null
   return {
     title: page.title,
@@ -20,7 +20,7 @@ export async function getWikiMetadata(slug: string) {
   }
 }
 
-export async function getWikiFull(slug: string) {
-  const page = (await getWikiPages()).find((wiki) => wiki.slug === slug)
+export async function getWikiFull(id: string) {
+  const page = (await getWikiPages()).find((wiki) => wiki.id === id)
   return page ?? null
 }

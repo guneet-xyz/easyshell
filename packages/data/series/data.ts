@@ -2,7 +2,7 @@ import { Series } from "./schema"
 
 export const SeriesList: Array<Series> = [
   {
-    slug: "file-management",
+    id: "file-management",
     name: "File Management",
     description: "Manage your files without leaving the terminal.",
     image: "",
@@ -33,7 +33,7 @@ export const SeriesList: Array<Series> = [
     ],
   },
   {
-    slug: "parsing",
+    id: "parsing",
     description: "Turn raw data into something useful.",
     name: "Parsing",
     image: "",

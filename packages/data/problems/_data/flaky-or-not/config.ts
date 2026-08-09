@@ -27,8 +27,7 @@ async function testcaseConfig({
 }
 
 const config: ProblemConfig = {
-  id: 25,
-  slug: SLUG,
+  id: SLUG,
   title: "Flaky or Not",
   description: `Run a mysterious script and report if it flops or flies!`,
   difficulty: "easy",

@@ -1,4 +1,4 @@
-import { getProblemConfig, getProblemSlugs } from "@easyshell/data/problems"
+import { getProblemConfig, getProblemIds } from "@easyshell/data/problems"
 import { RunParallelStuff, Task } from "@easyshell/utils/build"
 
 import { env } from "../env"
@@ -32,7 +32,7 @@ async function main() {
   const args = process.argv.slice(2)
   if (args.length === 0) {
     console.error(
-      "Provide a problem slug to push. Provide 'all' to push all problems.",
+      "Provide a problem id to push. Provide 'all' to push all problems.",
     )
     process.exit(1)
   }
@@ -44,7 +44,7 @@ async function main() {
 
   const push_tasks: Array<Task> = []
 
-  const problems = getProblemSlugs()
+  const problems = getProblemIds()
   if (arg === "all") {
     for (const problem of problems)
       push_tasks.push(...(await pushProblemTasks(problem)))

@@ -7,10 +7,10 @@ import { WikiLinkBase } from "."
 import { useEffect, useState } from "react"
 
 export function WikiLink({
-  slug,
+  id,
   className,
 }: {
-  slug: string
+  id: string
   className?: string
 }) {
   const [metadata, setMetadata] =
@@ -18,9 +18,9 @@ export function WikiLink({
 
   useEffect(() => {
     void (async () => {
-      setMetadata(await getWikiMetadata(slug))
+      setMetadata(await getWikiMetadata(id))
     })()
-  }, [slug])
+  }, [id])
 
-  return <WikiLinkBase slug={slug} metadata={metadata} className={className} />
+  return <WikiLinkBase id={id} metadata={metadata} className={className} />
 }

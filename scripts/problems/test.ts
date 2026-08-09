@@ -1,4 +1,4 @@
-import { getProblemConfig, getProblemSlugs } from "@easyshell/data/problems"
+import { getProblemConfig, getProblemIds } from "@easyshell/data/problems"
 import { getSeries } from "@easyshell/data/series"
 import { getWikis } from "@easyshell/data/wiki"
 import { runSubmissionAndGetOutput } from "@easyshell/submission-manager/utils"
@@ -34,7 +34,7 @@ async function main() {
   const args = process.argv.slice(2)
   if (args.length === 0) {
     console.error(
-      "Provide a problem slug to test. Type 'all' to test all problems. Type 'base' to run base tests.",
+      "Provide a problem id to test. Type 'all' to test all problems. Type 'base' to run base tests.",
     )
     process.exit(1)
   }
@@ -57,7 +57,7 @@ async function main() {
   if (arg === "base") {
     // do nothing
   } else if (arg === "all") {
-    for (const problem of getProblemSlugs()) {
+    for (const problem of getProblemIds()) {
       tests.push(...(await construct_tests(problem)))
     }
   } else {
@@ -150,47 +150,45 @@ async function base_tests(): Promise<Array<Test>> {
         name: "series",
         callable: async () => {
           if (
-            new Set(getSeries().map((s) => s.slug)).size !== getSeries().length
+            new Set(getSeries().map((s) => s.id)).size !== getSeries().length
           ) {
-            return "duplicate series slugs"
+            return "duplicate series ids"
           }
 
           for (const series of getSeries()) {
             const problems = series.sections.map((s) => s.problems).flat()
             if (new Set(problems).size !== problems.length) {
-              return `(series: ${series.slug}) duplicate problem slugs`
+              return `(series: ${series.id}) duplicate problem ids`
             }
 
-            for (const problemSlug of problems) {
-              if (!problems.includes(problemSlug))
-                return `(series: ${series.slug}) problem slug ${problemSlug} not found`
+            for (const problemId of problems) {
+              if (!getProblemIds().includes(problemId))
+                return `(series: ${series.id}) problem id ${problemId} not found`
             }
           }
         },
       },
       {
-        name: "(unique problem slugs)",
+        name: "(unique problem config ids)",
         callable: async () => {
-          const problems = getProblemSlugs()
-          const problem_slugs = new Set<string>()
+          const problems = getProblemIds()
+          const problem_ids = new Set<string>()
           const duplicates = new Set<string>()
           for (const problem of problems) {
-            if (problem_slugs.has(problem)) {
+            if (problem_ids.has(problem)) {
               duplicates.add(problem)
             }
-            problem_slugs.add(problem)
+            problem_ids.add(problem)
           }
           if (duplicates.size > 0)
-            return `duplicate problem slugs: ${Array.from(duplicates).join(
-              ", ",
-            )}`
+            return `duplicate problem ids: ${Array.from(duplicates).join(", ")}`
         },
       },
       {
         name: "(unique problem ids)",
         callable: async () => {
-          const problems = getProblemSlugs()
-          const id_map = new Map<number, Set<string>>()
+          const problems = getProblemIds()
+          const id_map = new Map<string, Set<string>>()
           for (const problem of problems) {
             try {
               const data = getProblemConfig(problem)
@@ -241,7 +239,7 @@ async function base_tests(): Promise<Array<Test>> {
               name: `(wiki ${page.id}) assert valid type`,
               callable: async () => {
                 if (page.type === "editorial") {
-                  if (!getProblemSlugs().includes(page.id))
+                  if (!getProblemIds().includes(page.id))
                     return "corresponding problem does not exist for editorial"
                 }
               },
@@ -255,13 +253,13 @@ async function base_tests(): Promise<Array<Test>> {
   return TestTreeToTests(tree)
 }
 
-async function construct_tests(slug: string): Promise<Array<Test>> {
-  const PROBLEM_DIR = `${PROBLEMS_DIR}/${slug}`
+async function construct_tests(id: string): Promise<Array<Test>> {
+  const PROBLEM_DIR = `${PROBLEMS_DIR}/${id}`
 
   const tree: TestTree = {
     tests: [
       {
-        name: `(${slug}) assert problem dir exists`,
+        name: `(${id}) assert problem dir exists`,
         callable: async () => {
           const { error } = await neverThrow(assertDirExists(PROBLEM_DIR))
           if (error) return error.message
@@ -272,7 +270,7 @@ async function construct_tests(slug: string): Promise<Array<Test>> {
       {
         tests: [
           {
-            name: `(${slug}) assert config.ts exists`,
+            name: `(${id}) assert config.ts exists`,
             callable: async () => {
               const { error } = await neverThrow(
                 assertFileExists(`${PROBLEM_DIR}/config.ts`),
@@ -281,7 +279,7 @@ async function construct_tests(slug: string): Promise<Array<Test>> {
             },
           },
           {
-            name: `(${slug}) assert page.md exists`,
+            name: `(${id}) assert page.md exists`,
             callable: async () => {
               const { error } = await neverThrow(
                 assertFileExists(`${PROBLEM_DIR}/page.md`),
@@ -294,10 +292,10 @@ async function construct_tests(slug: string): Promise<Array<Test>> {
           const tests: Array<Test> = []
 
           tests.push({
-            name: `(${slug}) import`,
+            name: `(${id}) import`,
             callable: async () => {
               try {
-                const data = getProblemConfig(slug)
+                const data = getProblemConfig(id)
                 if (!data) return "no data found"
               } catch (error) {
                 return error as string
@@ -306,10 +304,10 @@ async function construct_tests(slug: string): Promise<Array<Test>> {
           })
 
           tests.push({
-            name: `(${slug}) assert test workflow exists`,
+            name: `(${id}) assert test workflow exists`,
             callable: async () => {
               const test_workflow = autogeneratedWorkflowPath({
-                suffix: slug,
+                suffix: id,
                 type: "test",
               })
               const test_workflow_fullpath = `${PROJECT_ROOT}/${test_workflow}`
@@ -321,10 +319,10 @@ async function construct_tests(slug: string): Promise<Array<Test>> {
           })
 
           tests.push({
-            name: `(${slug}) assert push workflow exists`,
+            name: `(${id}) assert push workflow exists`,
             callable: async () => {
               const push_workflow = autogeneratedWorkflowPath({
-                suffix: slug,
+                suffix: id,
                 type: "push",
               })
               const push_workflow_fullpath = `${PROJECT_ROOT}/${push_workflow}`
@@ -336,7 +334,7 @@ async function construct_tests(slug: string): Promise<Array<Test>> {
           })
 
           if (!process.env.SKIP_SUBMISSION_TESTS) {
-            const problemInfo = getProblemConfig(slug)
+            const problemInfo = getProblemConfig(id)
 
             if (!problemInfo.tests) problemInfo.tests = []
             problemInfo.tests.push({ testcase: "all", pass: false, input: "" })
@@ -353,24 +351,23 @@ async function construct_tests(slug: string): Promise<Array<Test>> {
               if (testcase === "all") {
                 for (const { id: testcaseId } of problemInfo.testcases) {
                   tests.push({
-                    name: `(${slug}) test-${index}-testcase-${testcaseId}`,
+                    name: `(${id}) test-${index}-testcase-${testcaseId}`,
                     callable: () =>
-                      _runSubmissionTest(slug, testcaseId, input, pass),
+                      _runSubmissionTest(id, testcaseId, input, pass),
                   })
                 }
               } else if (testcase instanceof Array) {
                 for (const testcaseId of testcase) {
                   tests.push({
-                    name: `(${slug}) test-${index}-testcase-${testcaseId}`,
+                    name: `(${id}) test-${index}-testcase-${testcaseId}`,
                     callable: () =>
-                      _runSubmissionTest(slug, testcaseId, input, pass),
+                      _runSubmissionTest(id, testcaseId, input, pass),
                   })
                 }
               } else {
                 tests.push({
-                  name: `(${slug}) test-${index}-testcase-${testcase}`,
-                  callable: () =>
-                    _runSubmissionTest(slug, testcase, input, pass),
+                  name: `(${id}) test-${index}-testcase-${testcase}`,
+                  callable: () => _runSubmissionTest(id, testcase, input, pass),
                 })
               }
             }
@@ -386,23 +383,23 @@ async function construct_tests(slug: string): Promise<Array<Test>> {
 }
 
 async function _runSubmissionTest(
-  slug: string,
+  id: string,
   testcase: number,
   input: string,
   pass: boolean,
 ): Promise<string | undefined> {
   const { passed, output } = await runSubmissionAndGetOutput({
-    problemSlug: slug,
+    problemId: id,
     testcaseId: testcase,
     input,
     suffix: `test-${randomBytes(8).toString("hex")}`,
   })
   if (passed !== pass) {
     if (process.env.DEBUG_STDOUT)
-      console.debug(`output (${slug}-${testcase} stdout): ${output.stdout}`)
+      console.debug(`output (${id}-${testcase} stdout): ${output.stdout}`)
     if (process.env.DEBUG_FS)
       console.debug(
-        `output (${slug}-${testcase} fs): ${JSON.stringify(output.fs)}`,
+        `output (${id}-${testcase} fs): ${JSON.stringify(output.fs)}`,
       )
     return `expected to ${pass ? "pass" : "fail"} with input: ${input}`
   }

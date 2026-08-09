@@ -6,11 +6,11 @@ import Link from "next/link"
 
 export function WikiLinkBase({
   metadata,
-  slug,
+  id,
   className,
 }: {
   metadata: Awaited<ReturnType<typeof getWikiMetadata>> | null
-  slug: string
+  id: string
   className?: string
 }) {
   return (
@@ -30,7 +30,7 @@ export function WikiLinkBase({
       }
     >
       <Link
-        href={`/problems/${slug}`}
+        href={`/wiki/${id}`}
         className={cn(
           "shadow-xs ml-1 inline w-fit space-x-1 whitespace-nowrap rounded-md border bg-neutral-100 px-2 py-1 dark:bg-neutral-800",
           className,
@@ -41,7 +41,7 @@ export function WikiLinkBase({
           WIKI
         </span>
         <span className={cn("font-geist-mono inline text-xs font-medium", {})}>
-          {slug}
+          {id}
         </span>
       </Link>
     </EasyTooltip>

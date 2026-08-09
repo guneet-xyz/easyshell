@@ -25,8 +25,7 @@ async function testcaseConfig({
 }
 
 const config: ProblemConfig = {
-  id: 5,
-  slug: SLUG,
+  id: SLUG,
   title: "Move And Rename",
   description: `Sometimes, files end up in the wrong place with the wrong name.`,
   difficulty: "easy",

@@ -27,8 +27,7 @@ async function testcaseConfig({
 }
 
 const config: ProblemConfig = {
-  id: 7,
-  slug: SLUG,
+  id: SLUG,
   title: "Remove That File",
   description: `A single file is standing in the way—time to delete it and clear the clutter! 🗑️`,
   difficulty: "easy",

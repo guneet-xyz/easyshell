@@ -1,8 +1,7 @@
 import type { ProblemConfig } from "../../schema"
 
 const config: ProblemConfig = {
-  id: 1,
-  slug: "say-hello",
+  id: "say-hello",
   title: "Say Hello to the Shell",
   description: `Print "Hello, World!"—your first step into the world of shell commands.`,
   difficulty: "easy",

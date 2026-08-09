@@ -38,7 +38,7 @@ async function resetSession({
   testcaseId,
 }: {
   setSession: Dispatch<Awaited<ReturnType<typeof getTerminalSession>> | null>
-  problemId: number
+  problemId: string
   testcaseId: number
 }) {
   setSession(null)
@@ -51,11 +51,9 @@ async function resetSession({
 
 export function TestcaseTerminal({
   problemId,
-  problemSlug,
   testcase,
 }: {
-  problemId: number
-  problemSlug: string
+  problemId: string
   testcase: number
 }) {
   const [session, setSession] = useState<Awaited<
@@ -89,7 +87,7 @@ export function TestcaseTerminal({
   if (!session)
     return (
       <LoadingTestcaseTerminal
-        problemSlug={problemSlug}
+        problemId={problemId}
         testcase={testcase}
         restarting={restarting}
       />
@@ -98,7 +96,6 @@ export function TestcaseTerminal({
   return (
     <LoadedTestcaseTerminal
       problemId={problemId}
-      problemSlug={problemSlug}
       testcase={testcase}
       session={session}
       setSession={setSession}
@@ -109,11 +106,11 @@ export function TestcaseTerminal({
 }
 
 function LoadingTestcaseTerminal({
-  problemSlug,
+  problemId,
   testcase,
   restarting,
 }: {
-  problemSlug: string
+  problemId: string
   testcase: number
   restarting: boolean
 }) {
@@ -121,7 +118,7 @@ function LoadingTestcaseTerminal({
     <div className="font-geist-mono flex flex-col rounded-md border-4 border-gray-400">
       <div className="relative flex h-80 flex-col overflow-scroll whitespace-pre-line bg-black px-2 py-1">
         <p className="absolute left-1/2 top-0 -translate-x-1/2 select-none rounded-b-md bg-neutral-800 px-4 text-center font-semibold text-white opacity-100 transition-opacity hover:opacity-0">
-          {problemSlug}-{testcase}
+          {problemId}-{testcase}
         </p>
         <div
           className={cn(
@@ -148,15 +145,14 @@ function LoadingTestcaseTerminal({
 }
 
 function LoadedTestcaseTerminal({
-  problemSlug,
+  problemId,
   testcase,
   session,
   setSession,
   restarting,
   handleRestartTerminal,
 }: {
-  problemId: number
-  problemSlug: string
+  problemId: string
   testcase: number
   session: Exclude<Awaited<ReturnType<typeof getTerminalSession>>, null>
   setSession: Dispatch<
@@ -360,7 +356,7 @@ function LoadedTestcaseTerminal({
         <div className="flex h-full grow items-center justify-between rounded-md border bg-neutral-100 px-4 text-xs dark:bg-neutral-800">
           <div className="flex flex-col">
             <p className="font-semibold">
-              {problemSlug}-{testcase}-session-{session.id}
+              {problemId}-{testcase}-session-{session.id}
             </p>
             <p className="text-neutral-400">
               created {moment(session.createdAt).fromNow()}

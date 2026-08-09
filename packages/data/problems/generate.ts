@@ -29,20 +29,20 @@ async function _problemConfig(problem: string) {
   }
 
   const config = parse_result.data
-  if (config.slug !== problem) {
-    throw new Error(`Problem slug does not match`)
+  if (config.id !== problem) {
+    throw new Error(`Problem id does not match`)
   }
 
   return config
 }
 
-async function _problemBody(slug: string): Promise<string> {
-  const path = `${PROBLEMS_DIR}/${slug}/page.md`
+async function _problemBody(id: string): Promise<string> {
+  const path = `${PROBLEMS_DIR}/${id}/page.md`
   return await readFile(path, { encoding: "utf8" })
 }
 
-export async function _problemHints(slug: string): Promise<string[]> {
-  const hintsDir = `${PROBLEMS_DIR}/${slug}/hints`
+export async function _problemHints(id: string): Promise<string[]> {
+  const hintsDir = `${PROBLEMS_DIR}/${id}/hints`
   const files = await readdir(hintsDir).catch(
     (error: NodeJS.ErrnoException) => {
       if (error.code === "ENOENT") return []
@@ -57,18 +57,17 @@ export async function _problemHints(slug: string): Promise<string[]> {
 }
 
 export async function generateProblemsData() {
-  const problemSlugs = await readdir(PROBLEMS_DIR)
+  const problemIds = await readdir(PROBLEMS_DIR)
 
   const problems: GeneratedProblemData = []
 
-  for (const problemSlug of problemSlugs) {
-    const problem = await _problemConfig(problemSlug)
-    const body = await _problemBody(problemSlug)
-    const hints = await _problemHints(problemSlug)
+  for (const problemId of problemIds) {
+    const problem = await _problemConfig(problemId)
+    const body = await _problemBody(problemId)
+    const hints = await _problemHints(problemId)
 
     problems.push({
       id: problem.id,
-      slug: problem.slug,
       title: problem.title,
       description: problem.description,
       tags: problem.tags,
@@ -83,12 +82,12 @@ export async function generateProblemsData() {
 }
 
 export async function generateProblemConfigData() {
-  const problemSlugs = await readdir(PROBLEMS_DIR)
+  const problemIds = await readdir(PROBLEMS_DIR)
 
   const problems: GeneratedProblemConfigData = []
 
-  for (const problemSlug of problemSlugs) {
-    const problem = await _problemConfig(problemSlug)
+  for (const problemId of problemIds) {
+    const problem = await _problemConfig(problemId)
     problems.push(problem)
   }
 

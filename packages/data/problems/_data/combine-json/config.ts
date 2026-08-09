@@ -31,8 +31,7 @@ async function testcaseConfig({
 }
 
 const config: ProblemConfig = {
-  id: 17,
-  slug: SLUG,
+  id: SLUG,
   title: "Combine multiple JSON files",
   description: `Combine a pie of product JSONs.`,
   difficulty: "medium",

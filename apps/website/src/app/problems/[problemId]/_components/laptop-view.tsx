@@ -12,17 +12,11 @@ import { TestcaseTabs } from "./testcases/tabs"
 
 import { Suspense } from "react"
 
-export async function LaptopView({
-  problemId,
-  problemSlug,
-}: {
-  problemId: number
-  problemSlug: string
-}) {
+export async function LaptopView({ problemId }: { problemId: string }) {
   const session = await getAuthSession()
   const user = session?.user
 
-  const testcases = await getPublicTestcaseInfo(problemSlug)
+  const testcases = await getPublicTestcaseInfo(problemId)
   const testcaseIds = testcases.map((testcase) => testcase.id)
   const submissions = user
     ? await getUserSubmissions({ problemId, userId: user.id })
@@ -31,7 +25,7 @@ export async function LaptopView({
   return (
     <ResizablePanelGroup direction="horizontal" className="h-full">
       <CollapsibleProblemPanel>
-        <Problem slug={problemSlug} />
+        <Problem id={problemId} />
       </CollapsibleProblemPanel>
       <ResizablePanel className="flex h-full w-full flex-col p-2">
         <ProblemPageTabs
@@ -41,11 +35,7 @@ export async function LaptopView({
               value: "testcases",
               content: user ? (
                 <Suspense fallback={<div>Loading</div>}>
-                  <TestcaseTabs
-                    problemId={problemId}
-                    problemSlug={problemSlug}
-                    testcases={testcaseIds}
-                  />
+                  <TestcaseTabs problemId={problemId} testcases={testcaseIds} />
                 </Suspense>
               ) : (
                 <LoginToProceed />
@@ -58,7 +48,6 @@ export async function LaptopView({
                 <Suspense fallback={<div>Loading</div>}>
                   <Submissions
                     problemId={problemId}
-                    problemSlug={problemSlug}
                     pastSubmissions={submissions}
                   />
                 </Suspense>

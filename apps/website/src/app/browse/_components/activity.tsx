@@ -1,4 +1,4 @@
-import { ProblemBookmark } from "@/app/problems/[problemSlug]/_components/problem/bookmark"
+import { ProblemBookmark } from "@/app/problems/[problemId]/_components/problem/bookmark"
 import { DesktopContainer } from "@/components/media"
 import { AlternativeProblemStatus } from "@/components/problem-status"
 import {
@@ -9,10 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import {
-  getProblemSlugFromId,
-  getPublicProblemInfo,
-} from "@/lib/server/problems"
+import { getPublicProblemInfo } from "@/lib/server/problems"
 import { min } from "@/lib/utils"
 
 import Link from "next/link"
@@ -23,7 +20,7 @@ export async function RecentActivity({
   attempted,
   loggedIn,
 }: {
-  bookmarks: Array<number>
+  bookmarks: Array<string>
   attempted: Array<string>
   loggedIn: boolean
 }) {
@@ -70,7 +67,7 @@ export async function RecentActivity({
               <BookmarkedProblem key={id} id={id} />
             ))}
             {attempted.slice(0, attempted_end).map((id) => (
-              <AttemptedProblem key={id} slug={id} />
+              <AttemptedProblem key={id} id={id} />
             ))}
           </>
         )}
@@ -94,7 +91,7 @@ async function Expand({
   attempted,
 }: {
   text: string
-  bookmarks: Array<number>
+  bookmarks: Array<string>
   attempted: Array<string>
 }) {
   return (
@@ -125,7 +122,7 @@ async function Expand({
           </div>
           <div className="flex flex-col gap-2">
             {attempted.map((id) => (
-              <AttemptedProblemExpanded key={id} slug={id} />
+              <AttemptedProblemExpanded key={id} id={id} />
             ))}
           </div>
         </div>
@@ -134,13 +131,12 @@ async function Expand({
   )
 }
 
-async function BookmarkedProblem({ id }: { id: number }) {
-  const slug = await getProblemSlugFromId(id)
-  const { title } = await getPublicProblemInfo(slug)
+async function BookmarkedProblem({ id }: { id: string }) {
+  const { title } = await getPublicProblemInfo(id)
   return (
     <Link
       prefetch={true}
-      href={`/problems/${slug}`}
+      href={`/problems/${id}`}
       className="flex items-center rounded-md border py-1 shadow hover:bg-neutral-100 dark:hover:bg-neutral-800/50"
     >
       <div className="px-1">
@@ -156,9 +152,8 @@ async function BookmarkedProblem({ id }: { id: number }) {
   )
 }
 
-async function BookmarkedProblemExpanded({ id }: { id: number }) {
-  const slug = await getProblemSlugFromId(id)
-  const { title } = await getPublicProblemInfo(slug)
+async function BookmarkedProblemExpanded({ id }: { id: string }) {
+  const { title } = await getPublicProblemInfo(id)
   return (
     <div className="flex items-center overflow-hidden rounded-md border shadow">
       <div className="flex items-center justify-center border-r px-1 py-0.5 dark:bg-neutral-900">
@@ -169,7 +164,7 @@ async function BookmarkedProblemExpanded({ id }: { id: number }) {
         />
       </div>
       <Link
-        href={`/problems/${slug}`}
+        href={`/problems/${id}`}
         className="flex h-full grow items-center px-2 py-1 hover:bg-neutral-100 dark:hover:bg-neutral-800/50"
       >
         <div className="h-full overflow-hidden overflow-ellipsis whitespace-nowrap text-sm dark:text-neutral-200">
@@ -183,11 +178,11 @@ async function BookmarkedProblemExpanded({ id }: { id: number }) {
   )
 }
 
-async function AttemptedProblem({ slug }: { slug: string }) {
-  const { id, title } = await getPublicProblemInfo(slug)
+async function AttemptedProblem({ id }: { id: string }) {
+  const { title } = await getPublicProblemInfo(id)
   return (
     <Link
-      href={`/problems/${slug}`}
+      href={`/problems/${id}`}
       className="flex items-center rounded-md border py-1 shadow hover:bg-neutral-100 dark:hover:bg-neutral-800/50"
     >
       <div className="px-1">
@@ -206,8 +201,8 @@ async function AttemptedProblem({ slug }: { slug: string }) {
   )
 }
 
-async function AttemptedProblemExpanded({ slug }: { slug: string }) {
-  const { id, title } = await getPublicProblemInfo(slug)
+async function AttemptedProblemExpanded({ id }: { id: string }) {
+  const { title } = await getPublicProblemInfo(id)
   return (
     <div className="flex items-center overflow-hidden rounded-md border shadow">
       <div className="flex items-center justify-center border-r px-1 py-0.5 dark:bg-neutral-900">
@@ -219,7 +214,7 @@ async function AttemptedProblemExpanded({ slug }: { slug: string }) {
       </div>
       <Link
         prefetch={true}
-        href={`/problems/${slug}`}
+        href={`/problems/${id}`}
         className="flex h-full grow items-center px-2 py-1 hover:bg-neutral-100 dark:hover:bg-neutral-800/50"
       >
         <div className="h-full overflow-hidden overflow-ellipsis whitespace-nowrap text-sm dark:text-neutral-200">

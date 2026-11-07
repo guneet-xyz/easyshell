@@ -7,7 +7,11 @@ import { useEffect } from "react"
 import { toast } from "sonner"
 
 function validCallbackUrl(url: string | null): boolean {
-  return url == undefined || /^\/(?:[\w-]+\/?)*$/.test(url)
+  // Linear-time pattern (the previous nested quantifier backtracked exponentially).
+  return (
+    url == undefined ||
+    (url.length <= 256 && /^\/(?:[\w-]+\/)*[\w-]*$/.test(url))
+  )
 }
 
 export function Client({

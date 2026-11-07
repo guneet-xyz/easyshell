@@ -26,11 +26,13 @@ func reapExpiredSessions() {
 			fmt.Println("Session reaper: listing containers failed:", err)
 		}
 		now := time.Now().Unix()
+		live := map[string]bool{}
 		for _, line := range strings.Split(strings.TrimSpace(string(output)), "\n") {
 			fields := strings.Fields(line)
-			if len(fields) != 2 {
+			if len(fields) != 2 || !utils.ValidName(fields[0]) {
 				continue
 			}
+			live[fields[0]] = true
 			expires, err := strconv.ParseInt(fields[1], 10, 64)
 			if err != nil || expires > now {
 				continue
@@ -39,12 +41,24 @@ func reapExpiredSessions() {
 			_ = exec.Command("docker", "container", "kill", fields[0]).Run()
 			_ = os.RemoveAll(path.Join(utils.WorkingDir, "sessions", fields[0]))
 		}
+		// Remove directories left by containers that exited on their own (crash,
+		// out of memory). Skip recent ones that may still be starting.
+		if err == nil {
+			sessionsDir := path.Join(utils.WorkingDir, "sessions")
+			entries, _ := os.ReadDir(sessionsDir)
+			for _, entry := range entries {
+				info, infoErr := entry.Info()
+				if live[entry.Name()] || infoErr != nil || time.Since(info.ModTime()) < 5*time.Minute {
+					continue
+				}
+				_ = os.RemoveAll(path.Join(sessionsDir, entry.Name()))
+			}
+		}
 		time.Sleep(time.Minute)
 	}
 }
 
 func main() {
-	utils.Init()
 	go reapExpiredSessions()
 
 	http.HandleFunc("/exec", exec_handler.Handler)

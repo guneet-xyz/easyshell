@@ -5,8 +5,9 @@ export const env = createEnv({
   server: {
     DATABASE_URL: z.string().url(),
 
-    NEXTAUTH_SECRET: z.string(),
-    NEXTAUTH_URL: z.string().url(),
+    // Legacy names; better-auth reads BETTER_AUTH_SECRET and BETTER_AUTH_URL.
+    NEXTAUTH_SECRET: z.string().optional(),
+    NEXTAUTH_URL: z.string().url().optional(),
 
     // Each OAuth provider is enabled only when both of its values are set.
     DISCORD_CLIENT_ID: z.string().optional(),

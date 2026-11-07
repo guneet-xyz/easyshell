@@ -3,14 +3,23 @@
 import { terminalSessions } from "@easyshell/db/schema"
 
 import { db } from "@/db"
+import { getAuthSession } from "@/lib/server/auth"
 
-import { eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 
 export async function isSessionAlive(sessionId: number) {
+  const userId = (await getAuthSession())?.user.id
+  if (!userId) return false
+
   const session = await db
     .select()
     .from(terminalSessions)
-    .where(eq(terminalSessions.id, sessionId))
+    .where(
+      and(
+        eq(terminalSessions.id, sessionId),
+        eq(terminalSessions.userId, userId),
+      ),
+    )
 
   if (!session[0]) {
     return false

@@ -9,6 +9,7 @@ import (
 	"path"
 	"session-manager/utils"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -37,6 +38,16 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	if !utils.ValidName(req.Image) || !utils.ValidName(req.ContainerName) {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	running, err := exec.Command("docker", "ps", "-q", "--filter", "label=easyshell.session=1").Output()
+	if err != nil {
+		http.Error(w, "Failed to count sessions", http.StatusInternalServerError)
+		return
+	}
+	if len(strings.Fields(string(running))) >= utils.MaxSessions {
+		http.Error(w, "Too many active sessions", http.StatusServiceUnavailable)
 		return
 	}
 

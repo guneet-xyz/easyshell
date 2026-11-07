@@ -212,6 +212,31 @@ function escapeHtml(text: string) {
   )
 }
 
+// Abuse limits for sign-in email, on top of better-auth's per-IP rate limit.
+// In-memory: the website runs as a single process.
+const MAGIC_LINK_COOLDOWN_MS = 60_000
+const MAGIC_LINK_DAILY_LIMIT = 500
+const lastMagicLinkSent = new Map<string, number>()
+let magicLinkDay = ""
+let magicLinksToday = 0
+
+function allowMagicLink(email: string) {
+  const now = Date.now()
+  const day = new Date(now).toISOString().slice(0, 10)
+  if (day !== magicLinkDay) {
+    magicLinkDay = day
+    magicLinksToday = 0
+    lastMagicLinkSent.clear()
+  }
+  const key = email.toLowerCase()
+  const last = lastMagicLinkSent.get(key)
+  if (last !== undefined && now - last < MAGIC_LINK_COOLDOWN_MS) return false
+  if (magicLinksToday >= MAGIC_LINK_DAILY_LIMIT) return false
+  lastMagicLinkSent.set(key, now)
+  magicLinksToday++
+  return true
+}
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
@@ -225,7 +250,11 @@ export const auth = betterAuth({
     ? [
         magicLink({
           expiresIn: 60 * 10,
+          storeToken: "hashed",
           sendMagicLink: async ({ email, url }) => {
+            if (!allowMagicLink(email)) {
+              throw new Error("Too many sign-in emails; try again later")
+            }
             await sendEmail({
               to: email,
               subject: "Sign in to easyshell",

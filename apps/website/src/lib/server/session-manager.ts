@@ -11,7 +11,7 @@ import {
   HTTP_STATUS_LOCKED,
 } from "@/lib/utils"
 
-import { and, asc, eq, isNull } from "drizzle-orm"
+import { and, asc, count, eq, gt, isNull } from "drizzle-orm"
 import { z } from "zod"
 
 export async function runTerminalSession({
@@ -47,6 +47,9 @@ export async function getTerminalSession({
     testcaseId,
   })
   if (!session) {
+    if ((await countActiveTerminalSessions(userId)) >= MAX_ACTIVE_SESSIONS) {
+      return null
+    }
     await createTerminalSession({ userId, problemId, testcaseId })
     session = await getActiveTerminalSession({ userId, problemId, testcaseId })
   }
@@ -62,6 +65,24 @@ export async function getTerminalSession({
     deletedAt: session.deletedAt,
     logs: logs,
   }
+}
+
+/** Live terminal containers one user may have at once. */
+const MAX_ACTIVE_SESSIONS = 5
+
+async function countActiveTerminalSessions(userId: string) {
+  return (
+    await db
+      .select({ active: count() })
+      .from(terminalSessions)
+      .where(
+        and(
+          eq(terminalSessions.userId, userId),
+          isNull(terminalSessions.deletedAt),
+          gt(terminalSessions.expiresAt, new Date()),
+        ),
+      )
+  )[0]!.active
 }
 
 export async function createTerminalSession({
@@ -334,6 +355,8 @@ export async function sessionManagerKill(containerName: string) {
   }
 }
 
+const MAX_STORED_OUTPUT = 64 * 1024
+
 export async function insertTerminalSessionLog({
   sessionId,
   stdin,
@@ -354,8 +377,8 @@ export async function insertTerminalSessionLog({
     .values({
       sessionId: sessionId,
       stdin: stdin,
-      stdout: stdout,
-      stderr: stderr,
+      stdout: stdout.slice(0, MAX_STORED_OUTPUT),
+      stderr: stderr.slice(0, MAX_STORED_OUTPUT),
       startedAt: startedAt,
       finishedAt: finishedAt,
     })

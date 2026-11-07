@@ -6,7 +6,7 @@ import { execa } from "execa"
 import { z } from "zod"
 
 import { mkdir } from "fs"
-import { chmod, readFile, rm, writeFile } from "fs/promises"
+import { chmod, readFile, rm, stat, writeFile } from "fs/promises"
 
 export const WORKING_DIR = `${env.WORKING_DIR}/submission-manager`
 
@@ -19,6 +19,7 @@ mkdir(`${WORKING_DIR}/outputs`, { recursive: true }, (err) => {
 
 /** Upper bound for one testcase run, including container start. */
 const SUBMISSION_TIMEOUT_MS = 30_000
+const MAX_OUTPUT_BYTES = 1024 * 1024
 
 const OutputJsonSchema = z.object({
   stdout: z.string(),
@@ -93,22 +94,27 @@ export async function runSubmissionAndGetOutput({
     ],
     { timeout: SUBMISSION_TIMEOUT_MS },
   )
+  let raw: string
   try {
-    await run
-  } catch (error) {
-    // On timeout execa kills only the CLI; remove the container as well.
-    await execa("docker", ["rm", "-f", containerName]).catch(() => undefined)
-    await rm(outputFilePath, { force: true })
-    throw error
+    try {
+      await run
+    } catch (error) {
+      // On timeout execa kills only the CLI; remove the container as well.
+      await execa("docker", ["rm", "-f", containerName]).catch(() => undefined)
+      throw error
+    }
+    // User code can write /output.json itself; bound what is read.
+    if ((await stat(outputFilePath)).size > MAX_OUTPUT_BYTES) {
+      throw new Error("Submission output too large")
+    }
+    raw = await readFile(outputFilePath, { encoding: "utf-8" })
   } finally {
     await rm(inputFilePath, { force: true })
+    await rm(outputFilePath, { force: true })
   }
   const finishedAt = new Date()
 
-  const output = OutputJsonSchema.parse(
-    JSON.parse(await readFile(outputFilePath, { encoding: "utf-8" })),
-  )
-  await rm(outputFilePath, { force: true })
+  const output = OutputJsonSchema.parse(JSON.parse(raw))
 
   const fs = output.fs
 

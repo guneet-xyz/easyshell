@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os/exec"
 	"session-manager/utils"
+	"strings"
 )
 
 type requestBody struct {
@@ -41,10 +42,10 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = exec.Command("docker", "container", "inspect", reqBody.ContainerName).Run()
+	output, err := exec.Command("docker", "container", "inspect", "--format", "{{.State.Running}}", reqBody.ContainerName).Output()
 
 	var respBody = responseBody{
-		IsRunning: err == nil,
+		IsRunning: err == nil && strings.TrimSpace(string(output)) == "true",
 	}
 
 	err = json.NewEncoder(w).Encode(respBody)

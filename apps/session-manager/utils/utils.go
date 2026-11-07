@@ -13,6 +13,9 @@ import (
 // SessionLifetime matches the website's terminal session expiry.
 const SessionLifetime = time.Hour
 
+// MaxSessions caps concurrent session containers across all users.
+const MaxSessions = 60
+
 var validName = regexp.MustCompile(`^[a-z0-9][a-z0-9_.-]{0,127}$`)
 
 // ValidName reports whether s is safe to use as a container or image name and as

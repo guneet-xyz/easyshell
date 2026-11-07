@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"os/exec"
+	"path"
 	"session-manager/utils"
 )
 
@@ -38,6 +40,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Killing session container:", req.ContainerName)
 
 	err = exec.Command("docker", "container", "kill", req.ContainerName).Run()
+	_ = os.RemoveAll(path.Join(utils.WorkingDir, "sessions", req.ContainerName))
 	if err != nil {
 		http.Error(w, "Failed"+err.Error(), http.StatusInternalServerError)
 		return

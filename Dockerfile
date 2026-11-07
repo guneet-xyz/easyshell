@@ -38,8 +38,20 @@ ENV PROJECT_ROOT=/src
 RUN pnpm run build
 
 FROM node AS submission-manager
+RUN apk add --no-cache docker-cli
 COPY --from=build-submission-manager /src/apps/submission-manager/submission-manager.cjs /app/submission-manager.cjs
 ENTRYPOINT ["node", "/app/submission-manager.cjs"]
+
+FROM build AS migrator
+ENTRYPOINT ["pnpm", "exec", "drizzle-kit", "migrate"]
+
+FROM build AS problems
+RUN apk add --no-cache docker-cli
+ENV APP="script"
+ENV PROJECT_ROOT=/src
+RUN pnpm run --filter @easyshell/data generate
+ENTRYPOINT ["pnpm", "exec", "tsx"]
+CMD ["scripts/problems/build.ts", "all"]
 
 FROM build AS build-website
 WORKDIR /src/apps/website

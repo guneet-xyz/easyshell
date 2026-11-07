@@ -20,15 +20,11 @@ export const env = createEnv({
     SESSION_MANAGER_URL: z.string().url(),
     SESSION_MANAGER_TOKEN: z.string(),
 
-    RESEND_API_KEY: z.string(),
+    RESEND_API_KEY: z.string().optional(),
   },
   clientPrefix: "NEXT_PUBLIC_",
   client: {
-    ...(process.env.APP === "website"
-      ? {
-          NEXT_PUBLIC_POSTHOG_KEY: z.string(),
-        }
-      : {}),
+    NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
   },
   runtimeEnv: {
     ...process.env,

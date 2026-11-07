@@ -1,6 +1,7 @@
 // ====================================================
 // Utility function that can be used ONLY on the client
 // ====================================================
+import { magicLinkClient } from "better-auth/client/plugins"
 import { createAuthClient } from "better-auth/react"
 import { useTheme as _useTheme } from "next-themes"
 
@@ -46,4 +47,6 @@ export function clientOS() {
 
 export type SetState<T> = React.Dispatch<React.SetStateAction<T>>
 
-export const authClient = createAuthClient()
+export const authClient = createAuthClient({
+  plugins: [magicLinkClient()],
+})

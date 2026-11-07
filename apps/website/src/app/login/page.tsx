@@ -1,4 +1,4 @@
-import { getAuthSession } from "@/lib/server/auth"
+import { getAuthSession, getLoginMethods } from "@/lib/server/auth"
 
 import { Client } from "./client"
 
@@ -7,7 +7,7 @@ export default async function Page() {
 
   return (
     <div className="flex h-full w-full items-center justify-center">
-      <Client loggedIn={loggedIn} />
+      <Client loggedIn={loggedIn} methods={getLoginMethods()} />
     </div>
   )
 }

@@ -4,9 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"os/exec"
 	"path"
 	"session-manager/utils"
+	"strconv"
+	"strings"
+	"time"
 )
 
 type request struct {
@@ -32,30 +36,51 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pullPolicy := ""
-	if utils.DockerRegistry != "" {
-		pullPolicy = "--pull=always"
+	if !utils.ValidName(req.Image) || !utils.ValidName(req.ContainerName) {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	running, err := exec.Command("docker", "ps", "-q", "--filter", "label=easyshell.session=1").Output()
+	if err != nil {
+		http.Error(w, "Failed to count sessions", http.StatusInternalServerError)
+		return
+	}
+	if len(strings.Fields(string(running))) >= utils.MaxSessions {
+		http.Error(w, "Too many active sessions", http.StatusServiceUnavailable)
+		return
 	}
 
 	containerDir := path.Join(utils.WorkingDir, "sessions", req.ContainerName)
 	utils.Mkdirp(containerDir)
+	// Writable by remapped (user-namespaced) root in the session container.
+	if err := os.Chmod(containerDir, 0o777); err != nil {
+		http.Error(w, "Failed to prepare session directory", http.StatusInternalServerError)
+		return
+	}
 
-	var imageTag string
+	imageTag := req.Image
 	if utils.DockerRegistry != "" {
 		imageTag = utils.DockerRegistry + "/easyshell/" + req.Image
-	} else {
-		imageTag = req.Image
 	}
-	command := fmt.Sprintf("docker run -q -d --rm --name %s -m 10m --cpus 0.1 -v %s:/tmp/easyshell %s %s -mode session", req.ContainerName, containerDir, pullPolicy, imageTag)
 
-	fmt.Println("Command: ", command)
+	expires := time.Now().Add(utils.SessionLifetime).Unix()
+	args := []string{"run", "-q", "-d", "--rm", "--name", req.ContainerName,
+		"--label", "easyshell.session=1",
+		"--label", "easyshell.expires=" + strconv.FormatInt(expires, 10),
+		"--network", "none", "--pids-limit", "256", "-m", "10m", "--cpus", "0.1",
+		"-v", containerDir + ":/tmp/easyshell"}
+	if utils.DockerRegistry != "" {
+		args = append(args, "--pull=always")
+	}
+	args = append(args, imageTag, "-mode", "session")
 
-	cmd := exec.Command("sh", "-c", command)
-	output, _ := cmd.CombinedOutput()
+	fmt.Println("Creating session container:", req.ContainerName)
 
+	output, err := exec.Command("docker", args...).CombinedOutput()
 	if err != nil {
 		fmt.Printf("Command Failed : %s\n", string(output))
-		http.Error(w, "Failed"+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Failed to create session container", http.StatusInternalServerError)
 		return
 	}
 }

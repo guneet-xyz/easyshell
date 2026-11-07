@@ -1,16 +1,26 @@
 "use client"
 
-import { LoginForm } from "./_components/form"
+import { LoginForm, type LoginMethods } from "./_components/form"
 
 import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect } from "react"
 import { toast } from "sonner"
 
 function validCallbackUrl(url: string | null): boolean {
-  return url == undefined || /^\/(?:[\w-]+\/?)*$/.test(url)
+  // Linear-time pattern (the previous nested quantifier backtracked exponentially).
+  return (
+    url == undefined ||
+    (url.length <= 256 && /^\/(?:[\w-]+\/)*[\w-]*$/.test(url))
+  )
 }
 
-export function Client({ loggedIn }: { loggedIn: boolean }) {
+export function Client({
+  loggedIn,
+  methods,
+}: {
+  loggedIn: boolean
+  methods: LoginMethods
+}) {
   const router = useRouter()
   const searchParams = useSearchParams()
   let callback = searchParams.get("callback")
@@ -36,5 +46,5 @@ export function Client({ loggedIn }: { loggedIn: boolean }) {
 
   if (loggedIn) return null
 
-  return <LoginForm callback={callback ?? "/"} />
+  return <LoginForm callback={callback ?? "/"} methods={methods} />
 }

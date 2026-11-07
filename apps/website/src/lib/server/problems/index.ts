@@ -4,6 +4,25 @@ import type { Problem } from "@easyshell/data/problems/schema"
 import { getUserSubmissionStats } from "@/lib/server/queries"
 import { getSeriesForProblem } from "@/lib/server/series"
 
+/**
+ * Whether the ids name a real problem/testcase. Server actions receive these
+ * from the client; they end up in container names and image tags.
+ */
+export function isKnownProblem(problemId: unknown): problemId is string {
+  return typeof problemId === "string" && getProblemIds().includes(problemId)
+}
+
+export function isKnownTestcase(
+  problemId: unknown,
+  testcaseId: unknown,
+): boolean {
+  return (
+    isKnownProblem(problemId) &&
+    Number.isInteger(testcaseId) &&
+    getProblem(problemId).testcases.some((t) => t.id === testcaseId)
+  )
+}
+
 export async function getProblemInfo(problem: string): Promise<Problem> {
   return getProblem(problem)
 }

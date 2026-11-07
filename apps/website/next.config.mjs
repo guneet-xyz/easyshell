@@ -1,9 +1,7 @@
 import createMDX from "@next/mdx"
 
-if (!process.env.NEXT_PUBLIC_POSTHOG_KEY)
-  throw "NEXT_PUBLIC_POSTHOG_KEY is not defined"
-
-if (!process.env.POSTHOG_HOST) throw "POSTHOG_HOST is not defined"
+// PostHog is optional: without POSTHOG_HOST the /ph proxy rewrites are omitted.
+const posthogHost = process.env.POSTHOG_HOST
 
 /** @type {import('next').NextConfig} */
 const config = {
@@ -14,14 +12,15 @@ const config = {
   },
   output: "standalone",
   async rewrites() {
+    if (!posthogHost) return []
     return [
       {
         source: "/ph/static/:path*",
-        destination: `https://${process.env.POSTHOG_HOST}/static/:path*`,
+        destination: `https://${posthogHost}/static/:path*`,
       },
       {
         source: "/ph/:path*",
-        destination: `https://${process.env.POSTHOG_HOST}/:path*`,
+        destination: `https://${posthogHost}/:path*`,
       },
     ]
   },

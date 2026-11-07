@@ -1,4 +1,5 @@
-import { getProblemConfig, getProblemIds } from "@easyshell/data/problems"
+import { getProblemIds } from "@easyshell/data/problems"
+import { loadProblemConfig } from "@easyshell/data/problems/generate"
 import {
   PROBLEMS_DIR,
   PROJECT_ROOT,
@@ -65,7 +66,7 @@ async function _existsAndIsDir(path: string) {
 
 async function buildProblemTasks(problem: string): Promise<Array<Task>> {
   const tasks: Array<Task> = []
-  const info = getProblemConfig(problem)
+  const info = await loadProblemConfig(problem)
   for (const testcase of info.testcases) {
     const tag = `easyshell-${problem}-${testcase.id}`
 

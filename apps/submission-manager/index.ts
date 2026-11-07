@@ -57,7 +57,7 @@ async function getQueueItem() {
       .limit(1)
   )[0]?.input
 
-  if (!input) throw new Error("Submission not found")
+  if (input == null) throw new Error("Submission not found")
 
   return {
     ...updated_item,
@@ -65,10 +65,44 @@ async function getQueueItem() {
   }
 }
 
-async function processQueueItem(
-  item: NonNullable<Awaited<ReturnType<typeof getQueueItem>>>,
-) {
-  console.log("Processing queue item", item)
+const MAX_CONCURRENCY = 4
+
+type QueueItem = NonNullable<Awaited<ReturnType<typeof getQueueItem>>>
+
+async function finishQueueItem(item: QueueItem) {
+  await db
+    .update(submissionTestcaseQueue)
+    .set({ status: "finished" })
+    .where(
+      and(
+        eq(submissionTestcaseQueue.submissionId, item.submissionId),
+        eq(submissionTestcaseQueue.testcaseId, item.testcaseId),
+      ),
+    )
+}
+
+/** Record a failed result so a crashed or timed-out run never stays "running". */
+async function failQueueItem(item: QueueItem, error: unknown) {
+  console.error("Queue item failed", item.submissionId, item.testcaseId, error)
+  const now = new Date()
+  await db
+    .insert(submissionTestcases)
+    .values({
+      submissionId: item.submissionId,
+      testcaseId: item.testcaseId,
+      stdout: "",
+      stderr: "The submission failed or timed out.",
+      exitCode: -1,
+      startedAt: now,
+      finishedAt: now,
+      passed: false,
+    })
+    .onConflictDoNothing()
+  await finishQueueItem(item)
+}
+
+async function processQueueItem(item: QueueItem) {
+  console.log("Processing queue item", item.submissionId, item.testcaseId)
   const problemId = (
     await db
       .select({ problemId: submissions.problemId })
@@ -98,30 +132,50 @@ async function processQueueItem(
     passed,
   })
 
-  await db
+  await finishQueueItem(item)
+}
+
+/** With a single consumer, any "running" item at startup was interrupted. */
+async function requeueInterrupted() {
+  const requeued = await db
     .update(submissionTestcaseQueue)
-    .set({ status: "finished" })
-    .where(
-      and(
-        eq(submissionTestcaseQueue.submissionId, item.submissionId),
-        eq(submissionTestcaseQueue.testcaseId, item.testcaseId),
-      ),
-    )
+    .set({ status: "pending" })
+    .where(eq(submissionTestcaseQueue.status, "running"))
+    .returning({ submissionId: submissionTestcaseQueue.submissionId })
+  if (requeued.length > 0)
+    console.log("Requeued interrupted queue items:", requeued.length)
 }
 
 async function init() {
+  await requeueInterrupted()
   await mkdir(`${WORKING_DIR}/inputs`, { recursive: true })
   await mkdir(`${WORKING_DIR}/outputs`, { recursive: true })
 }
 
 async function loop() {
+  let inFlight = 0
   while (true) {
-    const item = await getQueueItem()
+    if (inFlight >= MAX_CONCURRENCY) {
+      await sleep(100)
+      continue
+    }
+    let item: QueueItem | null
+    try {
+      item = await getQueueItem()
+    } catch (error) {
+      console.error("Failed to fetch queue item", error)
+      await sleep(5000)
+      continue
+    }
     if (!item) {
       await sleep(1000)
       continue
     }
+    inFlight++
     processQueueItem(item)
+      .catch((error) => failQueueItem(item, error))
+      .catch((error) => console.error("Failed to record failure", error))
+      .finally(() => inFlight--)
   }
 }
 

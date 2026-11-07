@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"os/exec"
+	"path"
 	"session-manager/utils"
 )
 
@@ -30,12 +32,15 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	command := fmt.Sprintf("docker container kill %s", req.ContainerName)
-	fmt.Println("Command: ", command)
+	if !utils.ValidName(req.ContainerName) {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
 
-	cmd := exec.Command("sh", "-c", command)
+	fmt.Println("Killing session container:", req.ContainerName)
 
-	err = cmd.Run()
+	err = exec.Command("docker", "container", "kill", req.ContainerName).Run()
+	_ = os.RemoveAll(path.Join(utils.WorkingDir, "sessions", req.ContainerName))
 	if err != nil {
 		http.Error(w, "Failed"+err.Error(), http.StatusInternalServerError)
 		return

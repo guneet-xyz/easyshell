@@ -13,6 +13,8 @@ import type { getTerminalSession } from "./get-terminal-session"
 
 import { and, eq, isNull } from "drizzle-orm"
 
+const MAX_COMMAND_LENGTH = 10_000
+
 export async function submitTerminalSessionCommand({
   sessionId,
   command,
@@ -38,6 +40,9 @@ export async function submitTerminalSessionCommand({
 > {
   const user = (await getAuthSession())?.user
   if (!user) return { status: "error", type: "not-authenticated" }
+  if (typeof command !== "string" || command.length > MAX_COMMAND_LENGTH) {
+    throw new Error("Command too long")
+  }
 
   const terminalSession = await db
     .select()

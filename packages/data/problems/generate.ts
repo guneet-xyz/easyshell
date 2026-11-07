@@ -14,7 +14,11 @@ const PROBLEMS_DIR_RELATIVE = `./_data`
 const GENERATED_JS = `${PROJECT_ROOT}/packages/data/problems/generated.js`
 const GENERATED_CONFIG_JS = `${PROJECT_ROOT}/packages/data/problems/generated.config.js`
 
-async function _problemConfig(problem: string) {
+/**
+ * Load a problem config from source. Unlike the generated data, this keeps
+ * function fields such as `daemonSetup`, which image builds need.
+ */
+export async function loadProblemConfig(problem: string) {
   const parse_result = ProblemConfigSchema.safeParse(
     (
       (await import(`${PROBLEMS_DIR_RELATIVE}/${problem}/config`)) as {
@@ -62,7 +66,7 @@ export async function generateProblemsData() {
   const problems: GeneratedProblemData = []
 
   for (const problemId of problemIds) {
-    const problem = await _problemConfig(problemId)
+    const problem = await loadProblemConfig(problemId)
     const body = await _problemBody(problemId)
     const hints = await _problemHints(problemId)
 
@@ -87,7 +91,7 @@ export async function generateProblemConfigData() {
   const problems: GeneratedProblemConfigData = []
 
   for (const problemId of problemIds) {
-    const problem = await _problemConfig(problemId)
+    const problem = await loadProblemConfig(problemId)
     problems.push(problem)
   }
 

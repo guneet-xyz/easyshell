@@ -6,7 +6,7 @@ import { execa } from "execa"
 import { z } from "zod"
 
 import { mkdir } from "fs"
-import { readFile, writeFile } from "fs/promises"
+import { chmod, readFile, rm, stat, writeFile } from "fs/promises"
 
 export const WORKING_DIR = `${env.WORKING_DIR}/submission-manager`
 
@@ -16,6 +16,10 @@ mkdir(`${WORKING_DIR}/inputs`, { recursive: true }, (err) => {
 mkdir(`${WORKING_DIR}/outputs`, { recursive: true }, (err) => {
   if (err) throw err
 })
+
+/** Upper bound for one testcase run, including container start. */
+const SUBMISSION_TIMEOUT_MS = 30_000
+const MAX_OUTPUT_BYTES = 1024 * 1024
 
 const OutputJsonSchema = z.object({
   stdout: z.string(),
@@ -49,6 +53,8 @@ export async function runSubmissionAndGetOutput({
 
   await writeFile(inputFilePath, input)
   await writeFile(outputFilePath, "")
+  // Writable by remapped (user-namespaced) root in the testcase container.
+  await chmod(outputFilePath, 0o666)
 
   const startedAt = new Date()
 
@@ -61,30 +67,54 @@ export async function runSubmissionAndGetOutput({
       ? image
       : `${env.DOCKER_REGISTRY}/easyshell/${image}`
 
-  await execa("docker", [
-    "run",
-    "-q",
-    "--rm",
-    "--name",
-    containerName,
-    "-v",
-    `${inputFilePathForDocker}:/input.sh`,
-    "-v",
-    `${outputFilePathForDocker}:/output.json`,
-    "-m",
-    "10m",
-    "--cpus",
-    "0.1",
-    ...[pullPolicy].filter((x) => x !== undefined),
-    imageTag,
-    "-mode",
-    "submission",
-  ])
+  const run = execa(
+    "docker",
+    [
+      "run",
+      "-q",
+      "--rm",
+      "--name",
+      containerName,
+      "-v",
+      `${inputFilePathForDocker}:/input.sh`,
+      "-v",
+      `${outputFilePathForDocker}:/output.json`,
+      "--network",
+      "none",
+      "--pids-limit",
+      "256",
+      "-m",
+      "10m",
+      "--cpus",
+      "0.1",
+      ...[pullPolicy].filter((x) => x !== undefined),
+      imageTag,
+      "-mode",
+      "submission",
+    ],
+    { timeout: SUBMISSION_TIMEOUT_MS },
+  )
+  let raw: string
+  try {
+    try {
+      await run
+    } catch (error) {
+      // On timeout execa kills only the CLI; remove the container as well.
+      await execa("docker", ["rm", "-f", containerName]).catch(() => undefined)
+      throw error
+    }
+    // User code can write /output.json itself; bound what is read.
+    if ((await stat(outputFilePath)).size > MAX_OUTPUT_BYTES) {
+      throw new Error("Submission output too large")
+    }
+    raw = await readFile(outputFilePath, { encoding: "utf-8" })
+  } finally {
+    await rm(inputFilePath, { force: true })
+    await rm(outputFilePath, { force: true })
+  }
   const finishedAt = new Date()
 
-  const output = OutputJsonSchema.parse(
-    JSON.parse(await readFile(outputFilePath, { encoding: "utf-8" })),
-  )
+  const output = OutputJsonSchema.parse(JSON.parse(raw))
 
   const fs = output.fs
 

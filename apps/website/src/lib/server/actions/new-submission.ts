@@ -4,7 +4,9 @@ import { submissionTestcaseQueue, submissions } from "@easyshell/db/schema"
 
 import { db } from "@/db"
 import { getAuthSession } from "@/lib/server/auth"
-import { getProblemInfo } from "@/lib/server/problems"
+import { getProblemInfo, isKnownProblem } from "@/lib/server/problems"
+
+const MAX_INPUT_LENGTH = 10_000
 
 export async function newSubmission({
   problemId,
@@ -15,6 +17,8 @@ export async function newSubmission({
 }) {
   const user = (await getAuthSession())?.user
   if (!user) return null
+  if (!isKnownProblem(problemId)) return null
+  if (typeof input !== "string" || input.length > MAX_INPUT_LENGTH) return null
 
   const submissionId = (
     await db

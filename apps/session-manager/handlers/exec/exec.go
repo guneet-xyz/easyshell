@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"path"
 	"session-manager/utils"
 	"strings"
@@ -56,7 +57,25 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !utils.ValidName(reqBody.ContainerName) {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
 	socketPath := path.Join(utils.WorkingDir, "sessions", reqBody.ContainerName, "main.sock")
+	// The session directory is writable from inside the user's container; only
+	// dial a real socket, never a symlink planted there.
+	if info, statErr := os.Lstat(socketPath); statErr != nil || info.Mode()&os.ModeSocket == 0 {
+		w.WriteHeader(http.StatusInternalServerError)
+		if json.NewEncoder(w).Encode(ErrorResponse{
+			Critical: true,
+			Message:  "request failed, container might be down",
+			Error:    "session socket unavailable",
+		}) != nil {
+			panic("couldn't write error response")
+		}
+		return
+	}
 	client := utils.SocketClient(socketPath)
 
 	resp, err := client.Do(req)

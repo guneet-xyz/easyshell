@@ -1,10 +1,19 @@
-import { lower, users, type User } from "@easyshell/db/schema"
+import {
+  accounts,
+  lower,
+  sessions,
+  users,
+  verification,
+  type User,
+} from "@easyshell/db/schema"
 
 import { db } from "@/db"
 import { env } from "@/env"
+import { sendEmail } from "@/lib/server/email"
 
 import { User as NewUser, betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
+import { magicLink } from "better-auth/plugins"
 import { count, eq } from "drizzle-orm"
 import { headers } from "next/headers"
 
@@ -171,24 +180,62 @@ export async function getUserByUsername(username: string) {
 
 // ================================ Auth Configuration ===============================
 
+export type SocialProvider = "github" | "discord" | "google"
+
+function oauth(clientId?: string, clientSecret?: string) {
+  return clientId && clientSecret ? { clientId, clientSecret } : undefined
+}
+
+const socialProviders = {
+  github: oauth(env.GITHUB_CLIENT_ID, env.GITHUB_CLIENT_SECRET),
+  discord: oauth(env.DISCORD_CLIENT_ID, env.DISCORD_CLIENT_SECRET),
+  google: oauth(env.GOOGLE_CLIENT_ID, env.GOOGLE_CLIENT_SECRET),
+}
+
+/** Sign-in methods that are configured, for rendering login/settings UI. */
+export function getLoginMethods() {
+  return {
+    social: (Object.keys(socialProviders) as SocialProvider[]).filter(
+      (provider) => socialProviders[provider] !== undefined,
+    ),
+    email: !!env.EMAIL_FROM,
+  }
+}
+
+function escapeHtml(text: string) {
+  return text.replace(
+    /[&<>"']/g,
+    (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        c
+      ]!,
+  )
+}
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
+    // The tables are exported under plural names; map better-auth's models.
+    schema: { user: users, session: sessions, account: accounts, verification },
   }),
-  socialProviders: {
-    github: {
-      clientId: env.GITHUB_CLIENT_ID,
-      clientSecret: env.GITHUB_CLIENT_SECRET,
-    },
-    discord: {
-      clientId: env.DISCORD_CLIENT_ID,
-      clientSecret: env.DISCORD_CLIENT_SECRET,
-    },
-    google: {
-      clientId: env.GOOGLE_CLIENT_ID,
-      clientSecret: env.GOOGLE_CLIENT_SECRET,
-    },
-  },
+  socialProviders: Object.fromEntries(
+    Object.entries(socialProviders).filter(([, value]) => value !== undefined),
+  ),
+  plugins: env.EMAIL_FROM
+    ? [
+        magicLink({
+          expiresIn: 60 * 10,
+          sendMagicLink: async ({ email, url }) => {
+            await sendEmail({
+              to: email,
+              subject: "Sign in to easyshell",
+              text: `Sign in to easyshell.sh with this link (valid for 10 minutes):\n\n${url}\n\nIf you did not request this, you can ignore this email.`,
+              html: `<p>Sign in to easyshell.sh with the link below. It is valid for 10 minutes.</p><p><a href="${escapeHtml(url)}">Sign in to easyshell</a></p><p>If you did not request this, you can ignore this email.</p>`,
+            })
+          },
+        }),
+      ]
+    : [],
   user: {
     additionalFields: {
       username: {

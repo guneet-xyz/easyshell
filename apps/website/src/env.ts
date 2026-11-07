@@ -8,14 +8,21 @@ export const env = createEnv({
     NEXTAUTH_SECRET: z.string(),
     NEXTAUTH_URL: z.string().url(),
 
-    DISCORD_CLIENT_ID: z.string(),
-    DISCORD_CLIENT_SECRET: z.string(),
+    // Each OAuth provider is enabled only when both of its values are set.
+    DISCORD_CLIENT_ID: z.string().optional(),
+    DISCORD_CLIENT_SECRET: z.string().optional(),
 
-    GITHUB_CLIENT_ID: z.string(),
-    GITHUB_CLIENT_SECRET: z.string(),
+    GITHUB_CLIENT_ID: z.string().optional(),
+    GITHUB_CLIENT_SECRET: z.string().optional(),
 
-    GOOGLE_CLIENT_ID: z.string(),
-    GOOGLE_CLIENT_SECRET: z.string(),
+    GOOGLE_CLIENT_ID: z.string().optional(),
+    GOOGLE_CLIENT_SECRET: z.string().optional(),
+
+    // Email (magic link) sign-in through Amazon SES is enabled when EMAIL_FROM
+    // is set. AWS credentials come from the standard AWS_* variables.
+    EMAIL_FROM: z.string().optional(),
+    AWS_REGION: z.string().default("us-east-1"),
+    SES_CONFIGURATION_SET: z.string().optional(),
 
     SESSION_MANAGER_URL: z.string().url(),
     SESSION_MANAGER_TOKEN: z.string(),

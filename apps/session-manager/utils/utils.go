@@ -6,7 +6,20 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"regexp"
+	"time"
 )
+
+// SessionLifetime matches the website's terminal session expiry.
+const SessionLifetime = time.Hour
+
+var validName = regexp.MustCompile(`^[a-z0-9][a-z0-9_.-]{0,127}$`)
+
+// ValidName reports whether s is safe to use as a container or image name and as
+// a single path element. Names are passed to docker as arguments, never a shell.
+func ValidName(s string) bool {
+	return validName.MatchString(s)
+}
 
 var (
 	DockerRegistry string

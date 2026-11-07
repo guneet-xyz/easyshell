@@ -36,9 +36,12 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("Container Name: ", reqBody.ContainerName)
 
-	command := fmt.Sprintf("docker inspect %s", reqBody.ContainerName)
-	cmd := exec.Command("sh", "-c", command)
-	err = cmd.Run()
+	if !utils.ValidName(reqBody.ContainerName) {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	err = exec.Command("docker", "container", "inspect", reqBody.ContainerName).Run()
 
 	var respBody = responseBody{
 		IsRunning: err == nil,

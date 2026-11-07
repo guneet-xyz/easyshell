@@ -5,6 +5,7 @@ import { terminalSessionLogs, terminalSessions } from "@easyshell/db/schema"
 
 import { db } from "@/db"
 import { env } from "@/env"
+import { isKnownTestcase } from "@/lib/server/problems"
 import {
   HTTP_STATUS_INTERNAL_SERVER_ERROR,
   HTTP_STATUS_LOCKED,
@@ -37,6 +38,9 @@ export async function getTerminalSession({
   problemId: string
   testcaseId: number
 }) {
+  if (!isKnownTestcase(problemId, testcaseId)) {
+    throw new Error("Unknown problem or testcase")
+  }
   let session = await getActiveTerminalSession({
     userId,
     problemId,

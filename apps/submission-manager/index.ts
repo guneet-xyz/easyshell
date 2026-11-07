@@ -65,10 +65,44 @@ async function getQueueItem() {
   }
 }
 
-async function processQueueItem(
-  item: NonNullable<Awaited<ReturnType<typeof getQueueItem>>>,
-) {
-  console.log("Processing queue item", item)
+const MAX_CONCURRENCY = 4
+
+type QueueItem = NonNullable<Awaited<ReturnType<typeof getQueueItem>>>
+
+async function finishQueueItem(item: QueueItem) {
+  await db
+    .update(submissionTestcaseQueue)
+    .set({ status: "finished" })
+    .where(
+      and(
+        eq(submissionTestcaseQueue.submissionId, item.submissionId),
+        eq(submissionTestcaseQueue.testcaseId, item.testcaseId),
+      ),
+    )
+}
+
+/** Record a failed result so a crashed or timed-out run never stays "running". */
+async function failQueueItem(item: QueueItem, error: unknown) {
+  console.error("Queue item failed", item.submissionId, item.testcaseId, error)
+  const now = new Date()
+  await db
+    .insert(submissionTestcases)
+    .values({
+      submissionId: item.submissionId,
+      testcaseId: item.testcaseId,
+      stdout: "",
+      stderr: "The submission failed or timed out.",
+      exitCode: -1,
+      startedAt: now,
+      finishedAt: now,
+      passed: false,
+    })
+    .onConflictDoNothing()
+  await finishQueueItem(item)
+}
+
+async function processQueueItem(item: QueueItem) {
+  console.log("Processing queue item", item.submissionId, item.testcaseId)
   const problemId = (
     await db
       .select({ problemId: submissions.problemId })
@@ -98,15 +132,7 @@ async function processQueueItem(
     passed,
   })
 
-  await db
-    .update(submissionTestcaseQueue)
-    .set({ status: "finished" })
-    .where(
-      and(
-        eq(submissionTestcaseQueue.submissionId, item.submissionId),
-        eq(submissionTestcaseQueue.testcaseId, item.testcaseId),
-      ),
-    )
+  await finishQueueItem(item)
 }
 
 async function init() {
@@ -115,13 +141,22 @@ async function init() {
 }
 
 async function loop() {
+  let inFlight = 0
   while (true) {
+    if (inFlight >= MAX_CONCURRENCY) {
+      await sleep(100)
+      continue
+    }
     const item = await getQueueItem()
     if (!item) {
       await sleep(1000)
       continue
     }
+    inFlight++
     processQueueItem(item)
+      .catch((error) => failQueueItem(item, error))
+      .catch((error) => console.error("Failed to record failure", error))
+      .finally(() => inFlight--)
   }
 }
 

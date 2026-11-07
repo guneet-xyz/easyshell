@@ -46,7 +46,7 @@ FROM build AS migrator
 ENTRYPOINT ["pnpm", "exec", "drizzle-kit", "migrate"]
 
 FROM build AS problems
-RUN apk add --no-cache docker-cli
+RUN apk add --no-cache docker-cli docker-cli-buildx
 ENV APP="script"
 ENV PROJECT_ROOT=/src
 RUN pnpm run --filter @easyshell/data generate

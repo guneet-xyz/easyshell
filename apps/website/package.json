@@ -11,6 +11,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@aws-sdk/client-sesv2": "^3.1163.0",
     "@easyshell/data": "workspace:*",
     "@easyshell/db": "workspace:*",
     "@mdx-js/loader": "^3.1.0",

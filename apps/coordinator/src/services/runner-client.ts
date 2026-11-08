@@ -58,7 +58,11 @@ export type GetJobOutput =
 // exec error union includes `container_locked` which the coordinator must
 // map onto its own `session_error` discriminant before returning to the
 // website (the coordinator schema intentionally omits it).
-export type CreateSessionInput = { container_name: string; image: string }
+export type CreateSessionInput = {
+  container_name: string
+  image: string
+  job_id?: string
+}
 export type CreateSessionOutput = { ok: true }
 
 export type ExecSessionInput = { container_name: string; command: string }

@@ -277,7 +277,7 @@ export const terminalSessionsRouter = router({
     .mutation(
       async ({ input }): Promise<z.infer<typeof CreateSessionOutputSchema>> => {
         const db = getDb(env.RUNNER_DB_PATH)
-        const jobId = sessionJobId(input.container_name)
+        const jobId = input.job_id ?? sessionJobId(input.container_name)
         const sessionDir = path.join(
           env.WORKING_DIR,
           "sessions",

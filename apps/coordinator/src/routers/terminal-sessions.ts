@@ -113,6 +113,7 @@ export const terminalSessionsRouter = router({
         await runnerClient.terminalSessions.create.mutate({
           container_name: containerName,
           image: input.image,
+          job_id: jobId,
         })
       } catch (err) {
         const msg = errMessage(err)

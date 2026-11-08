@@ -271,6 +271,22 @@ describe("routers/terminal-sessions", () => {
       expect(terminal.socket_path).toContain("main.sock")
     })
 
+    it("tracks the session under the coordinator's job id when given", async () => {
+      dockerState.run.mockResolvedValue({ stdout: "", stderr: "", exitCode: 0 })
+      const caller = terminalSessionsRouter.createCaller({
+        actor: "coordinator",
+      })
+      await caller.create({
+        container_name: "easyshell-sess-2",
+        image: "easyshell-foo",
+        job_id: "0b7e4f7e-2c1d-4c55-9a7a-3f0f1c9d2b11",
+      })
+      const job = dbHolder
+        .db!.prepare("SELECT job_id FROM accepted_job WHERE container_name=?")
+        .get("easyshell-sess-2") as { job_id: string }
+      expect(job.job_id).toBe("0b7e4f7e-2c1d-4c55-9a7a-3f0f1c9d2b11")
+    })
+
     it("marks status='failed' and throws when docker run fails", async () => {
       dockerState.run.mockResolvedValue({
         stdout: "",

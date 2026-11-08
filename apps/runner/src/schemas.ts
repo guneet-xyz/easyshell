@@ -50,6 +50,9 @@ export const CancelJobOutputSchema = z.object({
 export const CreateSessionInputSchema = z.object({
   container_name: z.string(),
   image: z.string().min(1),
+  // The coordinator's execution_job id, so job status polls and the final
+  // result push refer to the same job on both sides.
+  job_id: z.string().min(1).max(64).optional(),
 })
 export const CreateSessionOutputSchema = z.object({ ok: z.literal(true) })
 

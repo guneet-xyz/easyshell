@@ -228,15 +228,16 @@ describe("terminalSessions.create", () => {
 
     // The runner client was asked to spin up the session container.
     expect(runnerClientCreateMutate).toHaveBeenCalledTimes(1)
-    expect(runnerClientCreateMutate).toHaveBeenCalledWith({
-      container_name: "easyshell-test-uuid",
-      image: "easyshell-list-files-1",
-    })
-
     // insertExecutionJob ran inside a transaction with mode=session.
     expect(transactionSpy).toHaveBeenCalledTimes(1)
     expect(insertExecutionJobSpy).toHaveBeenCalledTimes(1)
     const [, params] = insertExecutionJobSpy.mock.calls[0] ?? []
+    // The runner tracks the session under the coordinator's job id.
+    expect(runnerClientCreateMutate).toHaveBeenCalledWith({
+      container_name: "easyshell-test-uuid",
+      image: "easyshell-list-files-1",
+      job_id: (params as { id: string }).id,
+    })
     expect(params).toMatchObject({
       runnerId: "r-1",
       mode: "session",

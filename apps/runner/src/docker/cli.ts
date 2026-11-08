@@ -113,7 +113,7 @@ export async function dockerRun(args: DockerRunArgs): Promise<DockerRunResult> {
     containerName,
     image,
     mode,
-    memory = "10m",
+    memory = "64m",
     cpus = "0.1",
     extraVolumes = [],
     extraEnv = [],

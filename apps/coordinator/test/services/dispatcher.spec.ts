@@ -191,7 +191,7 @@ describe("dispatch — happy path (runner accepts)", () => {
       mode: "submission",
       image: "easyshell-list-files-1",
       input: "ls -la",
-      resource_limits: { memory: "10m", cpus: "0.1" },
+      resource_limits: { memory: "64m", cpus: "0.1" },
     })
   })
 

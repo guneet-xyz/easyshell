@@ -128,7 +128,7 @@ function buildInput(overrides: {
     mode: overrides.mode ?? ("submission" as const),
     image: overrides.image ?? "easyshell-foo",
     input: overrides.input ?? "echo hi",
-    resource_limits: { memory: "10m", cpus: "0.1" },
+    resource_limits: { memory: "64m", cpus: "0.1" },
   }
 }
 

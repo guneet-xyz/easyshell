@@ -464,10 +464,10 @@ input = z.object({
   input: z.string().optional(), // required when mode=submission
   resource_limits: z
     .object({
-      memory: z.string().default("10m"),
+      memory: z.string().default("64m"),
       cpus: z.string().default("0.1"),
     })
-    .default({ memory: "10m", cpus: "0.1" }),
+    .default({ memory: "64m", cpus: "0.1" }),
 })
 output = z.discriminatedUnion("status", [
   z.object({ status: z.literal("accepted") }),

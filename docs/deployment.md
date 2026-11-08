@@ -166,7 +166,7 @@ Release testcase containers separately with:
 
 ### Runner sandbox
 
-The runner starts every user container with `--network none`, `--pids-limit 256` and the requested memory/CPU limits, validates container and image names, and removes session containers after an hour. Submissions get 30 seconds to run (a timeout is a failed testcase); the testcase image is pulled beforehand with its own limit. Point `DOCKER_HOST` at a dedicated Docker engine for user code, ideally with `--userns-remap` so container root is an unprivileged host user; the runner prepares its work directories for that.
+The runner starts every user container with `--network none`, `--pids-limit 256`, a 64 MiB memory limit and 0.1 CPU, validates container and image names, and removes session containers after an hour. Submissions get 30 seconds to run (a timeout is a failed testcase); the testcase image is pulled beforehand with its own limit. Point `DOCKER_HOST` at a dedicated Docker engine for user code, ideally with `--userns-remap` so container root is an unprivileged host user; the runner prepares its work directories for that. Size the engine's memory for `(SESSION_MAX_CONCURRENCY + SUBMISSION_MAX_CONCURRENCY) × 64 MiB`, or lower the concurrency to fit, so a full runner cannot exhaust it.
 
 ### Website
 

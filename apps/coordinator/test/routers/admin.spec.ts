@@ -89,7 +89,7 @@ vi.mock("../../src/db", () => {
       selectWhereSpy(c)
       return selectChain
     },
-    limit: (n: number) => selectLimitSpy(n),
+    limit: (n: unknown) => selectLimitSpy(n),
     orderBy: (c: unknown) => selectOrderBySpy(c),
     then: (onResolve, onReject) =>
       (selectFromThenSpy() as Promise<unknown>).then(onResolve, onReject),
@@ -411,9 +411,7 @@ describe("admin.runners.revoke", () => {
 
   it("rejects a non-website caller (UNAUTHORIZED)", async () => {
     const caller = adminRouter.createCaller({ actor: "unauth" })
-    await expect(
-      caller.runners.revoke({ runner_id: "r-1" }),
-    ).rejects.toThrow()
+    await expect(caller.runners.revoke({ runner_id: "r-1" })).rejects.toThrow()
     expect(updateTableSpy).not.toHaveBeenCalled()
   })
 })
@@ -593,7 +591,7 @@ describe("admin — cross-cutting invariants", () => {
     // function", surfacing the regression as a test failure. This spec
     // documents the invariant: revoke is a SET revokedAt, not a DELETE.
     const dbModule = await import("../../src/db")
-    const db = dbModule.db as Record<string, unknown>
+    const db = dbModule.db as unknown as Record<string, unknown>
     expect(db.delete).toBeUndefined()
   })
 })

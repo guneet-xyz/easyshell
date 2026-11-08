@@ -15,6 +15,13 @@
       "when": 1782647208880,
       "tag": "0001_coordinator_runner",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794120375757,
+      "tag": "0002_admin_revocation",
+      "breakpoints": true
     }
   ]
 }

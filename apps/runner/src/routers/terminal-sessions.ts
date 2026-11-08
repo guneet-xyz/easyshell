@@ -139,9 +139,13 @@ function execViaSocket(
       return
     }
     let settled = false
+    // Absolute deadline: an idle timeout alone lets a daemon replaced by user
+    // code hold the request open by trickling bytes.
+    let deadline: NodeJS.Timeout | undefined
     const settle = (result: SocketExecResult): void => {
       if (settled) return
       settled = true
+      clearTimeout(deadline)
       fs.closeSync(fd)
       resolve(result)
     }
@@ -212,14 +216,14 @@ function execViaSocket(
       },
     )
 
-    req.setTimeout(timeoutMs, () => {
+    deadline = setTimeout(() => {
       req.destroy()
       settle({
         status: "error",
         type: "took_too_long",
         message: "command timed out",
       })
-    })
+    }, timeoutMs)
 
     req.on("error", (err) => {
       // ENOENT / ECONNREFUSED — the socket file isn't there or the

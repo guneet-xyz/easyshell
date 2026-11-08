@@ -479,6 +479,31 @@ describe("routers/terminal-sessions", () => {
       expect(httpRequestMock).not.toHaveBeenCalled()
     })
 
+    it("gives up after an absolute deadline even if the daemon keeps the request open", async () => {
+      await seedTerminalSession("easyshell-sess-slow")
+      const req = makeFakeReq()
+      // The daemon accepts the request and never finishes the response.
+      httpRequestMock.mockImplementation(() => req)
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] })
+      try {
+        const caller = terminalSessionsRouter.createCaller({
+          actor: "coordinator",
+        })
+        const pending = caller.exec({
+          container_name: "easyshell-sess-slow",
+          command: "x",
+        })
+        await vi.advanceTimersByTimeAsync(5000)
+        expect(await pending).toMatchObject({
+          status: "error",
+          type: "took_too_long",
+        })
+        expect(req.destroy).toHaveBeenCalled()
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
     it("bounds the size of a session response", async () => {
       await seedTerminalSession("easyshell-sess-big")
       const req = mockSocketResponse({

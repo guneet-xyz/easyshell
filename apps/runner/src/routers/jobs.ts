@@ -159,8 +159,9 @@ function runSubmissionJob(params: {
 
       const finishedAt = Date.now()
 
-      if (result.timedOut) {
-        // The user's code ran too long: a result, not an infrastructure error.
+      if (result.timedOut || result.outputTooLarge) {
+        // The user's code ran too long or printed too much: a result, not an
+        // infrastructure error.
         db.prepare(
           `UPDATE accepted_job SET
             status='succeeded', finished_at=?, exit_code=?, stdout=?, stderr=?, fs=?
@@ -169,7 +170,9 @@ function runSubmissionJob(params: {
           finishedAt,
           TIMED_OUT_EXIT_CODE,
           "",
-          `Timed out after ${SUBMISSION_TIMEOUT_MS / 1000} seconds.`,
+          result.timedOut
+            ? `Timed out after ${SUBMISSION_TIMEOUT_MS / 1000} seconds.`
+            : "Output too large.",
           "{}",
           jobId,
         )

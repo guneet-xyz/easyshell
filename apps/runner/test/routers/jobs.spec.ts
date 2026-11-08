@@ -296,6 +296,23 @@ describe("routers/jobs", () => {
       })
     })
 
+    it("reports oversized output as a result, not a retry", async () => {
+      dockerState.run.mockResolvedValue({
+        stdout: "",
+        stderr: "output too large",
+        exitCode: 1,
+        outputTooLarge: true,
+      })
+      const caller = jobsRouter.createCaller({ actor: "coordinator" })
+      await caller.accept(buildInput({ job_id: "j-loud" }))
+      const row = await settle("j-loud")
+      expect(row).toMatchObject({
+        status: "succeeded",
+        exit_code: -1,
+        stderr: "Output too large.",
+      })
+    })
+
     it("fails (for retry) when the image cannot be pulled", async () => {
       dockerState.pull.mockResolvedValue({ ok: false, error: "not found" })
       const caller = jobsRouter.createCaller({ actor: "coordinator" })

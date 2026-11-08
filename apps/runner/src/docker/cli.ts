@@ -40,6 +40,11 @@ export function isSafeImage(image: string): boolean {
   return SAFE_IMAGE.test(image) && !image.includes("..")
 }
 
+/** Largest file a user container may write. */
+const MAX_FILE_SIZE_BYTES = 16 * 1024 * 1024
+/** Largest output read back from the docker CLI (what the container prints). */
+const MAX_CLI_OUTPUT_BYTES = 1024 * 1024
+
 /** Label on every session container: unix seconds after which it is reaped. */
 export const SESSION_EXPIRES_LABEL = "easyshell.session-expires"
 
@@ -49,6 +54,8 @@ export interface DockerRunResult {
   exitCode: number
   /** The run exceeded `timeoutMs` and its container was removed. */
   timedOut?: boolean
+  /** The container printed more than the output limit and was removed. */
+  outputTooLarge?: boolean
 }
 
 /**
@@ -136,6 +143,10 @@ export async function dockerRun(args: DockerRunArgs): Promise<DockerRunResult> {
     "none",
     "--pids-limit",
     "256",
+    // Bounds each file user code writes, including bind-mounted ones in the
+    // shared work directory (bytes).
+    "--ulimit",
+    `fsize=${MAX_FILE_SIZE_BYTES}`,
     "-m",
     memory,
     "--cpus",
@@ -160,17 +171,30 @@ export async function dockerRun(args: DockerRunArgs): Promise<DockerRunResult> {
   try {
     const { stdout, stderr } = await execFileAsync("docker", argv, {
       timeout: timeoutMs ?? 0,
-      maxBuffer: 1024 * 1024,
+      maxBuffer: MAX_CLI_OUTPUT_BYTES,
+      // The CLI forwards SIGTERM to the container instead of exiting; the
+      // container itself is removed below either way.
+      killSignal: "SIGKILL",
     })
     return { stdout, stderr, exitCode: 0 }
   } catch (err: unknown) {
     const e = err as {
       stdout?: string
       stderr?: string
-      code?: number
+      code?: number | string
       message?: string
       killed?: boolean
       signal?: string
+    }
+    if (e.code === "ERR_CHILD_PROCESS_STDIO_MAXBUFFER") {
+      await dockerRm(containerName)
+      log.warn({ container_name: containerName }, "docker.run.output-too-large")
+      return {
+        stdout: "",
+        stderr: "output too large",
+        exitCode: 1,
+        outputTooLarge: true,
+      }
     }
     if (e.killed || e.signal) {
       // Timeout: the CLI was killed, but the container may still be running.

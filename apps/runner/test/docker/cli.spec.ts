@@ -196,6 +196,8 @@ describe("docker CLI adapter", () => {
         "none",
         "--pids-limit",
         "256",
+        "--ulimit",
+        "fsize=16777216",
         "-m",
         "10m",
         "--cpus",
@@ -451,6 +453,45 @@ describe("docker CLI adapter", () => {
         ok: false,
         error: "manifest unknown",
       })
+    })
+  })
+
+  describe("user-caused run failures", () => {
+    it("kills the CLI with SIGKILL on timeout", async () => {
+      execFileMock.mockResolvedValue({ stdout: "", stderr: "" })
+      await dockerRun({
+        containerName: "easyshell-x",
+        image: "easyshell-foo-7",
+        mode: "submission",
+        timeoutMs: 1000,
+      })
+      const [, , options] = execFileMock.mock.calls[0] as [
+        string,
+        string[],
+        { killSignal: string },
+      ]
+      expect(options.killSignal).toBe("SIGKILL")
+    })
+
+    it("reports oversized output and removes the container", async () => {
+      execFileMock
+        .mockRejectedValueOnce(
+          Object.assign(new Error("maxBuffer"), {
+            code: "ERR_CHILD_PROCESS_STDIO_MAXBUFFER",
+          }),
+        )
+        .mockResolvedValue({ stdout: "", stderr: "" })
+      const result = await dockerRun({
+        containerName: "easyshell-x",
+        image: "easyshell-foo-7",
+        mode: "submission",
+      })
+      expect(result).toMatchObject({ outputTooLarge: true })
+      expect(execFileMock).toHaveBeenLastCalledWith("docker", [
+        "rm",
+        "-f",
+        "easyshell-x",
+      ])
     })
   })
 })

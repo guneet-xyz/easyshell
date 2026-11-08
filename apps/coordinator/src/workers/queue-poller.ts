@@ -1,5 +1,5 @@
 import crypto from "node:crypto"
-import { and, eq, sql } from "drizzle-orm"
+import { and, asc, eq, sql } from "drizzle-orm"
 
 import { submissions, submissionTestcaseQueue } from "@easyshell/db/schema"
 import { createLogger } from "@easyshell/logger"
@@ -8,7 +8,7 @@ import { sleep } from "@easyshell/utils"
 import { db } from "../db"
 import { dispatch } from "../services/dispatcher"
 import { generateContainerName } from "../services/job-name"
-import { insertExecutionJob } from "../services/jobs"
+import { insertExecutionJob, UNASSIGNED_RUNNER_ID } from "../services/jobs"
 import { getProblemSlugFromId } from "../services/problems"
 
 const log = createLogger("coordinator:queue-poller")
@@ -51,6 +51,9 @@ export async function claimNextQueueItem(): Promise<ClaimedQueueItem | null> {
       })
       .from(submissionTestcaseQueue)
       .where(eq(submissionTestcaseQueue.status, "pending"))
+      // Least recently touched first: a row put back after a failed dispatch
+      // goes behind the others instead of being reclaimed immediately.
+      .orderBy(asc(submissionTestcaseQueue.updatedAt))
       .limit(1),
   )
 
@@ -86,6 +89,39 @@ export async function claimNextQueueItem(): Promise<ClaimedQueueItem | null> {
 
   if (!updated) return null
 
+  try {
+    return await resolveClaim(jobId, containerName, updated)
+  } catch (err: unknown) {
+    // Never leave the row `running` with no job, where no sweeper finds it.
+    // A missing submission or problem is permanent: fail the row. Anything
+    // else (e.g. a dropped database connection) puts it back in the queue.
+    const message = err instanceof Error ? err.message : String(err)
+    if (!/not found/i.test(message)) {
+      await revertQueueItem(updated.submissionId, updated.testcaseId, message)
+      throw err
+    }
+    await db
+      .update(submissionTestcaseQueue)
+      .set({
+        status: "failed",
+        lastError: message,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(submissionTestcaseQueue.submissionId, updated.submissionId),
+          eq(submissionTestcaseQueue.testcaseId, updated.testcaseId),
+        ),
+      )
+    throw err
+  }
+}
+
+async function resolveClaim(
+  jobId: string,
+  containerName: string,
+  updated: { submissionId: number; testcaseId: number },
+): Promise<ClaimedQueueItem> {
   const submission = (
     await db
       .select({
@@ -148,7 +184,8 @@ export async function revertQueueItem(
 /**
  * Records an `execution_job` row for the claimed item and logs success.
  *
- * The `runner_id` column is set to the sentinel `"unassigned"`; the
+ * The `runner_id` column is set to the sentinel `"unassigned"` (a
+ * deregistered runner row, see migration 0005); the
  * dispatcher updates it to the real runner id once `runner.jobs.accept`
  * succeeds. `execution_job.runner_id` is `varchar(64) NOT NULL` with a
  * FK to `runner.id`, so the sentinel keeps the column non-null without
@@ -163,13 +200,13 @@ export async function revertQueueItem(
  */
 export async function processClaimedItem(
   item: ClaimedQueueItem,
-): Promise<void> {
+): Promise<boolean> {
   try {
     await db.transaction(async (tx) => {
       await insertExecutionJob(tx, {
         id: item.jobId,
         containerName: item.containerName,
-        runnerId: "unassigned",
+        runnerId: UNASSIGNED_RUNNER_ID,
         mode: "submission",
         image: item.image,
         submissionId: item.submissionId,
@@ -190,7 +227,7 @@ export async function processClaimedItem(
       "queue.claim.success",
     )
 
-    await dispatch(item.jobId)
+    return await dispatch(item.jobId)
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err)
     log.error(
@@ -203,13 +240,29 @@ export async function processClaimedItem(
       "queue.claim.process-failed",
     )
     await revertQueueItem(item.submissionId, item.testcaseId, message)
+    return false
   }
+}
+
+const RETRY_DELAY_MIN_MS = 1000
+const RETRY_DELAY_MAX_MS = 5000
+
+/**
+ * Pause before the next claim after `failures` consecutive items were not
+ * accepted (no runner, runner at capacity, insert or dispatch error). Those
+ * rows go straight back to `pending`, so without a pause the poller would
+ * reclaim them in a tight loop.
+ */
+export function retryDelayMs(failures: number): number {
+  if (failures <= 0) return 0
+  return Math.min(RETRY_DELAY_MAX_MS, RETRY_DELAY_MIN_MS * 2 ** (failures - 1))
 }
 
 /**
  * Main poll loop. Mirrors `submission-manager/index.ts:116-140`: claim →
- * dispatch (async) → immediately re-poll. Sleeps 1s only when the queue
- * was empty or when the claim itself threw.
+ * dispatch (async) → immediately re-poll. Sleeps 1s when the queue was
+ * empty or the claim itself threw, and backs off (see `retryDelayMs`) while
+ * claimed items are not being accepted.
  *
  * Returns `Promise<never>`; the caller is expected to keep the process
  * alive (this is invoked from a long-running coordinator worker, not a
@@ -217,8 +270,11 @@ export async function processClaimedItem(
  */
 export async function startQueuePoller(): Promise<never> {
   log.info("queue-poller starting")
+  let consecutiveFailures = 0
   // eslint-disable-next-line no-constant-condition
   while (true) {
+    const delay = retryDelayMs(consecutiveFailures)
+    if (delay > 0) await sleep(delay)
     try {
       const item = await claimNextQueueItem()
       if (!item) {
@@ -227,15 +283,21 @@ export async function startQueuePoller(): Promise<never> {
       }
       // Fire-and-forget: re-poll immediately so a single slow job does
       // not stall queue throughput.
-      processClaimedItem(item).catch((err: unknown) => {
-        log.error(
-          {
-            error: err instanceof Error ? err.message : String(err),
-            job_id: item.jobId,
-          },
-          "queue.poller.unexpected-error",
-        )
-      })
+      processClaimedItem(item).then(
+        (accepted) => {
+          consecutiveFailures = accepted ? 0 : consecutiveFailures + 1
+        },
+        (err: unknown) => {
+          consecutiveFailures++
+          log.error(
+            {
+              error: err instanceof Error ? err.message : String(err),
+              job_id: item.jobId,
+            },
+            "queue.poller.unexpected-error",
+          )
+        },
+      )
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err)
       log.error({ error: message }, "queue.poller.claim-error")

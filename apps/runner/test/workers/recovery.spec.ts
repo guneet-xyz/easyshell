@@ -202,6 +202,40 @@ describe("workers/recovery", () => {
     expect(dockerState.rm).not.toHaveBeenCalled()
   })
 
+  it("counts sessions that survived the restart", async () => {
+    const { getCapacity } = await import("../../src/services/capacity")
+    const before = getCapacity().session_used
+    const now = Date.now()
+    dbHolder
+      .db!.prepare(
+        `INSERT INTO accepted_job (job_id, container_name, image, mode, status, accepted_at)
+         VALUES (?,?,?,?,?,?)`,
+      )
+      .run(
+        "sess-1",
+        "easyshell-sess-1",
+        "easyshell-foo",
+        "session",
+        "running",
+        now,
+      )
+    dbHolder
+      .db!.prepare(
+        `INSERT INTO container (container_name, job_id, docker_state, working_dir, created_at)
+         VALUES (?,?,?,?,?)`,
+      )
+      .run("easyshell-sess-1", "sess-1", "starting", "/tmp", now)
+    dockerState.inspect.mockResolvedValue({ exists: true, running: true })
+
+    await runRecovery()
+
+    expect(getCapacity().session_used).toBe(before + 1)
+    const container = dbHolder
+      .db!.prepare("SELECT docker_state FROM container WHERE container_name=?")
+      .get("easyshell-sess-1") as { docker_state: string }
+    expect(container.docker_state).toBe("running")
+  })
+
   it("leaves already-running rows unchanged when container is still up", async () => {
     seedAcceptedJob(dbHolder.db!, {
       job_id: "job-4",

@@ -148,7 +148,9 @@ export const jobsRouter = router({
             const testcase = problem.testcases.find(
               (tc) => tc.id === job.testcaseId,
             )
-            if (testcase) {
+            // A negative exit code means the run timed out or was killed by
+            // a signal; it never passes, whatever the expectations.
+            if (testcase && outcome.exit_code >= 0) {
               passed = computePassed(
                 {
                   stdout: outcome.stdout,

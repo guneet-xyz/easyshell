@@ -1,12 +1,14 @@
 "use client"
 
-import { signOut } from "next-auth/react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { authClient } from "@/lib/auth-client"
 
 export function LogoutForm() {
+  const router = useRouter()
   return (
     <Card className="flex w-fit flex-col rounded-xl border px-8 py-4">
       <h2 className="text-lg font-semibold">{`You're about to log out`}</h2>
@@ -18,7 +20,9 @@ export function LogoutForm() {
         <Button
           variant={"destructive"}
           onClick={async () => {
-            await signOut()
+            await authClient.signOut()
+            router.push("/")
+            router.refresh()
           }}
         >
           Log Out

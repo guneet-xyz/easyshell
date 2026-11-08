@@ -16,6 +16,9 @@ export async function getTestcaseInfo({
   submissionId: number
   testcaseId: number
 }) {
+  // Checks that the caller owns the submission before any data is returned.
+  const submission = await getSubmissionInfo({ submissionId })
+
   const _dataFromDb = await db
     .select({
       input: submissions.input,
@@ -45,8 +48,6 @@ export async function getTestcaseInfo({
   }
 
   const dataFromDb = _dataFromDb[0]!
-
-  const submission = await getSubmissionInfo({ submissionId })
 
   const problemSlug = await getProblemSlugFromId(
     submission.submission.problemId,

@@ -35,7 +35,13 @@ import { createLogger } from "@easyshell/logger"
 
 import { type Context } from "../context"
 import { getDb } from "../db/sqlite"
-import { dockerInspect, dockerKill, dockerRun } from "../docker/cli"
+import {
+  dockerInspect,
+  dockerKill,
+  dockerRun,
+  isSafeContainerName,
+  SESSION_EXPIRES_LABEL,
+} from "../docker/cli"
 import { env } from "../env"
 import {
   CreateSessionInputSchema,
@@ -47,7 +53,9 @@ import {
   type IsRunningOutputSchema,
   type KillSessionOutputSchema,
 } from "../schemas"
-import { decrementSession, incrementSession } from "../services/capacity"
+import { incrementSession } from "../services/capacity"
+import { clearInFlight, markInFlight } from "../services/in-flight"
+import { endSession } from "../services/session-lifecycle"
 
 const log = createLogger("runner:terminal-sessions")
 
@@ -87,24 +95,79 @@ type SocketExecResult =
       message: string
     }
 
+/** Session containers live this long, matching the website's session expiry. */
+const SESSION_LIFETIME_MS = 60 * 60 * 1000
+/** Upper bound for one exec response from a session daemon. */
+const MAX_EXEC_RESPONSE_BYTES = 1024 * 1024
+// Linux O_PATH (not exported by node:fs); same value on x86_64 and arm64.
+const O_PATH = 0o10000000
+
+/**
+ * Open the session socket without following symlinks. The session directory
+ * is writable by user code inside the container, so a planted symlink could
+ * otherwise redirect the runner to another session's socket. The returned
+ * descriptor is dialed through /proc/self/fd, so swapping the file after the
+ * check cannot change what is connected.
+ */
+function openSessionSocket(socketPath: string): number | null {
+  let fd: number
+  try {
+    fd = fs.openSync(socketPath, O_PATH | fs.constants.O_NOFOLLOW)
+  } catch {
+    return null
+  }
+  if (!fs.fstatSync(fd).isSocket()) {
+    fs.closeSync(fd)
+    return null
+  }
+  return fd
+}
+
 function execViaSocket(
   socketPath: string,
   command: string,
   timeoutMs: number,
 ): Promise<SocketExecResult> {
   return new Promise<SocketExecResult>((resolve) => {
+    const fd = openSessionSocket(socketPath)
+    if (fd === null) {
+      resolve({
+        status: "error",
+        type: "session_not_running",
+        message: "session socket unavailable",
+      })
+      return
+    }
     let settled = false
+    // Absolute deadline: an idle timeout alone lets a daemon replaced by user
+    // code hold the request open by trickling bytes.
+    let deadline: NodeJS.Timeout | undefined
     const settle = (result: SocketExecResult): void => {
       if (settled) return
       settled = true
+      clearTimeout(deadline)
+      fs.closeSync(fd)
       resolve(result)
     }
 
     const req = http.request(
-      { socketPath, path: "/", method: "POST" },
+      { socketPath: `/proc/self/fd/${fd}`, path: "/", method: "POST" },
       (res) => {
         const chunks: Buffer[] = []
-        res.on("data", (chunk: Buffer) => chunks.push(chunk))
+        let received = 0
+        res.on("data", (chunk: Buffer) => {
+          received += chunk.length
+          if (received > MAX_EXEC_RESPONSE_BYTES) {
+            req.destroy()
+            settle({
+              status: "error",
+              type: "session_error",
+              message: "session response too large",
+            })
+            return
+          }
+          chunks.push(chunk)
+        })
         res.on("end", () => {
           const body = Buffer.concat(chunks).toString("utf8")
           if (res.statusCode === 423) {
@@ -153,14 +216,14 @@ function execViaSocket(
       },
     )
 
-    req.setTimeout(timeoutMs, () => {
+    deadline = setTimeout(() => {
       req.destroy()
       settle({
         status: "error",
         type: "took_too_long",
         message: "command timed out",
       })
-    })
+    }, timeoutMs)
 
     req.on("error", (err) => {
       // ENOENT / ECONNREFUSED — the socket file isn't there or the
@@ -219,93 +282,140 @@ export const terminalSessionsRouter = router({
     .mutation(
       async ({ input }): Promise<z.infer<typeof CreateSessionOutputSchema>> => {
         const db = getDb(env.RUNNER_DB_PATH)
-        const jobId = sessionJobId(input.container_name)
+        const jobId = input.job_id ?? sessionJobId(input.container_name)
         const sessionDir = path.join(
           env.WORKING_DIR,
           "sessions",
           input.container_name,
         )
         const socketPath = path.join(sessionDir, "main.sock")
+        if (!isSafeContainerName(input.container_name)) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "invalid container name",
+          })
+        }
         fs.mkdirSync(sessionDir, { recursive: true })
+        // The sandbox engine remaps container root to an unprivileged host
+        // UID, which must be able to create the session socket here.
+        fs.chmodSync(sessionDir, 0o777)
 
         const now = Date.now()
 
-        // Insert accepted_job + container + terminal_session rows atomically.
-        // Use INSERT OR IGNORE so a retried create on an existing container
-        // is idempotent — the docker run below is also a no-op for an
-        // already-running container (it'll fail with "name already in use"
-        // which is surfaced as a normal docker-run failure).
-        db.transaction(() => {
-          db.prepare(
-            `INSERT OR IGNORE INTO accepted_job
+        // Until create settles, reconciliation leaves this job alone.
+        markInFlight(jobId)
+        try {
+          // Insert accepted_job + container + terminal_session rows atomically.
+          // Use INSERT OR IGNORE so a retried create on an existing container
+          // is idempotent — the docker run below is also a no-op for an
+          // already-running container (it'll fail with "name already in use"
+          // which is surfaced as a normal docker-run failure).
+          db.transaction(() => {
+            db.prepare(
+              `INSERT OR IGNORE INTO accepted_job
               (job_id, container_name, image, mode, status, accepted_at)
               VALUES (?,?,?,?,?,?)`,
-          ).run(
-            jobId,
-            input.container_name,
-            input.image,
-            "session",
-            "starting",
-            now,
-          )
-          db.prepare(
-            `INSERT OR IGNORE INTO container
+            ).run(
+              jobId,
+              input.container_name,
+              input.image,
+              "session",
+              "starting",
+              now,
+            )
+            db.prepare(
+              `INSERT OR IGNORE INTO container
               (container_name, job_id, docker_state, working_dir, created_at)
               VALUES (?,?,?,?,?)`,
-          ).run(input.container_name, jobId, "starting", sessionDir, now)
-          db.prepare(
-            `INSERT OR IGNORE INTO terminal_session
+            ).run(input.container_name, jobId, "starting", sessionDir, now)
+            db.prepare(
+              `INSERT OR IGNORE INTO terminal_session
               (container_name, job_id, socket_path, created_at)
               VALUES (?,?,?,?)`,
-          ).run(input.container_name, jobId, socketPath, now)
-        })()
+            ).run(input.container_name, jobId, socketPath, now)
+          })()
 
-        // docker run -d --rm --name {name} -m 10m --cpus 0.1
-        //            -v {sessionDir}:/tmp/easyshell {image} -mode session
-        const result = await dockerRun({
-          containerName: input.container_name,
-          image: input.image,
-          mode: "session",
-          memory: "10m",
-          cpus: "0.1",
-          extraVolumes: [`${sessionDir}:/tmp/easyshell`],
-          detach: true,
-        })
-
-        if (result.exitCode !== 0) {
-          db.prepare(
-            "UPDATE accepted_job SET status='failed', error_message=? WHERE job_id=?",
-          ).run(`docker run failed: ${result.stderr.slice(0, 500)}`, jobId)
-          db.prepare(
-            "UPDATE container SET docker_state='removed' WHERE container_name=?",
-          ).run(input.container_name)
-          log.error(
-            {
-              container_name: input.container_name,
-              exit_code: result.exitCode,
-              stderr: result.stderr,
+          // docker run -d --rm --name {name} -m 10m --cpus 0.1
+          //            -v {sessionDir}:/tmp/easyshell {image} -mode session
+          const result = await dockerRun({
+            containerName: input.container_name,
+            image: input.image,
+            mode: "session",
+            memory: "10m",
+            cpus: "0.1",
+            extraVolumes: [`${sessionDir}:/tmp/easyshell`],
+            detach: true,
+            labels: {
+              [SESSION_EXPIRES_LABEL]: String(
+                Math.floor((now + SESSION_LIFETIME_MS) / 1000),
+              ),
             },
-            "terminal-session.create-failed",
-          )
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: `docker run failed: ${result.stderr}`,
+            // Covers pulling the testcase image from the registry.
+            timeoutMs: 120_000,
           })
+
+          if (result.exitCode !== 0) {
+            db.prepare(
+              "UPDATE accepted_job SET status='failed', error_message=?, finished_at=? WHERE job_id=? AND status='starting'",
+            ).run(
+              `docker run failed: ${result.stderr.slice(0, 500)}`,
+              Date.now(),
+              jobId,
+            )
+            db.prepare(
+              "UPDATE container SET docker_state='removed' WHERE container_name=?",
+            ).run(input.container_name)
+            db.prepare(
+              "INSERT OR IGNORE INTO cleanup_pending (container_name, reason, queued_at) VALUES (?,?,?)",
+            ).run(input.container_name, "finished", Date.now())
+            log.error(
+              {
+                container_name: input.container_name,
+                exit_code: result.exitCode,
+                stderr: result.stderr,
+              },
+              "terminal-session.create-failed",
+            )
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: `docker run failed: ${result.stderr}`,
+            })
+          }
+
+          // Only if still starting: the session may have been killed while
+          // its container was being pulled or created.
+          const promoted = db
+            .prepare(
+              "UPDATE accepted_job SET status='running', started_at=? WHERE job_id=? AND status='starting'",
+            )
+            .run(now, jobId).changes
+          if (promoted === 0) {
+            await dockerKill(input.container_name)
+            db.prepare(
+              "INSERT OR IGNORE INTO cleanup_pending (container_name, reason, queued_at) VALUES (?,?,?)",
+            ).run(input.container_name, "cancelled", Date.now())
+            log.warn(
+              { container_name: input.container_name },
+              "terminal-session.ended-while-starting",
+            )
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: "session ended while starting",
+            })
+          }
+          db.prepare(
+            "UPDATE container SET docker_state='running' WHERE container_name=?",
+          ).run(input.container_name)
+          incrementSession()
+
+          log.info(
+            { container_name: input.container_name },
+            "terminal-session.created",
+          )
+          return { ok: true }
+        } finally {
+          clearInFlight(jobId)
         }
-
-        db.prepare(
-          "UPDATE accepted_job SET status='running', started_at=? WHERE job_id=?",
-        ).run(now, jobId)
-        db.prepare(
-          "UPDATE container SET docker_state='running' WHERE container_name=?",
-        ).run(input.container_name)
-        incrementSession()
-
-        log.info(
-          { container_name: input.container_name },
-          "terminal-session.created",
-        )
-        return { ok: true }
       },
     ),
 
@@ -391,24 +501,12 @@ export const terminalSessionsRouter = router({
     .mutation(
       async ({ input }): Promise<z.infer<typeof KillSessionOutputSchema>> => {
         const db = getDb(env.RUNNER_DB_PATH)
-        const jobId = sessionJobId(input.container_name)
-
         // docker container kill is idempotent at the cli adapter level —
         // it returns ok:false if the container is already gone but does
         // not throw. We swallow that and continue to the SQLite updates
         // because the desired terminal state is the same either way.
         await dockerKill(input.container_name)
-
-        db.prepare(
-          "UPDATE accepted_job SET status='cancelled', finished_at=? WHERE job_id=?",
-        ).run(Date.now(), jobId)
-        db.prepare(
-          "UPDATE container SET docker_state='removed' WHERE container_name=?",
-        ).run(input.container_name)
-        db.prepare(
-          "INSERT OR IGNORE INTO cleanup_pending (container_name, reason, queued_at) VALUES (?,?,?)",
-        ).run(input.container_name, "cancelled", Date.now())
-        decrementSession()
+        endSession(db, input.container_name, "cancelled", "cancelled")
 
         log.info(
           { container_name: input.container_name },

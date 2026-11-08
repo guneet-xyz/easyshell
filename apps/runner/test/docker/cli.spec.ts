@@ -33,9 +33,13 @@ vi.mock("@easyshell/logger", () => ({
 const {
   dockerInspect,
   dockerKill,
+  dockerPull,
   dockerRm,
   dockerRun,
   expandImageName,
+  isSafeContainerName,
+  isSafeImage,
+  listExpiredSessions,
   pullArgs,
 } = await import("../../src/docker/cli")
 
@@ -142,6 +146,19 @@ describe("docker CLI adapter", () => {
 
       expect(result).toEqual({ exists: false, running: false })
     })
+
+    it("throws, rather than reporting the container gone, when the engine fails", async () => {
+      execFileMock.mockRejectedValue(
+        Object.assign(new Error("exit 1"), {
+          stderr:
+            "Cannot connect to the Docker daemon at unix:///run/dind/docker.sock",
+        }),
+      )
+
+      await expect(dockerInspect("easyshell-x")).rejects.toThrow(
+        /Cannot connect to the Docker daemon/,
+      )
+    })
   })
 
   describe("dockerRm", () => {
@@ -188,10 +205,20 @@ describe("docker CLI adapter", () => {
         "--rm",
         "--name",
         "easyshell-session-x",
+        "--network",
+        "none",
+        "--pids-limit",
+        "256",
+        "--ulimit",
+        "fsize=16777216",
+        "--ulimit",
+        "core=0",
         "-m",
         "10m",
         "--cpus",
         "0.1",
+        "--label",
+        "easyshell.mode=session",
         "-d",
         "-v",
         "/tmp/easyshell/sessions/easyshell-session-x:/tmp/easyshell",
@@ -310,6 +337,176 @@ describe("docker CLI adapter", () => {
       expect(argv.filter((a) => a === "--env")).toHaveLength(2)
       expect(argv).toContain("FOO=bar")
       expect(argv).toContain("BAZ=qux")
+    })
+  })
+
+  describe("sandbox hardening", () => {
+    it("validates container names and image references", () => {
+      for (const ok of ["easyshell-say-hello-1-session-42", "a", "x.y_z-1"])
+        expect(isSafeContainerName(ok)).toBe(true)
+      for (const bad of [
+        "",
+        "-rm",
+        "x;id",
+        "../etc",
+        "a/b",
+        "A",
+        "x y",
+        "a".repeat(129),
+      ])
+        expect(isSafeContainerName(bad)).toBe(false)
+      for (const ok of [
+        "easyshell-foo-7",
+        "cr.guneet.dev/easyshell/easyshell-foo-7",
+        "localhost:5000/a/b@sha256:abc",
+      ])
+        expect(isSafeImage(ok)).toBe(true)
+      for (const bad of ["", "--privileged", "x;id", "a/../b", "a b"])
+        expect(isSafeImage(bad)).toBe(false)
+    })
+
+    it("refuses unsafe names without invoking docker", async () => {
+      const result = await dockerRun({
+        containerName: "x;id",
+        image: "easyshell-foo-7",
+        mode: "session",
+      })
+      expect(result.exitCode).toBe(1)
+      expect(await dockerKill("--all")).toEqual({
+        ok: false,
+        error: "invalid container name",
+      })
+      expect(await dockerInspect("a/../b")).toEqual({
+        exists: false,
+        running: false,
+      })
+      await dockerRm("$(id)")
+      expect(execFileMock).not.toHaveBeenCalled()
+    })
+
+    it("adds labels and a timeout, and removes the container when it expires", async () => {
+      const killed = Object.assign(new Error("killed"), {
+        killed: true,
+        signal: "SIGTERM",
+      })
+      execFileMock
+        .mockRejectedValueOnce(killed)
+        .mockResolvedValue({ stdout: "", stderr: "" })
+
+      const result = await dockerRun({
+        containerName: "easyshell-foo-7-submission-1",
+        image: "easyshell-foo-7",
+        mode: "submission",
+        labels: { "easyshell.session-expires": "123" },
+        timeoutMs: 5000,
+      })
+
+      expect(result.exitCode).toBe(124)
+      const [, argv, options] = execFileMock.mock.calls[0] as [
+        string,
+        string[],
+        { timeout: number },
+      ]
+      expect(argv).toEqual(
+        expect.arrayContaining(["--network", "none", "--pids-limit", "256"]),
+      )
+      expect(argv).toContain("easyshell.session-expires=123")
+      expect(options.timeout).toBe(5000)
+      expect(execFileMock).toHaveBeenLastCalledWith("docker", [
+        "rm",
+        "-f",
+        "easyshell-foo-7-submission-1",
+      ])
+    })
+
+    it("lists only expired, well-formed session containers", async () => {
+      execFileMock.mockResolvedValue({
+        stdout:
+          "old-session 100\nfresh-session 9999999999\nno-label \nBAD;name 1\n",
+        stderr: "",
+      })
+      expect(await listExpiredSessions(200_000)).toEqual(["old-session"])
+      const [, argv] = execFileMock.mock.calls[0] as [string, string[]]
+      expect(argv).toEqual(
+        expect.arrayContaining(["--filter", "label=easyshell.mode=session"]),
+      )
+    })
+  })
+
+  describe("separate pull", () => {
+    it("is a no-op without a registry", async () => {
+      expect(await dockerPull("easyshell-foo-7", 1000)).toEqual({ ok: true })
+      expect(execFileMock).not.toHaveBeenCalled()
+    })
+
+    it("pulls the registry image, and runs with --pull=never when asked", async () => {
+      envState.DOCKER_REGISTRY = "cr.example"
+      execFileMock.mockResolvedValue({ stdout: "", stderr: "" })
+      expect(await dockerPull("easyshell-foo-7", 1000)).toEqual({ ok: true })
+      expect(execFileMock).toHaveBeenCalledWith(
+        "docker",
+        ["pull", "--quiet", "cr.example/easyshell/easyshell-foo-7"],
+        { timeout: 1000 },
+      )
+      await dockerRun({
+        containerName: "easyshell-x",
+        image: "easyshell-foo-7",
+        mode: "submission",
+        pull: false,
+      })
+      const [, argv] = execFileMock.mock.calls[1] as [string, string[]]
+      expect(argv).toContain("--pull=never")
+      expect(argv).not.toContain("--pull=always")
+    })
+
+    it("reports a failed pull", async () => {
+      envState.DOCKER_REGISTRY = "cr.example"
+      execFileMock.mockRejectedValue(
+        Object.assign(new Error("x"), { stderr: "manifest unknown" }),
+      )
+      expect(await dockerPull("easyshell-foo-7", 1000)).toEqual({
+        ok: false,
+        error: "manifest unknown",
+      })
+    })
+  })
+
+  describe("user-caused run failures", () => {
+    it("kills the CLI with SIGKILL on timeout", async () => {
+      execFileMock.mockResolvedValue({ stdout: "", stderr: "" })
+      await dockerRun({
+        containerName: "easyshell-x",
+        image: "easyshell-foo-7",
+        mode: "submission",
+        timeoutMs: 1000,
+      })
+      const [, , options] = execFileMock.mock.calls[0] as [
+        string,
+        string[],
+        { killSignal: string },
+      ]
+      expect(options.killSignal).toBe("SIGKILL")
+    })
+
+    it("reports oversized output and removes the container", async () => {
+      execFileMock
+        .mockRejectedValueOnce(
+          Object.assign(new Error("maxBuffer"), {
+            code: "ERR_CHILD_PROCESS_STDIO_MAXBUFFER",
+          }),
+        )
+        .mockResolvedValue({ stdout: "", stderr: "" })
+      const result = await dockerRun({
+        containerName: "easyshell-x",
+        image: "easyshell-foo-7",
+        mode: "submission",
+      })
+      expect(result).toMatchObject({ outputTooLarge: true })
+      expect(execFileMock).toHaveBeenLastCalledWith("docker", [
+        "rm",
+        "-f",
+        "easyshell-x",
+      ])
     })
   })
 })

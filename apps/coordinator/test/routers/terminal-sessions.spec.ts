@@ -228,15 +228,16 @@ describe("terminalSessions.create", () => {
 
     // The runner client was asked to spin up the session container.
     expect(runnerClientCreateMutate).toHaveBeenCalledTimes(1)
-    expect(runnerClientCreateMutate).toHaveBeenCalledWith({
-      container_name: "easyshell-test-uuid",
-      image: "easyshell-list-files-1",
-    })
-
     // insertExecutionJob ran inside a transaction with mode=session.
     expect(transactionSpy).toHaveBeenCalledTimes(1)
     expect(insertExecutionJobSpy).toHaveBeenCalledTimes(1)
     const [, params] = insertExecutionJobSpy.mock.calls[0] ?? []
+    // The runner tracks the session under the coordinator's job id.
+    expect(runnerClientCreateMutate).toHaveBeenCalledWith({
+      container_name: "easyshell-test-uuid",
+      image: "easyshell-list-files-1",
+      job_id: (params as { id: string }).id,
+    })
     expect(params).toMatchObject({
       runnerId: "r-1",
       mode: "session",
@@ -374,14 +375,16 @@ describe("terminalSessions.exec", () => {
 
 describe("terminalSessions.isAlive", () => {
   it("returns the runner's is_running flag on the happy path", async () => {
-    selectLimitSpy.mockResolvedValueOnce([
-      {
-        terminalSessionId: 100,
-        runnerId: "r-1",
-        containerName: "easyshell-test-uuid",
-        executionJobId: "job-1",
-      },
-    ])
+    selectLimitSpy
+      .mockResolvedValueOnce([
+        {
+          terminalSessionId: 100,
+          runnerId: "r-1",
+          containerName: "easyshell-test-uuid",
+          executionJobId: "job-1",
+        },
+      ])
+      .mockResolvedValueOnce([{ status: "active", revokedAt: null }])
 
     const caller = terminalSessionsRouter.createCaller(websiteCtx)
     const result = await caller.isAlive({ terminal_session_id: 100 })
@@ -390,6 +393,42 @@ describe("terminalSessions.isAlive", () => {
     expect(runnerClientIsRunningQuery).toHaveBeenCalledWith({
       container_name: "easyshell-test-uuid",
     })
+  })
+
+  it("reports an error, not 'dead', when the runner cannot be reached", async () => {
+    selectLimitSpy
+      .mockResolvedValueOnce([
+        {
+          terminalSessionId: 100,
+          runnerId: "r-1",
+          containerName: "easyshell-test-uuid",
+          executionJobId: "job-1",
+        },
+      ])
+      .mockResolvedValueOnce([{ status: "active", revokedAt: null }])
+    runnerClientIsRunningQuery.mockRejectedValueOnce(new Error("ECONNREFUSED"))
+
+    const caller = terminalSessionsRouter.createCaller(websiteCtx)
+    await expect(caller.isAlive({ terminal_session_id: 100 })).rejects.toThrow()
+  })
+
+  it("returns is_running=false for a stale runner without asking it", async () => {
+    selectLimitSpy
+      .mockResolvedValueOnce([
+        {
+          terminalSessionId: 100,
+          runnerId: "r-1",
+          containerName: "easyshell-test-uuid",
+          executionJobId: "job-1",
+        },
+      ])
+      .mockResolvedValueOnce([{ status: "stale", revokedAt: null }])
+
+    const caller = terminalSessionsRouter.createCaller(websiteCtx)
+    expect(await caller.isAlive({ terminal_session_id: 100 })).toEqual({
+      is_running: false,
+    })
+    expect(runnerClientIsRunningQuery).not.toHaveBeenCalled()
   })
 
   it("returns is_running=false when there is no route row", async () => {

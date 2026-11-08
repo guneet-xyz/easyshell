@@ -78,7 +78,7 @@ The quickest way to run the application stack locally is through Docker Compose.
 
    If the network already exists, Docker will report that and you can continue.
 
-3. Make sure your dev secrets are available through Infisical. At minimum, the Compose stack needs `DATABASE_URL`; the website also needs the auth, SMTP and PostHog variables listed below.
+3. Make sure your dev secrets are available through Infisical. At minimum, the Compose stack needs `DATABASE_URL`; the website also needs `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` and at least one sign-in method (see below).
 
 4. Build and run the stack.
 
@@ -128,8 +128,9 @@ The following environment variables might be required
 - [`COORDINATOR_URL`](#coordinator_url)
 - [`WEBSITE_TOKEN`](#website_token)
 - [`ADMIN_EMAILS`](#admin_emails)
-- [`NEXTAUTH_URL`](#nextauth_url)
-- [`NEXTAUTH_SECRET`](#nextauth_secret)
+- [`BETTER_AUTH_SECRET`](#better_auth_secret)
+- [`BETTER_AUTH_URL`](#better_auth_url)
+- [`EMAIL_FROM`](#email_from)
 - [`DISCORD_CLIENT_ID`](#discord_client_id)
 - [`DISCORD_CLIENT_SECRET`](#discord_client_secret)
 - [`GITHUB_CLIENT_ID`](#github_client_id)
@@ -180,7 +181,15 @@ Bearer token used by the website when calling the coordinator API.
 
 Comma-separated list of email addresses with admin access to the website admin dashboard.
 
-#### `NEXTAUTH_SECRET`
+#### `BETTER_AUTH_SECRET`
+
+#### `BETTER_AUTH_URL`
+
+[better-auth](https://www.better-auth.com) secret (at least 32 characters) and the public website URL. These are **required** for running the Next.js application.
+
+#### `EMAIL_FROM`
+
+Sender address for email (magic link) sign-in, sent through the Amazon SES API using the standard AWS credential variables plus optional `AWS_REGION` and `SES_CONFIGURATION_SET`. Email sign-in is enabled only when this is set.
 
 #### `DISCORD_CLIENT_ID`
 
@@ -194,7 +203,7 @@ Comma-separated list of email addresses with admin access to the website admin d
 
 #### `GOOGLE_CLIENT_SECRET`
 
-These are the [NextAuth](https://authjs.dev) configuration variables. These are **required** for running the Next.js application.
+OAuth sign-in credentials. Each provider is optional and is offered only when both its client ID and secret are set.
 
 ### Scripts
 

@@ -18,8 +18,11 @@
 import { createLogger } from "@easyshell/logger"
 
 import { getDb } from "../db/sqlite"
-import { dockerInspect } from "../docker/cli"
+import { dockerInspect, dockerKill, listExpiredSessions } from "../docker/cli"
 import { env } from "../env"
+import { isInFlight } from "../services/in-flight"
+import { endSession } from "../services/session-lifecycle"
+import { drainCleanupQueue } from "./recovery"
 
 const log = createLogger("runner:reconciliation")
 
@@ -28,26 +31,53 @@ const SCAN_INTERVAL_MS = 30_000
 interface ActiveJobRow {
   job_id: string
   container_name: string
+  mode: "session" | "submission"
 }
 
 export async function scanOnce(): Promise<void> {
   const db = getDb(env.RUNNER_DB_PATH)
   const active = db
     .prepare(
-      "SELECT job_id, container_name FROM accepted_job WHERE status IN ('accepted','starting','running')",
+      "SELECT job_id, container_name, mode FROM accepted_job WHERE status IN ('accepted','starting','running')",
     )
     .all() as ActiveJobRow[]
 
   if (active.length === 0) return
 
   for (const row of active) {
+    // Its docker run is still being awaited here and will record the outcome.
+    if (isInFlight(row.job_id)) continue
     try {
       const inspect = await dockerInspect(row.container_name)
       if (inspect.exists && inspect.running) continue
 
-      db.prepare(
-        "UPDATE accepted_job SET status='lost', error_message=?, finished_at=? WHERE job_id=?",
-      ).run("container gone during reconciliation", Date.now(), row.job_id)
+      if (row.mode === "session") {
+        // Also releases the session capacity slot.
+        endSession(
+          db,
+          row.container_name,
+          "lost",
+          "orphaned",
+          "container gone during reconciliation",
+        )
+        log.warn(
+          { job_id: row.job_id, container_name: row.container_name },
+          "reconciliation.orphan-marked-lost",
+        )
+        continue
+      }
+
+      // Only if still active: the job may have finished during the inspect.
+      const changed = db
+        .prepare(
+          "UPDATE accepted_job SET status='lost', error_message=?, finished_at=? WHERE job_id=? AND status IN ('accepted','starting','running')",
+        )
+        .run(
+          "container gone during reconciliation",
+          Date.now(),
+          row.job_id,
+        ).changes
+      if (changed === 0) continue
       db.prepare(
         "INSERT OR IGNORE INTO cleanup_pending (container_name, reason, queued_at) VALUES (?,?,?)",
       ).run(row.container_name, "orphaned", Date.now())
@@ -67,9 +97,27 @@ export async function scanOnce(): Promise<void> {
   }
 }
 
+/** Kill session containers past their expiry label (sessions last one hour). */
+export async function reapExpiredSessions(): Promise<void> {
+  const db = getDb(env.RUNNER_DB_PATH)
+  for (const name of await listExpiredSessions()) {
+    await dockerKill(name)
+    endSession(db, name, "cancelled", "cancelled")
+    log.info({ container_name: name }, "reconciliation.session-expired")
+  }
+}
+
+async function tick(): Promise<void> {
+  await scanOnce()
+  await reapExpiredSessions()
+  // Remove finished containers' working directories during normal operation,
+  // not only at boot, so the shared work volume does not fill up.
+  await drainCleanupQueue(getDb(env.RUNNER_DB_PATH))
+}
+
 export function startReconciliation(): void {
   setInterval(() => {
-    scanOnce().catch((err: unknown) => {
+    tick().catch((err: unknown) => {
       log.error(
         { error: err instanceof Error ? err.message : String(err) },
         "reconciliation.error",

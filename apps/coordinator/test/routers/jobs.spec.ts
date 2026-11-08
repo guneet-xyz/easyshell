@@ -183,6 +183,37 @@ describe("jobs.reportResult — succeeded path", () => {
   })
 })
 
+describe("jobs.reportResult — timed-out run", () => {
+  it("never passes a negative exit code, even when the output matches", async () => {
+    selectLimitSpy
+      .mockResolvedValueOnce([
+        {
+          id: "job-2",
+          mode: "submission",
+          submissionId: 1,
+          testcaseId: 1,
+          status: "running",
+        },
+      ])
+      .mockResolvedValueOnce([{ problemId: 5 }])
+
+    const caller = jobsRouter.createCaller(runnerCtx)
+    await caller.reportResult({
+      job_id: "job-2",
+      outcome: { ...successOutcome, exit_code: -1 },
+    })
+
+    const insertedRow = insertValuesSpy.mock.calls[0]?.[0] as Record<
+      string,
+      unknown
+    >
+    expect(insertedRow.exitCode).toBe(-1)
+    expect(insertedRow.passed).toBe(false)
+    const queueSet = updateSetSpy.mock.calls[0]?.[0] as Record<string, unknown>
+    expect(queueSet.status).toBe("finished")
+  })
+})
+
 describe("jobs.reportResult — failed path", () => {
   it("requeues queue row when attempts < MAX_ATTEMPTS", async () => {
     selectLimitSpy

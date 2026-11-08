@@ -55,7 +55,8 @@ export function SubmitPrompt({
     })
     if (!resp) {
       toast.error("Failed to submit command", {
-        description: "Unauthenticated",
+        description:
+          "Sign in, check your input, or wait for pending submissions to finish.",
       })
       setSubmitting(false)
       return

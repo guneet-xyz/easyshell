@@ -148,10 +148,7 @@ export function RunnersTable({ runners }: { runners: Runner[] }) {
           <tbody>
             {runners.length === 0 ? (
               <tr>
-                <td
-                  colSpan={6}
-                  className="px-3 py-6 text-center text-gray-500"
-                >
+                <td colSpan={6} className="px-3 py-6 text-center text-gray-500">
                   No runners yet. Create one below.
                 </td>
               </tr>
@@ -212,8 +209,7 @@ export function RunnersTable({ runners }: { runners: Runner[] }) {
         </table>
       </div>
 
-      {rotateState.kind === "confirming" ||
-      rotateState.kind === "rotating" ? (
+      {rotateState.kind === "confirming" || rotateState.kind === "rotating" ? (
         <ConfirmRotateModal
           runnerName={rotateState.runner.name}
           runnerId={rotateState.runner.id}
@@ -231,8 +227,7 @@ export function RunnersTable({ runners }: { runners: Runner[] }) {
         />
       ) : null}
 
-      {revokeState.kind === "confirming" ||
-      revokeState.kind === "revoking" ? (
+      {revokeState.kind === "confirming" || revokeState.kind === "revoking" ? (
         <ConfirmRevokeModal
           runnerName={revokeState.runner.name}
           runnerId={revokeState.runner.id}

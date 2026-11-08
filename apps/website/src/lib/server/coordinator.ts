@@ -2,7 +2,7 @@
 // Internal Functions to interact with the coordinator
 // ================================================================
 import crypto from "node:crypto"
-import { and, asc, eq, isNull } from "drizzle-orm"
+import { and, asc, count, eq, gt, isNull } from "drizzle-orm"
 
 import { createCoordinatorClient } from "@easyshell/coordinator/client"
 import { terminalSessionLogs, terminalSessions } from "@easyshell/db/schema"
@@ -10,6 +10,7 @@ import { terminalSessionLogs, terminalSessions } from "@easyshell/db/schema"
 import { db } from "@/db"
 import { env } from "@/env"
 import { getProblemSlugFromId } from "@/lib/server/problems"
+import { withUserLock } from "@/lib/server/user-limits"
 
 const _cClient = createCoordinatorClient({
   url: env.COORDINATOR_URL,
@@ -106,7 +107,23 @@ export async function getTerminalSession({
     testcaseId,
   })
   if (!session) {
-    await createTerminalSession({ userId, problemId, testcaseId })
+    // Count and insert under a per-user lock so parallel requests cannot
+    // exceed the cap or start two sessions for the same testcase.
+    const created = await withUserLock(userId, "sessions", async (tx) => {
+      if (
+        await hasLiveTerminalSessionRow({ userId, problemId, testcaseId }, tx)
+      )
+        return "exists" as const
+      if (
+        (await countActiveTerminalSessions(userId, tx)) >= MAX_ACTIVE_SESSIONS
+      )
+        return null
+      return insertTerminalSession({ userId, problemId, testcaseId }, tx)
+    })
+    if (created === null) return null
+    if (created !== "exists") {
+      await startTerminalSession({ problemId, testcaseId, sessionId: created })
+    }
     session = await getActiveTerminalSession({ userId, problemId, testcaseId })
   }
 
@@ -123,26 +140,91 @@ export async function getTerminalSession({
   }
 }
 
-export async function createTerminalSession({
-  userId,
+/** Live terminal containers one user may have at once. */
+const MAX_ACTIVE_SESSIONS = 5
+/**
+ * How long a session may take to start (the runner allows 120s, including
+ * pulling the image). A younger session that is not running yet is starting,
+ * not dead.
+ */
+const SESSION_START_GRACE_MS = 150_000
+
+async function hasLiveTerminalSessionRow(
+  {
+    userId,
+    problemId,
+    testcaseId,
+  }: { userId: string; problemId: number; testcaseId: number },
+  tx: Pick<typeof db, "select"> = db,
+) {
+  const rows = await tx
+    .select({ id: terminalSessions.id })
+    .from(terminalSessions)
+    .where(
+      and(
+        eq(terminalSessions.userId, userId),
+        eq(terminalSessions.problemId, problemId),
+        eq(terminalSessions.testcaseId, testcaseId),
+        isNull(terminalSessions.deletedAt),
+        gt(terminalSessions.expiresAt, new Date()),
+      ),
+    )
+    .limit(1)
+  return rows.length > 0
+}
+
+async function countActiveTerminalSessions(
+  userId: string,
+  tx: Pick<typeof db, "select"> = db,
+) {
+  return (
+    await tx
+      .select({ active: count() })
+      .from(terminalSessions)
+      .where(
+        and(
+          eq(terminalSessions.userId, userId),
+          isNull(terminalSessions.deletedAt),
+          gt(terminalSessions.expiresAt, new Date()),
+        ),
+      )
+  )[0]!.active
+}
+
+/** Starts the container for an inserted session; releases the row on failure. */
+export async function startTerminalSession({
   problemId,
   testcaseId,
+  sessionId,
 }: {
-  userId: string
   problemId: number
   testcaseId: number
+  sessionId: number
 }) {
-  const sessionId = await insertTerminalSession({
-    userId: userId,
-    problemId: problemId,
-    testcaseId: testcaseId,
-  })
-
-  await runTerminalSession({
-    problemId: problemId.toString(),
-    testcaseId: testcaseId.toString(),
-    sessionId: sessionId,
-  })
+  try {
+    await runTerminalSession({
+      problemId: problemId.toString(),
+      testcaseId: testcaseId.toString(),
+      sessionId,
+    })
+    // A kill that arrived while the container was starting found nothing to
+    // kill on the coordinator yet; finish it now so no container is orphaned.
+    const row = (
+      await db
+        .select({ deletedAt: terminalSessions.deletedAt })
+        .from(terminalSessions)
+        .where(eq(terminalSessions.id, sessionId))
+        .limit(1)
+    )[0]
+    if (row?.deletedAt) await coordinatorKill(sessionId)
+  } catch (err) {
+    // Otherwise the dead row would count toward the cap until it expires.
+    await db
+      .update(terminalSessions)
+      .set({ deletedAt: new Date() })
+      .where(eq(terminalSessions.id, sessionId))
+    throw err
+  }
 }
 
 export async function getActiveTerminalSession({
@@ -163,6 +245,8 @@ export async function getActiveTerminalSession({
         eq(terminalSessions.problemId, problemId),
         eq(terminalSessions.testcaseId, testcaseId),
         isNull(terminalSessions.deletedAt),
+        // Expired rows are gone (the watchdog releases them).
+        gt(terminalSessions.expiresAt, new Date()),
       ),
     )
     .limit(1)
@@ -172,10 +256,16 @@ export async function getActiveTerminalSession({
   const isRunning = await coordinatorIsRunning(session[0].id)
 
   if (isRunning) return session[0]
+  // Another request may still be starting it.
+  if (Date.now() - session[0].createdAt.getTime() < SESSION_START_GRACE_MS)
+    return session[0]
+
   await db
     .update(terminalSessions)
     .set({ deletedAt: new Date() })
     .where(eq(terminalSessions.id, session[0].id))
+  // Make sure nothing is left running for the released row.
+  await coordinatorKill(session[0].id).catch(() => undefined)
 
   return null
 }
@@ -202,16 +292,19 @@ export async function getTerminalSessionLogs(sessionId: number) {
   return logs
 }
 
-export async function insertTerminalSession({
-  problemId,
-  userId,
-  testcaseId,
-}: {
-  userId: string
-  problemId: number
-  testcaseId: number
-}) {
-  const inserted = await db
+export async function insertTerminalSession(
+  {
+    problemId,
+    userId,
+    testcaseId,
+  }: {
+    userId: string
+    problemId: number
+    testcaseId: number
+  },
+  tx: Pick<typeof db, "insert"> = db,
+) {
+  const inserted = await tx
     .insert(terminalSessions)
     .values({
       userId: userId,
@@ -225,6 +318,8 @@ export async function insertTerminalSession({
   }
   return inserted[0].id
 }
+
+const MAX_STORED_OUTPUT = 64 * 1024
 
 export async function insertTerminalSessionLog({
   sessionId,
@@ -246,8 +341,8 @@ export async function insertTerminalSessionLog({
     .values({
       sessionId: sessionId,
       stdin: stdin,
-      stdout: stdout,
-      stderr: stderr,
+      stdout: stdout.slice(0, MAX_STORED_OUTPUT),
+      stderr: stderr.slice(0, MAX_STORED_OUTPUT),
       startedAt: startedAt,
       finishedAt: finishedAt,
     })

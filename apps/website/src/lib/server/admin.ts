@@ -1,17 +1,34 @@
 import { eq } from "drizzle-orm"
 import { redirect } from "next/navigation"
+
 import { users } from "@easyshell/db/schema"
+
 import { db } from "@/db"
 import { env } from "@/env"
 import { auth } from "@/lib/server/auth"
 
 function parseAdminEmails(raw: string): Set<string> {
-  return new Set(raw.split(",").map((s) => s.trim().toLowerCase()).filter((s) => s.length > 0))
+  return new Set(
+    raw
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .filter((s) => s.length > 0),
+  )
 }
 
-const ADMIN_EMAIL_SET = parseAdminEmails(env.ADMIN_EMAILS)
+// Parsed on first use: env values are not available while Next builds pages.
+let adminEmailSet: Set<string> | undefined
+function adminEmails(): Set<string> {
+  adminEmailSet ??= parseAdminEmails(env.ADMIN_EMAILS)
+  return adminEmailSet
+}
 
-export type AdminUser = { id: string; email: string; name: string; username: string }
+export type AdminUser = {
+  id: string
+  email: string
+  name: string
+  username: string
+}
 
 /**
  * Server-side guard for admin routes. Returns the authenticated admin user or
@@ -19,7 +36,9 @@ export type AdminUser = { id: string; email: string; name: string; username: str
  * not return to the caller when the user is unauthenticated/not-admin).
  *
  * Auth model:
- * - Admin identity = NextAuth session + email in ADMIN_EMAILS.
+ * - Admin identity = better-auth session + verified email in ADMIN_EMAILS.
+ *   OAuth sign-up accepts provider emails the provider has not verified, so
+ *   an unverified address must never grant admin.
  * - Session type does NOT include email (auth.ts:211-224); email is resolved
  *   from the users table by user.id.
  * - Unauthenticated -> redirect to /login?callback=/admin/runners.
@@ -27,18 +46,31 @@ export type AdminUser = { id: string; email: string; name: string; username: str
  */
 export async function requireAdmin(pathname: string): Promise<AdminUser> {
   const session = await auth()
-  if (!session?.user) redirect(`/login?callback=${encodeURIComponent(pathname)}`)
-  const rows = await db.select({ id: users.id, email: users.email, name: users.name, username: users.username })
-    .from(users).where(eq(users.id, session.user.id)).limit(1)
+  if (!session?.user)
+    redirect(`/login?callback=${encodeURIComponent(pathname)}`)
+  const rows = await db
+    .select({
+      id: users.id,
+      email: users.email,
+      emailVerified: users.emailVerified,
+      name: users.name,
+      username: users.username,
+    })
+    .from(users)
+    .where(eq(users.id, session.user.id))
+    .limit(1)
   const user = rows[0]
   if (!user?.email) redirect(`/login?callback=${encodeURIComponent(pathname)}`)
-  if (!ADMIN_EMAIL_SET.has(user.email.trim().toLowerCase())) {
+  if (
+    !user.emailVerified ||
+    !adminEmails().has(user.email.trim().toLowerCase())
+  ) {
     throw new Response("Forbidden", { status: 403 })
   }
-  return { id: user.id, email: user.email, name: user.name ?? "", username: user.username ?? "" }
-}
-
-export function isAdminEmail(email: string | null | undefined): boolean {
-  if (!email) return false
-  return ADMIN_EMAIL_SET.has(email.trim().toLowerCase())
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name ?? "",
+    username: user.username ?? "",
+  }
 }

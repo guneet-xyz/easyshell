@@ -77,10 +77,10 @@ export async function watchdogJobs(): Promise<void> {
           "accepted",
           "running",
         ] as const),
-        lt(
-          sql`GREATEST(COALESCE(${executionJobs.lastPushAt}, ${executionJobs.dispatchedAt}), COALESCE(${executionJobs.lastPollAt}, ${executionJobs.dispatchedAt}))`,
-          staleCutoff,
-        ),
+        // Bind the cutoff explicitly: with a raw SQL left operand drizzle cannot
+        // infer the column type and would send Date.toString(), which
+        // PostgreSQL rejects (the sweeper failed on every tick).
+        sql`GREATEST(COALESCE(${executionJobs.lastPushAt}, ${executionJobs.dispatchedAt}), COALESCE(${executionJobs.lastPollAt}, ${executionJobs.dispatchedAt})) < ${staleCutoff.toISOString()}::timestamptz`,
       ),
     )
     .limit(JOB_BATCH_SIZE)

@@ -3,4 +3,5 @@ apps/website/.open-next
 apps/website/.next
 apps/website/.vercel
 data
-
+# Written by pnpm in its own format.
+pnpm-lock.yaml

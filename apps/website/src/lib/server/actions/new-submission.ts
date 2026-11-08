@@ -2,9 +2,19 @@
 
 import { submissions, submissionTestcaseQueue } from "@easyshell/db/schema"
 
-import { db } from "@/db"
 import { auth } from "@/lib/server/auth"
-import { getProblemInfo, getProblemSlugFromId } from "@/lib/server/problems"
+import {
+  getProblemInfo,
+  getProblemSlugFromId,
+  isKnownProblem,
+} from "@/lib/server/problems"
+import {
+  countPendingTestcases,
+  MAX_PENDING_TESTCASES,
+  withUserLock,
+} from "@/lib/server/user-limits"
+
+const MAX_INPUT_LENGTH = 10_000
 
 export async function newSubmission({
   problemId,
@@ -15,35 +25,39 @@ export async function newSubmission({
 }) {
   const user = (await auth())?.user
   if (!user) return null
+  if (!(await isKnownProblem(problemId))) return null
+  if (
+    typeof input !== "string" ||
+    input.trim() === "" ||
+    input.length > MAX_INPUT_LENGTH
+  )
+    return null
 
-  const problemSlug = await getProblemSlugFromId(problemId)
+  const problem = await getProblemInfo(await getProblemSlugFromId(problemId))
 
-  const submissionId = (
-    await db
-      .insert(submissions)
-      .values({
-        problemId: problemId,
-        userId: user.id,
-        input: input,
-      })
-      .returning({ id: submissions.id })
-  )[0]?.id
+  const submissionId = await withUserLock(user.id, "queue", async (tx) => {
+    // The new submission's testcases count toward the cap too.
+    const pending = await countPendingTestcases(user.id, tx)
+    if (pending + problem.testcases.length > MAX_PENDING_TESTCASES) return null
 
-  if (!submissionId) {
-    throw new Error("Failed to create submission")
-  }
+    const id = (
+      await tx
+        .insert(submissions)
+        .values({ problemId: problemId, userId: user.id, input: input })
+        .returning({ id: submissions.id })
+    )[0]?.id
+    if (!id) throw new Error("Failed to create submission")
 
-  const problem = await getProblemInfo(problemSlug)
-  // TODO: parallelize this
-  for (const testcase of problem.testcases) {
-    await db.insert(submissionTestcaseQueue).values({
-      submissionId: submissionId,
-      testcaseId: testcase.id,
-      status: "pending",
-    })
-  }
+    await tx.insert(submissionTestcaseQueue).values(
+      problem.testcases.map((testcase) => ({
+        submissionId: id,
+        testcaseId: testcase.id,
+        status: "pending" as const,
+      })),
+    )
+    return id
+  })
 
-  return {
-    submissionId: submissionId,
-  }
+  if (!submissionId) return null
+  return { submissionId }
 }

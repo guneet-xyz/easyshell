@@ -27,6 +27,7 @@ import { createLogger } from "@easyshell/logger"
 import { getDb } from "../db/sqlite"
 import { dockerInspect, dockerRm } from "../docker/cli"
 import { env } from "../env"
+import { incrementSession } from "../services/capacity"
 
 const log = createLogger("runner:recovery")
 
@@ -34,6 +35,7 @@ interface OrphanedJobRow {
   job_id: string
   container_name: string
   status: string
+  mode: "session" | "submission"
 }
 
 interface CleanupRow {
@@ -49,7 +51,7 @@ export async function runRecovery(): Promise<void> {
 
   const orphaned = db
     .prepare(
-      "SELECT job_id, container_name, status FROM accepted_job WHERE status IN ('accepted','starting','running')",
+      "SELECT job_id, container_name, status, mode FROM accepted_job WHERE status IN ('accepted','starting','running')",
     )
     .all() as OrphanedJobRow[]
 
@@ -91,6 +93,14 @@ export async function runRecovery(): Promise<void> {
           db.prepare(
             "UPDATE accepted_job SET status='running' WHERE job_id=? AND status IN ('accepted','starting')",
           ).run(row.job_id)
+          if (row.mode === "session") {
+            // The in-memory session counter starts at zero: count sessions
+            // that survived the restart so capacity is not over-reported.
+            db.prepare(
+              "UPDATE container SET docker_state='running' WHERE container_name=?",
+            ).run(row.container_name)
+            incrementSession()
+          }
           continue
         }
 
@@ -122,7 +132,9 @@ export async function runRecovery(): Promise<void> {
   log.info("runner.recovery.complete")
 }
 
-async function drainCleanupQueue(db: ReturnType<typeof getDb>): Promise<void> {
+export async function drainCleanupQueue(
+  db: ReturnType<typeof getDb>,
+): Promise<void> {
   const pending = db
     .prepare(
       "SELECT container_name, reason FROM cleanup_pending WHERE attempts < ?",

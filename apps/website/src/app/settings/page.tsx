@@ -2,7 +2,7 @@ import { Metadata } from "next"
 import { redirect } from "next/navigation"
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { auth } from "@/lib/server/auth"
+import { auth, getLoginMethods } from "@/lib/server/auth"
 import { getUserProviders } from "@/lib/server/queries"
 import { getPathname } from "@/lib/server/utils"
 
@@ -30,6 +30,7 @@ export default async function Page() {
   }
 
   const providers = await getUserProviders(user.id)
+  const enabledProviders = getLoginMethods().social
 
   return (
     <div className="min-h-screen p-6">
@@ -63,17 +64,25 @@ export default async function Page() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <h2 className="text-xl font-bold">Integrations</h2>
-            <p className="text-sm text-gray-500">Connect your accounts.</p>
-          </CardHeader>
-          <CardContent className="flex flex-wrap items-center justify-center gap-4 pb-8 lg:gap-8">
-            <DiscordCard connected={providers.discord} />
-            <GithubCard connected={providers.github} />
-            <GoogleCard connected={providers.google} />
-          </CardContent>
-        </Card>
+        {enabledProviders.length > 0 && (
+          <Card>
+            <CardHeader>
+              <h2 className="text-xl font-bold">Integrations</h2>
+              <p className="text-sm text-gray-500">Connect your accounts.</p>
+            </CardHeader>
+            <CardContent className="flex flex-wrap items-center justify-center gap-4 pb-8 lg:gap-8">
+              {enabledProviders.includes("discord") && (
+                <DiscordCard connected={providers.discord} />
+              )}
+              {enabledProviders.includes("github") && (
+                <GithubCard connected={providers.github} />
+              )}
+              {enabledProviders.includes("google") && (
+                <GoogleCard connected={providers.google} />
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   )

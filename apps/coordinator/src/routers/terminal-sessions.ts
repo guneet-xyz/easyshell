@@ -113,6 +113,7 @@ export const terminalSessionsRouter = router({
         await runnerClient.terminalSessions.create.mutate({
           container_name: containerName,
           image: input.image,
+          job_id: jobId,
         })
       } catch (err) {
         const msg = errMessage(err)
@@ -251,15 +252,30 @@ export const terminalSessionsRouter = router({
 
       if (!route) return { is_running: false }
 
+      // A runner that is gone, stale, deregistered or revoked cannot be
+      // serving the session (exec refuses it too).
+      const runner = (
+        await db
+          .select({ status: runners.status, revokedAt: runners.revokedAt })
+          .from(runners)
+          .where(eq(runners.id, route.runnerId))
+          .limit(1)
+      )[0]
+      if (!runner || runner.status !== "active" || runner.revokedAt)
+        return { is_running: false }
+
+      let runnerClient: Awaited<ReturnType<typeof createRunnerClientFromDb>>
       try {
-        const runnerClient = await createRunnerClientFromDb(route.runnerId)
-        const result = await runnerClient.terminalSessions.isRunning.query({
-          container_name: route.containerName,
-        })
-        return { is_running: result.is_running }
+        runnerClient = await createRunnerClientFromDb(route.runnerId)
       } catch {
         return { is_running: false }
       }
+      // An active runner that cannot be reached is an error, not a dead
+      // session: reporting it dead would make the website discard a live one.
+      const result = await runnerClient.terminalSessions.isRunning.query({
+        container_name: route.containerName,
+      })
+      return { is_running: result.is_running }
     }),
 
   kill: websiteProcedure

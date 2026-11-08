@@ -9,7 +9,7 @@ export function Forbidden() {
       </p>
       <Link
         href="/"
-        className="text-primary text-sm underline underline-offset-4"
+        className="text-sm text-primary underline underline-offset-4"
       >
         Back to home
       </Link>

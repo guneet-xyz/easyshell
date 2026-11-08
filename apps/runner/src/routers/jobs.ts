@@ -29,7 +29,12 @@ import { createLogger } from "@easyshell/logger"
 
 import { type Context } from "../context"
 import { getDb } from "../db/sqlite"
-import { dockerKill, dockerRun } from "../docker/cli"
+import {
+  dockerKill,
+  dockerPull,
+  dockerRun,
+  isSafeContainerName,
+} from "../docker/cli"
 import { env } from "../env"
 import {
   AcceptJobInputSchema,
@@ -44,6 +49,7 @@ import {
   getCapacity,
   incrementSubmission,
 } from "../services/capacity"
+import { clearInFlight, markInFlight } from "../services/in-flight"
 
 const log = createLogger("runner:jobs")
 
@@ -80,6 +86,15 @@ type EntrypointOutput = {
   fs?: Record<string, string>
 }
 
+/** Pulling the testcase image (an infrastructure step, retried on failure). */
+const IMAGE_PULL_TIMEOUT_MS = 120_000
+/** Running the user's code. Exceeding it is a failed testcase, not retried. */
+const SUBMISSION_TIMEOUT_MS = 30_000
+/** Reported exit code for a timed-out run; the coordinator never passes it. */
+const TIMED_OUT_EXIT_CODE = -1
+/** User code can write /output.json directly; bound what is read back. */
+const MAX_OUTPUT_BYTES = 1024 * 1024
+
 // ─── Background submission runner ────────────────────────────────────────────
 //
 // Kicks off the docker run in a detached async IIFE. Does NOT await — the
@@ -97,6 +112,7 @@ function runSubmissionJob(params: {
 }): void {
   const { jobId, containerName, image, input, memory, cpus } = params
   const db = getDb(env.RUNNER_DB_PATH)
+  markInFlight(jobId)
 
   void (async () => {
     const containerDir = path.join(
@@ -104,14 +120,20 @@ function runSubmissionJob(params: {
       "submissions",
       containerName,
     )
-    fs.mkdirSync(containerDir, { recursive: true })
-
     const inputPath = path.join(containerDir, "input.sh")
     const outputPath = path.join(containerDir, "output.json")
 
     try {
-      fs.writeFileSync(inputPath, input, { mode: 0o600 })
-      fs.writeFileSync(outputPath, "{}", { mode: 0o600 })
+      if (!isSafeContainerName(containerName)) {
+        throw new Error("invalid container name")
+      }
+      fs.mkdirSync(containerDir, { recursive: true })
+      fs.writeFileSync(inputPath, input)
+      fs.writeFileSync(outputPath, "{}")
+      // The sandbox engine remaps container root to an unprivileged host UID:
+      // it must read the input and write the output.
+      fs.chmodSync(inputPath, 0o644)
+      fs.chmodSync(outputPath, 0o666)
 
       // Transition: accepted → running. started_at is set ONCE here.
       db.prepare(
@@ -121,6 +143,9 @@ function runSubmissionJob(params: {
         "UPDATE container SET docker_state='running' WHERE container_name=?",
       ).run(containerName)
 
+      const pulled = await dockerPull(image, IMAGE_PULL_TIMEOUT_MS)
+      if (!pulled.ok) throw new Error(`image pull failed: ${pulled.error}`)
+
       const result = await dockerRun({
         containerName,
         image,
@@ -128,9 +153,36 @@ function runSubmissionJob(params: {
         memory,
         cpus,
         extraVolumes: [`${inputPath}:/input.sh`, `${outputPath}:/output.json`],
+        timeoutMs: SUBMISSION_TIMEOUT_MS,
+        pull: false,
       })
 
       const finishedAt = Date.now()
+      // User code can write more than the limit to /output.json directly, or
+      // leave more files under /home than fit in it.
+      const outputJsonTooLarge =
+        result.exitCode === 0 && fs.statSync(outputPath).size > MAX_OUTPUT_BYTES
+
+      if (result.timedOut || result.outputTooLarge || outputJsonTooLarge) {
+        // The user's code ran too long or printed too much: a result, not an
+        // infrastructure error.
+        db.prepare(
+          `UPDATE accepted_job SET
+            status='succeeded', finished_at=?, exit_code=?, stdout=?, stderr=?, fs=?
+            WHERE job_id=?`,
+        ).run(
+          finishedAt,
+          TIMED_OUT_EXIT_CODE,
+          "",
+          result.timedOut
+            ? `Timed out after ${SUBMISSION_TIMEOUT_MS / 1000} seconds.`
+            : "Output too large.",
+          "{}",
+          jobId,
+        )
+        log.info({ job_id: jobId }, "job.submission.timed-out")
+        return
+      }
 
       if (result.exitCode !== 0) {
         const errMsg = `docker run failed (exit ${result.exitCode}): ${result.stderr.slice(
@@ -186,6 +238,7 @@ function runSubmissionJob(params: {
       ).run(Date.now(), message, jobId)
       log.error({ job_id: jobId, error: message }, "job.submission.error")
     } finally {
+      clearInFlight(jobId)
       // Decrement exactly once, after the docker run lifecycle is fully done.
       decrementSubmission()
       // Enqueue cleanup for the cleanup worker (T22) to GC the directory and

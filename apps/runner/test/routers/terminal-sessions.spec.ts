@@ -15,8 +15,17 @@
 
 import { EventEmitter } from "node:events"
 import fs from "node:fs"
+import net from "node:net"
 import Database from "better-sqlite3"
-import { afterAll, beforeEach, describe, expect, it, vi } from "vitest"
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest"
 
 import { migrate } from "../../src/db/migrations"
 
@@ -67,6 +76,9 @@ vi.mock("../../src/docker/cli", () => ({
   dockerRun: (...args: unknown[]) => dockerState.run(...args),
   dockerKill: (...args: unknown[]) => dockerState.kill(...args),
   dockerInspect: (...args: unknown[]) => dockerState.inspect(...args),
+  isSafeContainerName: (name: string) =>
+    /^[a-z0-9][a-z0-9_.-]{0,127}$/.test(name),
+  SESSION_EXPIRES_LABEL: "easyshell.session-expires",
 }))
 
 vi.mock("../../src/db/sqlite", () => ({
@@ -259,6 +271,52 @@ describe("routers/terminal-sessions", () => {
       expect(terminal.socket_path).toContain("main.sock")
     })
 
+    it("tracks the session under the coordinator's job id when given", async () => {
+      dockerState.run.mockResolvedValue({ stdout: "", stderr: "", exitCode: 0 })
+      const caller = terminalSessionsRouter.createCaller({
+        actor: "coordinator",
+      })
+      await caller.create({
+        container_name: "easyshell-sess-2",
+        image: "easyshell-foo",
+        job_id: "0b7e4f7e-2c1d-4c55-9a7a-3f0f1c9d2b11",
+      })
+      const job = dbHolder
+        .db!.prepare("SELECT job_id FROM accepted_job WHERE container_name=?")
+        .get("easyshell-sess-2") as { job_id: string }
+      expect(job.job_id).toBe("0b7e4f7e-2c1d-4c55-9a7a-3f0f1c9d2b11")
+    })
+
+    it("kills the container and takes no slot when the session ended while starting", async () => {
+      const capacity = await import("../../src/services/capacity")
+      vi.mocked(capacity.incrementSession).mockClear()
+      vi.mocked(capacity.decrementSession).mockClear()
+      dockerState.kill.mockResolvedValue({ ok: true })
+      const caller = terminalSessionsRouter.createCaller({
+        actor: "coordinator",
+      })
+      // A kill arrives while the image is still being pulled.
+      dockerState.run.mockImplementation(async () => {
+        await caller.kill({ container_name: "easyshell-sess-race" })
+        return { stdout: "id\n", stderr: "", exitCode: 0 }
+      })
+
+      await expect(
+        caller.create({
+          container_name: "easyshell-sess-race",
+          image: "easyshell-foo",
+        }),
+      ).rejects.toThrow(/ended while starting/)
+
+      expect(dockerState.kill).toHaveBeenCalledTimes(2)
+      expect(capacity.incrementSession).not.toHaveBeenCalled()
+      expect(capacity.decrementSession).not.toHaveBeenCalled()
+      const job = dbHolder
+        .db!.prepare("SELECT status FROM accepted_job WHERE container_name=?")
+        .get("easyshell-sess-race") as { status: string }
+      expect(job.status).toBe("cancelled")
+    })
+
     it("marks status='failed' and throws when docker run fails", async () => {
       dockerState.run.mockResolvedValue({
         stdout: "",
@@ -290,8 +348,28 @@ describe("routers/terminal-sessions", () => {
   })
 
   describe("exec", () => {
-    function seedTerminalSession(containerName: string): string {
-      const socketPath = `${TEST_WORKING_DIR}/sessions/${containerName}/main.sock`
+    const servers: net.Server[] = []
+    afterEach(async () => {
+      await Promise.all(
+        servers.splice(0).map((s) => new Promise((r) => s.close(r))),
+      )
+    })
+
+    /** Seeds the rows and binds a real unix socket at the session path. */
+    async function seedTerminalSession(
+      containerName: string,
+      { symlink = false }: { symlink?: boolean } = {},
+    ): Promise<string> {
+      const sessionDir = `${TEST_WORKING_DIR}/sessions/${containerName}`
+      const socketPath = `${sessionDir}/main.sock`
+      fs.mkdirSync(sessionDir, { recursive: true })
+      fs.rmSync(socketPath, { force: true })
+      const target = symlink ? `${sessionDir}/elsewhere.sock` : socketPath
+      fs.rmSync(target, { force: true })
+      const server = net.createServer()
+      servers.push(server)
+      await new Promise<void>((r) => server.listen(target, r))
+      if (symlink) fs.symlinkSync(target, socketPath)
       const now = Date.now()
       dbHolder.db!.transaction(() => {
         dbHolder
@@ -327,7 +405,7 @@ describe("routers/terminal-sessions", () => {
     }
 
     it("returns success and writes a command_log row with exit_status='ok'", async () => {
-      const socketPath = seedTerminalSession("easyshell-sess-exec")
+      const socketPath = await seedTerminalSession("easyshell-sess-exec")
       mockSocketResponse({
         statusCode: 200,
         body: JSON.stringify({ stdout: "out\n", stderr: "" }),
@@ -353,7 +431,9 @@ describe("routers/terminal-sessions", () => {
         path: string
         method: string
       }
-      expect(httpCallOpts.socketPath).toBe(socketPath)
+      // Dialed through an O_PATH descriptor for the seeded socket.
+      expect(socketPath).toContain("main.sock")
+      expect(httpCallOpts.socketPath).toMatch(/^\/proc\/self\/fd\/\d+$/)
       expect(httpCallOpts.path).toBe("/")
       expect(httpCallOpts.method).toBe("POST")
 
@@ -383,8 +463,66 @@ describe("routers/terminal-sessions", () => {
       expect(ts.last_exec_at).toBeGreaterThan(0)
     })
 
+    it("refuses a symlinked session socket without connecting", async () => {
+      await seedTerminalSession("easyshell-sess-link", { symlink: true })
+      const caller = terminalSessionsRouter.createCaller({
+        actor: "coordinator",
+      })
+      const result = await caller.exec({
+        container_name: "easyshell-sess-link",
+        command: "id",
+      })
+      expect(result).toMatchObject({
+        status: "error",
+        type: "session_not_running",
+      })
+      expect(httpRequestMock).not.toHaveBeenCalled()
+    })
+
+    it("gives up after an absolute deadline even if the daemon keeps the request open", async () => {
+      await seedTerminalSession("easyshell-sess-slow")
+      const req = makeFakeReq()
+      // The daemon accepts the request and never finishes the response.
+      httpRequestMock.mockImplementation(() => req)
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] })
+      try {
+        const caller = terminalSessionsRouter.createCaller({
+          actor: "coordinator",
+        })
+        const pending = caller.exec({
+          container_name: "easyshell-sess-slow",
+          command: "x",
+        })
+        await vi.advanceTimersByTimeAsync(5000)
+        expect(await pending).toMatchObject({
+          status: "error",
+          type: "took_too_long",
+        })
+        expect(req.destroy).toHaveBeenCalled()
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it("bounds the size of a session response", async () => {
+      await seedTerminalSession("easyshell-sess-big")
+      const req = mockSocketResponse({
+        statusCode: 200,
+        body: "x".repeat(1024 * 1024 + 1),
+      })
+      const caller = terminalSessionsRouter.createCaller({
+        actor: "coordinator",
+      })
+      const result = await caller.exec({
+        container_name: "easyshell-sess-big",
+        command: "yes",
+      })
+      expect(result).toMatchObject({ status: "error" })
+      expect(req.destroy).toHaveBeenCalled()
+    })
+
     it("returns error/container_locked and writes exit_status='locked' on 423", async () => {
-      seedTerminalSession("easyshell-sess-locked")
+      await seedTerminalSession("easyshell-sess-locked")
       mockSocketResponse({ statusCode: 423 })
 
       const caller = terminalSessionsRouter.createCaller({
@@ -408,7 +546,7 @@ describe("routers/terminal-sessions", () => {
     })
 
     it("returns error/session_error and writes exit_status='error' on 5xx", async () => {
-      seedTerminalSession("easyshell-sess-500")
+      await seedTerminalSession("easyshell-sess-500")
       mockSocketResponse({ statusCode: 500, body: "internal" })
 
       const caller = terminalSessionsRouter.createCaller({
@@ -432,7 +570,7 @@ describe("routers/terminal-sessions", () => {
     })
 
     it("returns error/session_not_running when the socket file is gone", async () => {
-      seedTerminalSession("easyshell-sess-down")
+      await seedTerminalSession("easyshell-sess-down")
       mockSocketRequestError(
         Object.assign(new Error("ENOENT"), { code: "ENOENT" }),
       )

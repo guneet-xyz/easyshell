@@ -89,6 +89,7 @@ const {
   coordinatorIsRunning,
   coordinatorKill,
   getActiveTerminalSession,
+  startTerminalSession,
 } = await import("@/lib/server/coordinator")
 
 beforeEach(() => {
@@ -157,8 +158,19 @@ describe("coordinatorKill", () => {
 })
 
 describe("getActiveTerminalSession", () => {
-  it("when isAlive=false: marks the row as deleted and returns null", async () => {
+  it("when isAlive=false: marks the row as deleted, kills it and returns null", async () => {
     terminalsIsAliveMutate.mockResolvedValueOnce({ is_running: false })
+    selectLimitSpy.mockResolvedValueOnce([
+      {
+        id: 1,
+        userId: "u-1",
+        problemId: 1,
+        testcaseId: 1,
+        createdAt: new Date(Date.now() - 10 * 60 * 1000),
+        expiresAt: new Date(Date.now() + 50 * 60 * 1000),
+        deletedAt: null,
+      },
+    ])
 
     const result = await getActiveTerminalSession({
       userId: "u-1",
@@ -171,5 +183,46 @@ describe("getActiveTerminalSession", () => {
     const setArg = updateSetSpy.mock.calls[0]?.[0] as Record<string, unknown>
     expect(setArg.deletedAt).toBeInstanceOf(Date)
     expect(updateWhereSpy).toHaveBeenCalledTimes(1)
+    expect(terminalsKillMutate).toHaveBeenCalledWith({ terminal_session_id: 1 })
+  })
+
+  it("returns a session that is still starting instead of discarding it", async () => {
+    // Created moments ago by another request whose container is still
+    // being pulled: not running yet, but not dead either.
+    terminalsIsAliveMutate.mockResolvedValueOnce({ is_running: false })
+
+    const result = await getActiveTerminalSession({
+      userId: "u-1",
+      problemId: 1,
+      testcaseId: 1,
+    })
+
+    expect(result?.id).toBe(1)
+    expect(updateSetSpy).not.toHaveBeenCalled()
+    expect(terminalsKillMutate).not.toHaveBeenCalled()
+  })
+})
+
+describe("startTerminalSession", () => {
+  it("kills the container if the session was deleted while it started", async () => {
+    selectLimitSpy.mockResolvedValueOnce([{ deletedAt: new Date() }])
+    await startTerminalSession({ problemId: 1, testcaseId: 1, sessionId: 7 })
+    expect(terminalsCreateMutate).toHaveBeenCalledTimes(1)
+    expect(terminalsKillMutate).toHaveBeenCalledWith({ terminal_session_id: 7 })
+  })
+
+  it("leaves a session that is still wanted running", async () => {
+    selectLimitSpy.mockResolvedValueOnce([{ deletedAt: null }])
+    await startTerminalSession({ problemId: 1, testcaseId: 1, sessionId: 8 })
+    expect(terminalsKillMutate).not.toHaveBeenCalled()
+  })
+
+  it("releases the row when the container cannot be started", async () => {
+    terminalsCreateMutate.mockRejectedValueOnce(new Error("no runner"))
+    await expect(
+      startTerminalSession({ problemId: 1, testcaseId: 1, sessionId: 9 }),
+    ).rejects.toThrow("no runner")
+    const setArg = updateSetSpy.mock.calls[0]?.[0] as Record<string, unknown>
+    expect(setArg.deletedAt).toBeInstanceOf(Date)
   })
 })

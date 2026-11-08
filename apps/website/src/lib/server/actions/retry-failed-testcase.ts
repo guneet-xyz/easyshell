@@ -4,6 +4,10 @@ import { createCoordinatorClient } from "@easyshell/coordinator/client"
 
 import { env } from "@/env"
 import { auth } from "@/lib/server/auth"
+import {
+  countPendingTestcases,
+  MAX_PENDING_TESTCASES,
+} from "@/lib/server/user-limits"
 
 export async function retryFailedTestcase({
   submissionId,
@@ -14,6 +18,9 @@ export async function retryFailedTestcase({
 }) {
   const user = (await auth())?.user
   if (!user) return null
+  // Retries requeue testcases, so they respect the same per-user cap.
+  if ((await countPendingTestcases(user.id)) >= MAX_PENDING_TESTCASES)
+    return null
 
   const client = createCoordinatorClient({
     url: env.COORDINATOR_URL,

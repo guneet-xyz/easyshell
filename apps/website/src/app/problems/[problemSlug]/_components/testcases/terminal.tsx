@@ -42,11 +42,22 @@ async function resetSession({
   testcaseId: number
 }) {
   setSession(null)
-  const session = await getTerminalSession({
-    problemId: problemId,
-    testcaseId: testcaseId,
-  })
-  setSession(session)
+  try {
+    const session = await getTerminalSession({
+      problemId: problemId,
+      testcaseId: testcaseId,
+    })
+    if (!session)
+      toast.error("Could not open a terminal", {
+        description:
+          "You can have up to 5 open terminals. Close one and try again.",
+      })
+    setSession(session)
+  } catch {
+    toast.error("Could not open a terminal", {
+      description: "The terminal service is unavailable. Try again shortly.",
+    })
+  }
 }
 
 export function TestcaseTerminal({

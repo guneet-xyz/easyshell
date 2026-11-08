@@ -37,8 +37,14 @@ vi.mock("../../src/services/problems", () => ({
 const insertExecutionJobSpy =
   vi.fn<(tx: unknown, params: Record<string, unknown>) => Promise<void>>()
 vi.mock("../../src/services/jobs", () => ({
+  UNASSIGNED_RUNNER_ID: "unassigned",
   insertExecutionJob: (tx: unknown, params: Record<string, unknown>) =>
     insertExecutionJobSpy(tx, params),
+}))
+
+const dispatchSpy = vi.fn<(jobId: string) => Promise<boolean>>()
+vi.mock("../../src/services/dispatcher", () => ({
+  dispatch: (jobId: string) => dispatchSpy(jobId),
 }))
 
 vi.mock("../../src/services/job-name", () => ({
@@ -108,6 +114,7 @@ vi.mock("../../src/db", () => {
       selectWhereSpy(cond)
       return selectChain
     },
+    orderBy: () => selectChain,
     limit: (n: number) => selectLimitSpy(n),
   }
 
@@ -148,6 +155,7 @@ vi.mock("../../src/db", () => {
 const {
   claimNextQueueItem,
   processClaimedItem,
+  retryDelayMs,
   revertQueueItem,
   startQueuePoller,
 } = await import("../../src/workers/queue-poller")
@@ -169,6 +177,7 @@ beforeEach(() => {
   dollarWithSpy.mockClear()
   getProblemSlugFromIdSpy.mockReset().mockResolvedValue("test-slug")
   insertExecutionJobSpy.mockReset().mockResolvedValue(undefined)
+  dispatchSpy.mockReset().mockResolvedValue(true)
 })
 
 describe("module exports", () => {
@@ -258,6 +267,39 @@ describe("claimNextQueueItem", () => {
     await expect(claimNextQueueItem()).rejects.toThrow(
       /Submission 99 not found/,
     )
+    // The claimed row is failed, not left `running` without a job.
+    const setArg = updateSetSpy.mock.calls[0]?.[0] as Record<string, unknown>
+    expect(setArg.status).toBe("failed")
+    expect(setArg.lastError).toMatch(/Submission 99 not found/)
+  })
+
+  it("fails the claimed row when its problem cannot be resolved", async () => {
+    cteReturningSpy.mockResolvedValueOnce([
+      { submissionId: 5, testcaseId: 1, attempts: 1 },
+    ])
+    selectLimitSpy
+      .mockResolvedValueOnce([]) // inner CTE
+      .mockResolvedValueOnce([{ input: "echo hi", problemId: 999 }])
+    getProblemSlugFromIdSpy.mockRejectedValueOnce(
+      new Error("Problem not found"),
+    )
+
+    await expect(claimNextQueueItem()).rejects.toThrow(/Problem not found/)
+    const setArg = updateSetSpy.mock.calls[0]?.[0] as Record<string, unknown>
+    expect(setArg.status).toBe("failed")
+  })
+
+  it("puts the row back on a transient error instead of failing it", async () => {
+    cteReturningSpy.mockResolvedValueOnce([
+      { submissionId: 6, testcaseId: 1, attempts: 1 },
+    ])
+    selectLimitSpy
+      .mockResolvedValueOnce([]) // inner CTE
+      .mockRejectedValueOnce(new Error("connection terminated"))
+
+    await expect(claimNextQueueItem()).rejects.toThrow(/connection terminated/)
+    const setArg = updateSetSpy.mock.calls[0]?.[0] as Record<string, unknown>
+    expect(setArg.status).toBe("pending")
   })
 })
 
@@ -301,7 +343,7 @@ describe("processClaimedItem", () => {
     expect(params).toMatchObject({
       id: "job-123",
       containerName: "easyshell-container-abc",
-      // T14 will replace this placeholder with a real runner id.
+      // Sentinel runner row (migration 0005) until a runner accepts the job.
       runnerId: "unassigned",
       mode: "submission",
       image: "easyshell-greeting-2",
@@ -316,7 +358,8 @@ describe("processClaimedItem", () => {
 
     // processClaimedItem must NOT propagate — it handles failures internally
     // by reverting the queue row.
-    await expect(processClaimedItem(fakeClaim)).resolves.toBeUndefined()
+    await expect(processClaimedItem(fakeClaim)).resolves.toBe(false)
+    expect(dispatchSpy).not.toHaveBeenCalled()
 
     // The revert path goes through `db.update(...).set(...).where(...)`.
     expect(updateTableSpy).toHaveBeenCalledTimes(1)
@@ -332,5 +375,34 @@ describe("processClaimedItem", () => {
 
     const setArg = updateSetSpy.mock.calls[0]?.[0] as Record<string, unknown>
     expect(setArg.lastError).toBe("boom-string")
+  })
+})
+
+describe("processClaimedItem result", () => {
+  const claim = {
+    jobId: "job-9",
+    containerName: "easyshell-container-9",
+    submissionId: 3,
+    testcaseId: 1,
+    input: "echo hi",
+    image: "easyshell-greeting-1",
+  }
+
+  it("reports whether a runner accepted the job", async () => {
+    await expect(processClaimedItem(claim)).resolves.toBe(true)
+    expect(dispatchSpy).toHaveBeenCalledWith("job-9")
+    dispatchSpy.mockResolvedValueOnce(false)
+    await expect(processClaimedItem(claim)).resolves.toBe(false)
+  })
+})
+
+describe("retryDelayMs", () => {
+  it("backs off exponentially from 1s, capped at 5s", () => {
+    expect(retryDelayMs(0)).toBe(0)
+    expect(retryDelayMs(1)).toBe(1000)
+    expect(retryDelayMs(2)).toBe(2000)
+    expect(retryDelayMs(3)).toBe(4000)
+    expect(retryDelayMs(4)).toBe(5000)
+    expect(retryDelayMs(50)).toBe(5000)
   })
 })

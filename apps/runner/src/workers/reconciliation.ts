@@ -20,7 +20,7 @@ import { createLogger } from "@easyshell/logger"
 import { getDb } from "../db/sqlite"
 import { dockerInspect, dockerKill, listExpiredSessions } from "../docker/cli"
 import { env } from "../env"
-import { isSubmissionInFlight } from "../services/in-flight"
+import { isInFlight } from "../services/in-flight"
 import { endSession } from "../services/session-lifecycle"
 import { drainCleanupQueue } from "./recovery"
 
@@ -46,7 +46,7 @@ export async function scanOnce(): Promise<void> {
 
   for (const row of active) {
     // Its docker run is still being awaited here and will record the outcome.
-    if (row.mode === "submission" && isSubmissionInFlight(row.job_id)) continue
+    if (isInFlight(row.job_id)) continue
     try {
       const inspect = await dockerInspect(row.container_name)
       if (inspect.exists && inspect.running) continue

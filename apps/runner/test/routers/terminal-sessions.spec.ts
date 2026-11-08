@@ -287,6 +287,36 @@ describe("routers/terminal-sessions", () => {
       expect(job.job_id).toBe("0b7e4f7e-2c1d-4c55-9a7a-3f0f1c9d2b11")
     })
 
+    it("kills the container and takes no slot when the session ended while starting", async () => {
+      const capacity = await import("../../src/services/capacity")
+      vi.mocked(capacity.incrementSession).mockClear()
+      vi.mocked(capacity.decrementSession).mockClear()
+      dockerState.kill.mockResolvedValue({ ok: true })
+      const caller = terminalSessionsRouter.createCaller({
+        actor: "coordinator",
+      })
+      // A kill arrives while the image is still being pulled.
+      dockerState.run.mockImplementation(async () => {
+        await caller.kill({ container_name: "easyshell-sess-race" })
+        return { stdout: "id\n", stderr: "", exitCode: 0 }
+      })
+
+      await expect(
+        caller.create({
+          container_name: "easyshell-sess-race",
+          image: "easyshell-foo",
+        }),
+      ).rejects.toThrow(/ended while starting/)
+
+      expect(dockerState.kill).toHaveBeenCalledTimes(2)
+      expect(capacity.incrementSession).not.toHaveBeenCalled()
+      expect(capacity.decrementSession).not.toHaveBeenCalled()
+      const job = dbHolder
+        .db!.prepare("SELECT status FROM accepted_job WHERE container_name=?")
+        .get("easyshell-sess-race") as { status: string }
+      expect(job.status).toBe("cancelled")
+    })
+
     it("marks status='failed' and throws when docker run fails", async () => {
       dockerState.run.mockResolvedValue({
         stdout: "",

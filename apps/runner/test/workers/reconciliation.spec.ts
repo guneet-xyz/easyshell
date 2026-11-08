@@ -88,7 +88,7 @@ function seedAcceptedJob(
 const { scanOnce, startReconciliation } = await import(
   "../../src/workers/reconciliation"
 )
-const { markSubmissionInFlight, clearSubmissionInFlight } = await import(
+const { markInFlight, clearInFlight } = await import(
   "../../src/services/in-flight"
 )
 
@@ -146,18 +146,46 @@ describe("workers/reconciliation", () => {
         container_name: "easyshell-job-live",
         status: "running",
       })
-      markSubmissionInFlight("job-live")
+      markInFlight("job-live")
       dockerState.inspect.mockResolvedValue({ exists: false, running: false })
       try {
         await scanOnce()
       } finally {
-        clearSubmissionInFlight("job-live")
+        clearInFlight("job-live")
       }
       expect(dockerState.inspect).not.toHaveBeenCalled()
       const row = dbHolder
         .db!.prepare("SELECT status FROM accepted_job WHERE job_id=?")
         .get("job-live") as { status: string }
       expect(row.status).toBe("running")
+    })
+
+    it("skips a session that is still being created", async () => {
+      dbHolder
+        .db!.prepare(
+          `INSERT INTO accepted_job (job_id, container_name, image, mode, status, accepted_at)
+           VALUES (?,?,?,?,?,?)`,
+        )
+        .run(
+          "job-start",
+          "easyshell-start",
+          "easyshell-foo",
+          "session",
+          "starting",
+          Date.now(),
+        )
+      markInFlight("job-start")
+      dockerState.inspect.mockResolvedValue({ exists: false, running: false })
+      try {
+        await scanOnce()
+      } finally {
+        clearInFlight("job-start")
+      }
+      const row = dbHolder
+        .db!.prepare("SELECT status FROM accepted_job WHERE job_id=?")
+        .get("job-start") as { status: string }
+      expect(row.status).toBe("starting")
+      expect(dockerState.inspect).not.toHaveBeenCalled()
     })
 
     it("does not overwrite a job that finished during the inspect", async () => {

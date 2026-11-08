@@ -99,6 +99,16 @@ describe("session lifecycle", () => {
     expect(pending).toEqual({ reason: "cancelled" })
   })
 
+  it("does not release a slot for a session that never started", () => {
+    const db = dbHolder.db!
+    seedSession(db, "sess-starting")
+    db.prepare(
+      "UPDATE container SET docker_state='starting' WHERE container_name='sess-starting'",
+    ).run()
+    expect(endSession(db, "sess-starting", "cancelled", "cancelled")).toBe(true)
+    expect(capacity.decrementSession).not.toHaveBeenCalled()
+  })
+
   it("reaps expired session containers and ends them", async () => {
     const db = dbHolder.db!
     seedSession(db, "sess-old")

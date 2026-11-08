@@ -214,7 +214,7 @@ describe("docker CLI adapter", () => {
         "--ulimit",
         "core=0",
         "-m",
-        "10m",
+        "64m",
         "--cpus",
         "0.1",
         "--label",

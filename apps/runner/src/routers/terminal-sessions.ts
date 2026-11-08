@@ -335,13 +335,15 @@ export const terminalSessionsRouter = router({
             ).run(input.container_name, jobId, socketPath, now)
           })()
 
-          // docker run -d --rm --name {name} -m 10m --cpus 0.1
+          // docker run -d --rm --name {name} -m 64m --cpus 0.1
           //            -v {sessionDir}:/tmp/easyshell {image} -mode session
           const result = await dockerRun({
             containerName: input.container_name,
             image: input.image,
             mode: "session",
-            memory: "10m",
+            // Problem daemons alone peak at 15-23 MiB at startup; 10m was
+            // OOM-killed on some kernels.
+            memory: "64m",
             cpus: "0.1",
             extraVolumes: [`${sessionDir}:/tmp/easyshell`],
             detach: true,

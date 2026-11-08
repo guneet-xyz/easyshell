@@ -164,7 +164,8 @@ async function dispatchInner(jobId: string): Promise<boolean> {
     mode: job.mode,
     image: job.image,
     input: job.mode === "submission" ? payload : undefined,
-    resource_limits: { memory: "10m", cpus: "0.1" },
+    // Problem daemons alone peak at 15-23 MiB at startup.
+    resource_limits: { memory: "64m", cpus: "0.1" },
   }
 
   try {

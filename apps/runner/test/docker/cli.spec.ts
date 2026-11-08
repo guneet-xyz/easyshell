@@ -198,6 +198,8 @@ describe("docker CLI adapter", () => {
         "256",
         "--ulimit",
         "fsize=16777216",
+        "--ulimit",
+        "core=0",
         "-m",
         "10m",
         "--cpus",

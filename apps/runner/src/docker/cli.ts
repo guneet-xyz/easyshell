@@ -144,9 +144,11 @@ export async function dockerRun(args: DockerRunArgs): Promise<DockerRunResult> {
     "--pids-limit",
     "256",
     // Bounds each file user code writes, including bind-mounted ones in the
-    // shared work directory (bytes).
+    // shared work directory (bytes), and disables core dumps there.
     "--ulimit",
     `fsize=${MAX_FILE_SIZE_BYTES}`,
+    "--ulimit",
+    "core=0",
     "-m",
     memory,
     "--cpus",

@@ -10,6 +10,7 @@ import { terminalSessionLogs, terminalSessions } from "@easyshell/db/schema"
 import { db } from "@/db"
 import { env } from "@/env"
 import { getProblemSlugFromId } from "@/lib/server/problems"
+import { withUserLock } from "@/lib/server/user-limits"
 
 const _cClient = createCoordinatorClient({
   url: env.COORDINATOR_URL,
@@ -106,10 +107,17 @@ export async function getTerminalSession({
     testcaseId,
   })
   if (!session) {
-    if ((await countActiveTerminalSessions(userId)) >= MAX_ACTIVE_SESSIONS) {
-      return null
-    }
-    await createTerminalSession({ userId, problemId, testcaseId })
+    // Count and insert under a per-user lock so parallel requests cannot
+    // exceed the cap.
+    const sessionId = await withUserLock(userId, "sessions", async (tx) => {
+      if (
+        (await countActiveTerminalSessions(userId, tx)) >= MAX_ACTIVE_SESSIONS
+      )
+        return null
+      return insertTerminalSession({ userId, problemId, testcaseId }, tx)
+    })
+    if (sessionId === null) return null
+    await startTerminalSession({ problemId, testcaseId, sessionId })
     session = await getActiveTerminalSession({ userId, problemId, testcaseId })
   }
 
@@ -129,9 +137,12 @@ export async function getTerminalSession({
 /** Live terminal containers one user may have at once. */
 const MAX_ACTIVE_SESSIONS = 5
 
-async function countActiveTerminalSessions(userId: string) {
+async function countActiveTerminalSessions(
+  userId: string,
+  tx: Pick<typeof db, "select"> = db,
+) {
   return (
-    await db
+    await tx
       .select({ active: count() })
       .from(terminalSessions)
       .where(
@@ -144,26 +155,30 @@ async function countActiveTerminalSessions(userId: string) {
   )[0]!.active
 }
 
-export async function createTerminalSession({
-  userId,
+/** Starts the container for an inserted session; releases the row on failure. */
+async function startTerminalSession({
   problemId,
   testcaseId,
+  sessionId,
 }: {
-  userId: string
   problemId: number
   testcaseId: number
+  sessionId: number
 }) {
-  const sessionId = await insertTerminalSession({
-    userId: userId,
-    problemId: problemId,
-    testcaseId: testcaseId,
-  })
-
-  await runTerminalSession({
-    problemId: problemId.toString(),
-    testcaseId: testcaseId.toString(),
-    sessionId: sessionId,
-  })
+  try {
+    await runTerminalSession({
+      problemId: problemId.toString(),
+      testcaseId: testcaseId.toString(),
+      sessionId,
+    })
+  } catch (err) {
+    // Otherwise the dead row would count toward the cap until it expires.
+    await db
+      .update(terminalSessions)
+      .set({ deletedAt: new Date() })
+      .where(eq(terminalSessions.id, sessionId))
+    throw err
+  }
 }
 
 export async function getActiveTerminalSession({
@@ -223,16 +238,19 @@ export async function getTerminalSessionLogs(sessionId: number) {
   return logs
 }
 
-export async function insertTerminalSession({
-  problemId,
-  userId,
-  testcaseId,
-}: {
-  userId: string
-  problemId: number
-  testcaseId: number
-}) {
-  const inserted = await db
+export async function insertTerminalSession(
+  {
+    problemId,
+    userId,
+    testcaseId,
+  }: {
+    userId: string
+    problemId: number
+    testcaseId: number
+  },
+  tx: Pick<typeof db, "insert"> = db,
+) {
+  const inserted = await tx
     .insert(terminalSessions)
     .values({
       userId: userId,

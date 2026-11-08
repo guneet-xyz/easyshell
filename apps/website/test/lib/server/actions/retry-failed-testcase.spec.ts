@@ -22,6 +22,12 @@ vi.mock("@/env", () => ({
   },
 }))
 
+const pendingMock = vi.hoisted(() => ({ count: 0 }))
+vi.mock("@/lib/server/user-limits", () => ({
+  MAX_PENDING_TESTCASES: 20,
+  countPendingTestcases: async () => pendingMock.count,
+}))
+
 vi.mock("@/lib/server/auth", () => ({
   auth: authMock,
 }))

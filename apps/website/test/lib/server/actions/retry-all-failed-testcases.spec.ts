@@ -24,6 +24,12 @@ vi.mock("@/env", () => ({
   },
 }))
 
+const pendingMock = vi.hoisted(() => ({ count: 0 }))
+vi.mock("@/lib/server/user-limits", () => ({
+  MAX_PENDING_TESTCASES: 20,
+  countPendingTestcases: async () => pendingMock.count,
+}))
+
 vi.mock("@/lib/server/auth", () => ({
   auth: authMock,
 }))
@@ -57,6 +63,16 @@ describe("retryAllFailedTestcases", () => {
     const result = await retryAllFailedTestcases({ submissionId: 42 })
 
     expect(result).toBeNull()
+    expect(retryAllMutate).not.toHaveBeenCalled()
+  })
+
+  it("returns null without calling the coordinator at the queue cap", async () => {
+    pendingMock.count = 20
+    try {
+      expect(await retryAllFailedTestcases({ submissionId: 42 })).toBeNull()
+    } finally {
+      pendingMock.count = 0
+    }
     expect(retryAllMutate).not.toHaveBeenCalled()
   })
 

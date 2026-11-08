@@ -1,20 +1,20 @@
 "use server"
 
-import { and, count, eq, inArray } from "drizzle-orm"
-
 import { submissions, submissionTestcaseQueue } from "@easyshell/db/schema"
 
-import { db } from "@/db"
 import { auth } from "@/lib/server/auth"
 import {
   getProblemInfo,
   getProblemSlugFromId,
   isKnownProblem,
 } from "@/lib/server/problems"
+import {
+  countPendingTestcases,
+  MAX_PENDING_TESTCASES,
+  withUserLock,
+} from "@/lib/server/user-limits"
 
 const MAX_INPUT_LENGTH = 10_000
-/** Queued or running testcases one user may have at once. */
-const MAX_PENDING_TESTCASES = 20
 
 export async function newSubmission({
   problemId,
@@ -33,51 +33,31 @@ export async function newSubmission({
   )
     return null
 
-  const pending = (
-    await db
-      .select({ pending: count() })
-      .from(submissionTestcaseQueue)
-      .innerJoin(
-        submissions,
-        eq(submissions.id, submissionTestcaseQueue.submissionId),
-      )
-      .where(
-        and(
-          eq(submissions.userId, user.id),
-          inArray(submissionTestcaseQueue.status, ["pending", "running"]),
-        ),
-      )
-  )[0]!.pending
-  if (pending >= MAX_PENDING_TESTCASES) return null
+  const problem = await getProblemInfo(await getProblemSlugFromId(problemId))
 
-  const problemSlug = await getProblemSlugFromId(problemId)
+  const submissionId = await withUserLock(user.id, "queue", async (tx) => {
+    // The new submission's testcases count toward the cap too.
+    const pending = await countPendingTestcases(user.id, tx)
+    if (pending + problem.testcases.length > MAX_PENDING_TESTCASES) return null
 
-  const submissionId = (
-    await db
-      .insert(submissions)
-      .values({
-        problemId: problemId,
-        userId: user.id,
-        input: input,
-      })
-      .returning({ id: submissions.id })
-  )[0]?.id
+    const id = (
+      await tx
+        .insert(submissions)
+        .values({ problemId: problemId, userId: user.id, input: input })
+        .returning({ id: submissions.id })
+    )[0]?.id
+    if (!id) throw new Error("Failed to create submission")
 
-  if (!submissionId) {
-    throw new Error("Failed to create submission")
-  }
+    await tx.insert(submissionTestcaseQueue).values(
+      problem.testcases.map((testcase) => ({
+        submissionId: id,
+        testcaseId: testcase.id,
+        status: "pending" as const,
+      })),
+    )
+    return id
+  })
 
-  const problem = await getProblemInfo(problemSlug)
-  // TODO: parallelize this
-  for (const testcase of problem.testcases) {
-    await db.insert(submissionTestcaseQueue).values({
-      submissionId: submissionId,
-      testcaseId: testcase.id,
-      status: "pending",
-    })
-  }
-
-  return {
-    submissionId: submissionId,
-  }
+  if (!submissionId) return null
+  return { submissionId }
 }

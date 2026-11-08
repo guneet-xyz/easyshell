@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "tsx ./scripts/build.ts",
+    "cache:coordinator": "tsx ./scripts/cache-coordinator.ts",
     "cache:website": "tsx ./scripts/cache-website.ts",
     "generate-workflows": "tsx ./scripts/generate-workflows.ts",
     "new": "tsx ./scripts/new.ts",

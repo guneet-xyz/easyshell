@@ -9,6 +9,9 @@ WORKDIR /src
 COPY . .
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store CI=true pnpm install --frozen-lockfile
 
+# The coordinator resolves problem ids from a generated cache.
+RUN PROJECT_ROOT=/src pnpm --filter @easyshell/problems run cache:coordinator
+
 WORKDIR /src/apps/coordinator
 
 RUN pnpm exec esbuild src/index.ts --bundle --platform=node --outfile=coordinator.cjs --external:pino --external:pino-pretty --external:thread-stream --external:better-sqlite3

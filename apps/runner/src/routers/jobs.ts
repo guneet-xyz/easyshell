@@ -29,7 +29,12 @@ import { createLogger } from "@easyshell/logger"
 
 import { type Context } from "../context"
 import { getDb } from "../db/sqlite"
-import { dockerKill, dockerRun, isSafeContainerName } from "../docker/cli"
+import {
+  dockerKill,
+  dockerPull,
+  dockerRun,
+  isSafeContainerName,
+} from "../docker/cli"
 import { env } from "../env"
 import {
   AcceptJobInputSchema,
@@ -80,8 +85,12 @@ type EntrypointOutput = {
   fs?: Record<string, string>
 }
 
-/** One testcase run, including starting the container and pulling its image. */
-const SUBMISSION_TIMEOUT_MS = 60_000
+/** Pulling the testcase image (an infrastructure step, retried on failure). */
+const IMAGE_PULL_TIMEOUT_MS = 120_000
+/** Running the user's code. Exceeding it is a failed testcase, not retried. */
+const SUBMISSION_TIMEOUT_MS = 30_000
+/** Reported exit code for a timed-out run; the coordinator never passes it. */
+const TIMED_OUT_EXIT_CODE = -1
 /** User code can write /output.json directly; bound what is read back. */
 const MAX_OUTPUT_BYTES = 1024 * 1024
 
@@ -132,6 +141,9 @@ function runSubmissionJob(params: {
         "UPDATE container SET docker_state='running' WHERE container_name=?",
       ).run(containerName)
 
+      const pulled = await dockerPull(image, IMAGE_PULL_TIMEOUT_MS)
+      if (!pulled.ok) throw new Error(`image pull failed: ${pulled.error}`)
+
       const result = await dockerRun({
         containerName,
         image,
@@ -140,9 +152,28 @@ function runSubmissionJob(params: {
         cpus,
         extraVolumes: [`${inputPath}:/input.sh`, `${outputPath}:/output.json`],
         timeoutMs: SUBMISSION_TIMEOUT_MS,
+        pull: false,
       })
 
       const finishedAt = Date.now()
+
+      if (result.timedOut) {
+        // The user's code ran too long: a result, not an infrastructure error.
+        db.prepare(
+          `UPDATE accepted_job SET
+            status='succeeded', finished_at=?, exit_code=?, stdout=?, stderr=?, fs=?
+            WHERE job_id=?`,
+        ).run(
+          finishedAt,
+          TIMED_OUT_EXIT_CODE,
+          "",
+          `Timed out after ${SUBMISSION_TIMEOUT_MS / 1000} seconds.`,
+          "{}",
+          jobId,
+        )
+        log.info({ job_id: jobId }, "job.submission.timed-out")
+        return
+      }
 
       if (result.exitCode !== 0) {
         const errMsg = `docker run failed (exit ${result.exitCode}): ${result.stderr.slice(

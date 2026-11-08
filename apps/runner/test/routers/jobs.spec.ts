@@ -33,6 +33,7 @@ const { TEST_WORKING_DIR, dockerState, dbHolder, capacityState } = vi.hoisted(
         run: vi.fn(),
         kill: vi.fn(),
         inspect: vi.fn(),
+        pull: vi.fn(),
       },
       dbHolder: { db: null as Database.Database | null },
       capacityState: { submission_used: 0 },
@@ -72,6 +73,7 @@ vi.mock("@easyshell/logger", () => ({
 
 vi.mock("../../src/docker/cli", () => ({
   dockerRun: (...args: unknown[]) => dockerState.run(...args),
+  dockerPull: (...args: unknown[]) => dockerState.pull(...args),
   dockerKill: (...args: unknown[]) => dockerState.kill(...args),
   dockerInspect: (...args: unknown[]) => dockerState.inspect(...args),
   isSafeContainerName: (name: string) =>
@@ -150,6 +152,7 @@ describe("routers/jobs", () => {
     dockerState.run.mockReset()
     dockerState.kill.mockReset()
     dockerState.inspect.mockReset()
+    dockerState.pull.mockReset().mockResolvedValue({ ok: true })
     capacityState.submission_used = 0
     dbHolder.db = makeMemDb()
     // Pre-create the WORKING_DIR so the background runner's mkdirSync
@@ -250,6 +253,57 @@ describe("routers/jobs", () => {
       expect(capacityState.submission_used).toBe(1)
       await caller.accept(buildInput({ job_id: "j-cap-2" }))
       expect(capacityState.submission_used).toBe(2)
+    })
+  })
+
+  describe("background run", () => {
+    async function settle(jobId: string) {
+      for (let i = 0; i < 50; i++) {
+        const row = dbHolder
+          .db!.prepare("SELECT * FROM accepted_job WHERE job_id=?")
+          .get(jobId) as Record<string, unknown>
+        if (row.finished_at) return row
+        await new Promise((r) => setTimeout(r, 5))
+      }
+      throw new Error("job did not finish")
+    }
+
+    it("pulls first, then runs without pulling, with a 30s limit", async () => {
+      dockerState.run.mockResolvedValue({ stdout: "", stderr: "", exitCode: 0 })
+      const caller = jobsRouter.createCaller({ actor: "coordinator" })
+      await caller.accept(buildInput({ job_id: "j-pull" }))
+      await settle("j-pull")
+      expect(dockerState.pull).toHaveBeenCalledWith("easyshell-foo", 120_000)
+      expect(dockerState.run).toHaveBeenCalledWith(
+        expect.objectContaining({ pull: false, timeoutMs: 30_000 }),
+      )
+    })
+
+    it("reports a timed-out run as a result with exit code -1", async () => {
+      dockerState.run.mockResolvedValue({
+        stdout: "",
+        stderr: "timed out",
+        exitCode: 124,
+        timedOut: true,
+      })
+      const caller = jobsRouter.createCaller({ actor: "coordinator" })
+      await caller.accept(buildInput({ job_id: "j-slow" }))
+      const row = await settle("j-slow")
+      expect(row).toMatchObject({
+        status: "succeeded",
+        exit_code: -1,
+        stderr: "Timed out after 30 seconds.",
+      })
+    })
+
+    it("fails (for retry) when the image cannot be pulled", async () => {
+      dockerState.pull.mockResolvedValue({ ok: false, error: "not found" })
+      const caller = jobsRouter.createCaller({ actor: "coordinator" })
+      await caller.accept(buildInput({ job_id: "j-nopull" }))
+      const row = await settle("j-nopull")
+      expect(row.status).toBe("failed")
+      expect(row.error_message).toContain("image pull failed: not found")
+      expect(dockerState.run).not.toHaveBeenCalled()
     })
   })
 

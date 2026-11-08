@@ -47,6 +47,8 @@ export interface DockerRunResult {
   stdout: string
   stderr: string
   exitCode: number
+  /** The run exceeded `timeoutMs` and its container was removed. */
+  timedOut?: boolean
 }
 
 /**
@@ -85,6 +87,11 @@ export interface DockerRunArgs {
   labels?: Record<string, string>
   /** Kill and remove the container if `docker run` takes longer than this. */
   timeoutMs?: number
+  /**
+   * Pull the image as part of the run when a registry is configured
+   * (default). Callers that pulled beforehand pass false.
+   */
+  pull?: boolean
 }
 
 /**
@@ -106,6 +113,7 @@ export async function dockerRun(args: DockerRunArgs): Promise<DockerRunResult> {
     detach = false,
     labels = {},
     timeoutMs,
+    pull = true,
   } = args
 
   const fullImage = expandImageName(image)
@@ -135,7 +143,7 @@ export async function dockerRun(args: DockerRunArgs): Promise<DockerRunResult> {
     "--label",
     `easyshell.mode=${mode}`,
     ...Object.entries(labels).flatMap(([k, v]) => ["--label", `${k}=${v}`]),
-    ...pullArgs(),
+    ...(pull ? pullArgs() : ["--pull=never"]),
     ...(detach ? ["-d"] : []),
     ...extraVolumes.flatMap((v) => ["-v", v]),
     ...extraEnv.flatMap((e) => ["--env", e]),
@@ -171,7 +179,12 @@ export async function dockerRun(args: DockerRunArgs): Promise<DockerRunResult> {
         { container_name: containerName, timeout_ms: timeoutMs },
         "docker.run.timeout",
       )
-      return { stdout: e.stdout ?? "", stderr: "timed out", exitCode: 124 }
+      return {
+        stdout: e.stdout ?? "",
+        stderr: "timed out",
+        exitCode: 124,
+        timedOut: true,
+      }
     }
     log.warn(
       {
@@ -187,6 +200,32 @@ export async function dockerRun(args: DockerRunArgs): Promise<DockerRunResult> {
       stderr: e.stderr ?? e.message ?? "unknown error",
       exitCode: typeof e.code === "number" ? e.code : 1,
     }
+  }
+}
+
+/**
+ * Pulls an image (registry-prefixed as for `docker run`) when a registry is
+ * configured; a no-op otherwise.
+ */
+export async function dockerPull(
+  image: string,
+  timeoutMs: number,
+): Promise<{ ok: boolean; error?: string }> {
+  if (!env.DOCKER_REGISTRY) return { ok: true }
+  const fullImage = expandImageName(image)
+  if (!isSafeImage(fullImage)) return { ok: false, error: "invalid image name" }
+  try {
+    await execFileAsync("docker", ["pull", "--quiet", fullImage], {
+      timeout: timeoutMs,
+    })
+    return { ok: true }
+  } catch (err: unknown) {
+    const e = err as { stderr?: string; message?: string; killed?: boolean }
+    const error = e.killed
+      ? "image pull timed out"
+      : (e.stderr || e.message || "image pull failed").slice(0, 500)
+    log.warn({ image: fullImage, error }, "docker.pull.failed")
+    return { ok: false, error }
   }
 }
 

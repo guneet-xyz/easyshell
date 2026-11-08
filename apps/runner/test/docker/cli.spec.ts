@@ -33,6 +33,7 @@ vi.mock("@easyshell/logger", () => ({
 const {
   dockerInspect,
   dockerKill,
+  dockerPull,
   dockerRm,
   dockerRun,
   expandImageName,
@@ -412,6 +413,44 @@ describe("docker CLI adapter", () => {
       expect(argv).toEqual(
         expect.arrayContaining(["--filter", "label=easyshell.mode=session"]),
       )
+    })
+  })
+
+  describe("separate pull", () => {
+    it("is a no-op without a registry", async () => {
+      expect(await dockerPull("easyshell-foo-7", 1000)).toEqual({ ok: true })
+      expect(execFileMock).not.toHaveBeenCalled()
+    })
+
+    it("pulls the registry image, and runs with --pull=never when asked", async () => {
+      envState.DOCKER_REGISTRY = "cr.example"
+      execFileMock.mockResolvedValue({ stdout: "", stderr: "" })
+      expect(await dockerPull("easyshell-foo-7", 1000)).toEqual({ ok: true })
+      expect(execFileMock).toHaveBeenCalledWith(
+        "docker",
+        ["pull", "--quiet", "cr.example/easyshell/easyshell-foo-7"],
+        { timeout: 1000 },
+      )
+      await dockerRun({
+        containerName: "easyshell-x",
+        image: "easyshell-foo-7",
+        mode: "submission",
+        pull: false,
+      })
+      const [, argv] = execFileMock.mock.calls[1] as [string, string[]]
+      expect(argv).toContain("--pull=never")
+      expect(argv).not.toContain("--pull=always")
+    })
+
+    it("reports a failed pull", async () => {
+      envState.DOCKER_REGISTRY = "cr.example"
+      execFileMock.mockRejectedValue(
+        Object.assign(new Error("x"), { stderr: "manifest unknown" }),
+      )
+      expect(await dockerPull("easyshell-foo-7", 1000)).toEqual({
+        ok: false,
+        error: "manifest unknown",
+      })
     })
   })
 })

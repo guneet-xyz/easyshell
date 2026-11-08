@@ -146,6 +146,19 @@ describe("docker CLI adapter", () => {
 
       expect(result).toEqual({ exists: false, running: false })
     })
+
+    it("throws, rather than reporting the container gone, when the engine fails", async () => {
+      execFileMock.mockRejectedValue(
+        Object.assign(new Error("exit 1"), {
+          stderr:
+            "Cannot connect to the Docker daemon at unix:///run/dind/docker.sock",
+        }),
+      )
+
+      await expect(dockerInspect("easyshell-x")).rejects.toThrow(
+        /Cannot connect to the Docker daemon/,
+      )
+    })
   })
 
   describe("dockerRm", () => {

@@ -252,15 +252,19 @@ export const terminalSessionsRouter = router({
 
       if (!route) return { is_running: false }
 
+      let runnerClient: Awaited<ReturnType<typeof createRunnerClientFromDb>>
       try {
-        const runnerClient = await createRunnerClientFromDb(route.runnerId)
-        const result = await runnerClient.terminalSessions.isRunning.query({
-          container_name: route.containerName,
-        })
-        return { is_running: result.is_running }
+        runnerClient = await createRunnerClientFromDb(route.runnerId)
       } catch {
+        // The runner is gone or revoked: the session cannot be alive.
         return { is_running: false }
       }
+      // Errors reaching the runner propagate: the session's state is unknown,
+      // and reporting it dead would make the website discard a live session.
+      const result = await runnerClient.terminalSessions.isRunning.query({
+        container_name: route.containerName,
+      })
+      return { is_running: result.is_running }
     }),
 
   kill: websiteProcedure

@@ -315,8 +315,16 @@ export async function dockerInspect(
     ])
     const running = stdout.trim() === "true"
     return { exists: true, running }
-  } catch {
-    return { exists: false, running: false }
+  } catch (err: unknown) {
+    const e = err as { stderr?: string; message?: string }
+    const detail = e.stderr || e.message || String(err)
+    if (/no such (object|container)/i.test(detail)) {
+      return { exists: false, running: false }
+    }
+    // The engine is unreachable or failing: the container's state is
+    // unknown. Callers must not treat it as gone (that would end live
+    // sessions on a daemon blip).
+    throw new Error(`docker inspect failed: ${detail.slice(0, 300)}`)
   }
 }
 

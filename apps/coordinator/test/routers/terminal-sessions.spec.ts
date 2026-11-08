@@ -393,6 +393,21 @@ describe("terminalSessions.isAlive", () => {
     })
   })
 
+  it("reports an error, not 'dead', when the runner cannot be reached", async () => {
+    selectLimitSpy.mockResolvedValueOnce([
+      {
+        terminalSessionId: 100,
+        runnerId: "r-1",
+        containerName: "easyshell-test-uuid",
+        executionJobId: "job-1",
+      },
+    ])
+    runnerClientIsRunningQuery.mockRejectedValueOnce(new Error("ECONNREFUSED"))
+
+    const caller = terminalSessionsRouter.createCaller(websiteCtx)
+    await expect(caller.isAlive({ terminal_session_id: 100 })).rejects.toThrow()
+  })
+
   it("returns is_running=false when there is no route row", async () => {
     selectLimitSpy.mockResolvedValueOnce([])
 

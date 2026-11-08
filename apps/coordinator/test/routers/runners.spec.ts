@@ -124,6 +124,24 @@ describe("runners.heartbeat", () => {
     expect(setArg.lastSeenAt).toBeInstanceOf(Date)
   })
 
+  it("brings a stale runner back to active", async () => {
+    const caller = runnersRouter.createCaller({
+      actor: "runner",
+      runnerId: "runner-abc",
+    })
+    await caller.heartbeat({
+      capacity: {
+        session_used: 0,
+        session_max: 24,
+        submission_used: 0,
+        submission_max: 4,
+      },
+    })
+    // Second update: status stale -> active (filtered to stale rows only).
+    expect(updateSetSpy.mock.calls[1]?.[0]).toEqual({ status: "active" })
+    expect(updateWhereSpy).toHaveBeenCalledTimes(2)
+  })
+
   it("rejects when no runnerId in context", async () => {
     const caller = runnersRouter.createCaller({ actor: "runner" })
     await expect(

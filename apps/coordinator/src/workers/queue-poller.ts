@@ -92,13 +92,19 @@ export async function claimNextQueueItem(): Promise<ClaimedQueueItem | null> {
   try {
     return await resolveClaim(jobId, containerName, updated)
   } catch (err: unknown) {
-    // Unresolvable (missing submission or problem): fail the row rather than
-    // leaving it `running` with no job, where no sweeper would find it.
+    // Never leave the row `running` with no job, where no sweeper finds it.
+    // A missing submission or problem is permanent: fail the row. Anything
+    // else (e.g. a dropped database connection) puts it back in the queue.
+    const message = err instanceof Error ? err.message : String(err)
+    if (!/not found/i.test(message)) {
+      await revertQueueItem(updated.submissionId, updated.testcaseId, message)
+      throw err
+    }
     await db
       .update(submissionTestcaseQueue)
       .set({
         status: "failed",
-        lastError: err instanceof Error ? err.message : String(err),
+        lastError: message,
         updatedAt: new Date(),
       })
       .where(

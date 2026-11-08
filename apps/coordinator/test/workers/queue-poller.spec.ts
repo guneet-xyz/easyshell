@@ -288,6 +288,19 @@ describe("claimNextQueueItem", () => {
     const setArg = updateSetSpy.mock.calls[0]?.[0] as Record<string, unknown>
     expect(setArg.status).toBe("failed")
   })
+
+  it("puts the row back on a transient error instead of failing it", async () => {
+    cteReturningSpy.mockResolvedValueOnce([
+      { submissionId: 6, testcaseId: 1, attempts: 1 },
+    ])
+    selectLimitSpy
+      .mockResolvedValueOnce([]) // inner CTE
+      .mockRejectedValueOnce(new Error("connection terminated"))
+
+    await expect(claimNextQueueItem()).rejects.toThrow(/connection terminated/)
+    const setArg = updateSetSpy.mock.calls[0]?.[0] as Record<string, unknown>
+    expect(setArg.status).toBe("pending")
+  })
 })
 
 describe("revertQueueItem", () => {

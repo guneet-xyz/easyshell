@@ -12,18 +12,13 @@ Before running the server, you need to first build the problems cache using [`pr
 
 This app Requires the following environment variables. See [Environment Variables](../../README.md#environment-variables) for more information.
 
-- `NEXTAUTH_URL`
-- `NEXTAUTH_SECRET`
-- `DISCORD_CLIENT_ID`
-- `DISCORD_CLIENT_SECRET`
-- `GITHUB_CLIENT_ID`
-- `GITHUB_CLIENT_SECRET`
-- `GOOGLE_CLIENT_ID`
-- `GOOGLE_CLIENT_SECRET`
-- `DRIZZLE_PROXY_URL`
-- `DRIZZLE_PROXY_TOKEN`
-- `SESSION_MANAGER_URL`
-- `SESSION_MANAGER_TOKEN`
+- `DATABASE_URL`
+- `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`
+- `COORDINATOR_URL`, `WEBSITE_TOKEN`
+- `ADMIN_EMAILS`
+- Optional email sign-in: `EMAIL_FROM` (plus AWS credentials, `AWS_REGION`, `SES_CONFIGURATION_SET`)
+- Optional OAuth: `DISCORD_CLIENT_ID`/`DISCORD_CLIENT_SECRET`, `GITHUB_CLIENT_ID`/`GITHUB_CLIENT_SECRET`, `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`
+- Optional analytics: `POSTHOG_HOST`, `NEXT_PUBLIC_POSTHOG_KEY`
 
 ## Scripts
 

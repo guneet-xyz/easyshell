@@ -164,22 +164,31 @@ Release testcase containers separately with:
 | `LOG_LEVEL`                  | no       | Use `info` or `warn` in production.                                                                     |
 | `NODE_ENV`                   | no       | Use `production` for deployed services.                                                                 |
 
+### Runner sandbox
+
+The runner starts every user container with `--network none`, `--pids-limit 256` and the requested memory/CPU limits, validates container and image names, and removes session containers after an hour. Submissions get 30 seconds to run (a timeout is a failed testcase); the testcase image is pulled beforehand with its own limit. Point `DOCKER_HOST` at a dedicated Docker engine for user code, ideally with `--userns-remap` so container root is an unprivileged host user; the runner prepares its work directories for that.
+
 ### Website
 
-| Variable                                                        | Required          | Notes                                                                                                |
-| --------------------------------------------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`                                                  | yes               | PostgreSQL connection string.                                                                        |
-| `NEXTAUTH_SECRET`                                               | yes               | NextAuth secret.                                                                                     |
-| `NEXTAUTH_URL`                                                  | yes               | Public website URL.                                                                                  |
-| `COORDINATOR_URL`                                               | yes               | URL reachable from the website container to the coordinator.                                         |
-| `WEBSITE_TOKEN`                                                 | yes               | Bearer token used to authenticate website→coordinator calls. Must match coordinator `WEBSITE_TOKEN`. |
-| `ADMIN_EMAILS`                                                  | yes               | Comma-separated list of user emails granted access to `/admin/*` routes (including runner CRUD).     |
-| `DISCORD_CLIENT_ID` / `DISCORD_CLIENT_SECRET`                   | yes               | OAuth provider credentials.                                                                          |
-| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`                     | yes               | OAuth provider credentials.                                                                          |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`                     | yes               | OAuth provider credentials.                                                                          |
-| `SMTP_HOST`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_MAIL_FROM` | yes               | Mail delivery.                                                                                       |
-| `POSTHOG_HOST`                                                  | yes               | Server-side PostHog host.                                                                            |
-| `NEXT_PUBLIC_POSTHOG_KEY`                                       | yes at build time | Public PostHog key.                                                                                  |
+| Variable                                      | Required | Notes                                                                                                        |
+| --------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------ |
+| `DATABASE_URL`                                | yes      | PostgreSQL connection string.                                                                                |
+| `BETTER_AUTH_SECRET`                          | yes      | At least 32 characters; signs better-auth sessions.                                                          |
+| `BETTER_AUTH_URL`                             | yes      | Public website URL, used for auth callbacks and sign-in links.                                               |
+| `COORDINATOR_URL`                             | yes      | URL reachable from the website container to the coordinator.                                                 |
+| `WEBSITE_TOKEN`                               | yes      | Bearer token used to authenticate website→coordinator calls. Must match coordinator `WEBSITE_TOKEN`.         |
+| `ADMIN_EMAILS`                                | yes      | Comma-separated list of user emails granted access to `/admin/*` routes (including runner CRUD).             |
+| `EMAIL_FROM`                                  | no       | Sender for email sign-in links, e.g. `easyshell <auth@example.com>`. Email sign-in is enabled only when set. |
+| `AWS_REGION`                                  | no       | Amazon SES region. Defaults to `us-east-1`.                                                                  |
+| `SES_CONFIGURATION_SET`                       | no       | SES configuration set for sign-in emails.                                                                    |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | with SES | Credentials allowed to `ses:SendEmail` as `EMAIL_FROM` (any standard AWS credential source works).           |
+| `DISCORD_CLIENT_ID` / `DISCORD_CLIENT_SECRET` | no       | OAuth sign-in; each provider is offered only when both of its values are set.                                |
+| `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`   | no       | As above.                                                                                                    |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`   | no       | As above.                                                                                                    |
+| `POSTHOG_HOST`                                | no       | Server-side PostHog host. Without it the `/ph` proxy is disabled.                                            |
+| `NEXT_PUBLIC_POSTHOG_KEY`                     | no       | Public PostHog key, compiled in at build time. Without it analytics are off.                                 |
+
+Configure at least one sign-in method (email or an OAuth provider). OAuth callback URLs are `${BETTER_AUTH_URL}/api/auth/callback/<provider>`.
 
 ## Coordinator and Runner rollout
 
@@ -211,8 +220,9 @@ Runners are provisioned by an admin via the website's `/admin/runners` UI (backe
      -e COORDINATOR_URL=http://coordinator:4100 \
      -e WEBSITE_TOKEN=... \
      -e ADMIN_EMAILS="admin@example.com,ops@example.com" \
-     -e NEXTAUTH_SECRET=... \
-     -e NEXTAUTH_URL=https://easyshell.example.com \
+     -e BETTER_AUTH_SECRET=... \
+     -e BETTER_AUTH_URL=https://easyshell.example.com \
+     -e EMAIL_FROM="easyshell <auth@example.com>" \
      -e NODE_ENV=production \
      -p 3000:3000 \
      website-image

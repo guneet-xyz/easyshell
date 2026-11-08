@@ -36,7 +36,7 @@ export type AdminUser = {
  * not return to the caller when the user is unauthenticated/not-admin).
  *
  * Auth model:
- * - Admin identity = NextAuth session + email in ADMIN_EMAILS.
+ * - Admin identity = better-auth session + email in ADMIN_EMAILS.
  * - Session type does NOT include email (auth.ts:211-224); email is resolved
  *   from the users table by user.id.
  * - Unauthenticated -> redirect to /login?callback=/admin/runners.

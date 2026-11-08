@@ -36,6 +36,13 @@
       "when": 1794120420425,
       "tag": "0004_better_auth_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794123831496,
+      "tag": "0005_unassigned_runner_sentinel",
+      "breakpoints": true
     }
   ]
 }

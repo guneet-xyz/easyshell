@@ -1,6 +1,6 @@
 import crypto from "node:crypto"
 import { initTRPC, TRPCError } from "@trpc/server"
-import { and, desc, eq, isNull } from "drizzle-orm"
+import { and, desc, eq, isNull, ne } from "drizzle-orm"
 import { z } from "zod"
 
 import { runnerCapabilities, runners } from "@easyshell/db/schema"
@@ -8,6 +8,7 @@ import { runnerCapabilities, runners } from "@easyshell/db/schema"
 import type { Context } from "../context"
 import { db } from "../db"
 import { ExecutionModeSchema } from "../schemas"
+import { UNASSIGNED_RUNNER_ID } from "../services/jobs"
 import { encryptSecret } from "../services/secret"
 
 const t = initTRPC.context<Context>().create()
@@ -132,6 +133,7 @@ export const adminRouter = router({
         const rows = await db
           .select()
           .from(runners)
+          .where(ne(runners.id, UNASSIGNED_RUNNER_ID))
           .orderBy(desc(runners.registeredAt))
         const caps = await db.select().from(runnerCapabilities)
         const capsByRunner = new Map<

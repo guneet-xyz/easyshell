@@ -78,10 +78,12 @@ async function markJobFailed(jobId: string, message: string): Promise<void> {
  * NEVER THROWS. All errors are reconciled internally (mark job failed,
  * revert the queue row to `pending`) so the queue-poller can safely
  * `await dispatch(...)` without risk of double-reverting.
+ *
+ * Resolves true when a runner accepted the job, false otherwise.
  */
-export async function dispatch(jobId: string): Promise<void> {
+export async function dispatch(jobId: string): Promise<boolean> {
   try {
-    await dispatchInner(jobId)
+    return await dispatchInner(jobId)
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err)
     log.error({ job_id: jobId, error: msg }, "dispatch.unhandled")
@@ -96,10 +98,11 @@ export async function dispatch(jobId: string): Promise<void> {
         "dispatch.markFailed-failed",
       )
     }
+    return false
   }
 }
 
-async function dispatchInner(jobId: string): Promise<void> {
+async function dispatchInner(jobId: string): Promise<boolean> {
   const row = await db
     .select()
     .from(executionJobs)
@@ -108,7 +111,7 @@ async function dispatchInner(jobId: string): Promise<void> {
   const job = row[0]
   if (!job) {
     log.warn({ job_id: jobId }, "dispatch.job-not-found")
-    return
+    return false
   }
 
   const runner = await pickRunner(job.mode)
@@ -122,7 +125,7 @@ async function dispatchInner(jobId: string): Promise<void> {
     }
     await markJobFailed(jobId, "no runner available")
     log.warn({ job_id: jobId, mode: job.mode }, "dispatch.no-runner")
-    return
+    return false
   }
 
   let secret: string
@@ -138,7 +141,7 @@ async function dispatchInner(jobId: string): Promise<void> {
       { job_id: jobId, runner_id: runner.id, error: msg },
       "dispatch.decrypt-failed",
     )
-    return
+    return false
   }
 
   const client = createRunnerClientFromCreds(
@@ -180,7 +183,7 @@ async function dispatchInner(jobId: string): Promise<void> {
         { job_id: jobId, runner_id: runner.id },
         "dispatch.duplicate-ack",
       )
-      return
+      return true
     }
 
     if (result.status === "at_capacity") {
@@ -193,7 +196,7 @@ async function dispatchInner(jobId: string): Promise<void> {
       }
       await markJobFailed(jobId, "runner at capacity")
       log.warn({ job_id: jobId, runner_id: runner.id }, "dispatch.at-capacity")
-      return
+      return false
     }
 
     await db
@@ -205,6 +208,7 @@ async function dispatchInner(jobId: string): Promise<void> {
       })
       .where(eq(executionJobs.id, jobId))
     log.info({ job_id: jobId, runner_id: runner.id }, "dispatch.accepted")
+    return true
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err)
     if (job.submissionId != null && job.testcaseId != null) {
@@ -215,5 +219,6 @@ async function dispatchInner(jobId: string): Promise<void> {
       { job_id: jobId, runner_id: runner.id, error: msg },
       "dispatch.error",
     )
+    return false
   }
 }

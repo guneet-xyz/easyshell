@@ -11,6 +11,12 @@ type Tx = PgTransaction<
   ExtractTablesWithRelations<typeof schema>
 >
 
+/**
+ * runner_id of jobs not yet accepted by a runner. Migration 0005 inserts a
+ * matching deregistered, revoked runner row so the foreign key holds.
+ */
+export const UNASSIGNED_RUNNER_ID = "unassigned"
+
 export interface InsertExecutionJobParams {
   id: string
   containerName: string

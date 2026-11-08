@@ -273,7 +273,7 @@ describe("dispatch — runner client throws", () => {
     acceptMutateSpy.mockRejectedValueOnce(new Error("ECONNREFUSED"))
 
     // dispatch is documented to NEVER throw.
-    await expect(dispatch("job-1")).resolves.toBeUndefined()
+    await expect(dispatch("job-1")).resolves.toBe(false)
 
     const queueUpdates = updatesForTable(submissionTestcaseQueue)
     expect(queueUpdates).toHaveLength(1)

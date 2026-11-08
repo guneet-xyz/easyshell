@@ -9,7 +9,6 @@ import { type Metadata } from "next"
 import { ThemeProvider } from "next-themes"
 
 import { Navbar } from "./_components/navbar"
-import { SessionProvider } from "./_components/session-provider"
 import { ClientSideProviders } from "./client-side-providers"
 
 export const metadata: Metadata = {
@@ -36,13 +35,11 @@ export default function RootLayout({
       <body className="flex h-screen flex-col font-geist dark:bg-neutral-900">
         <ClientSideProviders>
           <ThemeProvider attribute="class" defaultTheme="dark">
-            <SessionProvider>
-              <Toaster />
-              <TooltipProvider>
-                <Navbar />
-                <div className="grow">{children}</div>
-              </TooltipProvider>
-            </SessionProvider>
+            <Toaster />
+            <TooltipProvider>
+              <Navbar />
+              <div className="grow">{children}</div>
+            </TooltipProvider>
           </ThemeProvider>
         </ClientSideProviders>
       </body>

@@ -97,7 +97,7 @@ export async function isProblemBookmarked({
 export async function getUserProviders(userId: string) {
   const results = await db
     .select({
-      provider: accounts.provider,
+      provider: accounts.providerId,
     })
     .from(accounts)
     .where(eq(accounts.userId, userId))

@@ -1,24 +1,20 @@
-import { DrizzleAdapter } from "@auth/drizzle-adapter"
+import { betterAuth } from "better-auth"
+import { drizzleAdapter } from "better-auth/adapters/drizzle"
+import { magicLink } from "better-auth/plugins"
 import { count, eq } from "drizzle-orm"
-import NextAuth, { type DefaultSession } from "next-auth"
-import { type Adapter } from "next-auth/adapters"
-import DiscordProvider from "next-auth/providers/discord"
-import GithubProvider from "next-auth/providers/github"
-import GoogleProvider from "next-auth/providers/google"
-import Nodemailer from "next-auth/providers/nodemailer"
+import { headers } from "next/headers"
 
 import {
   accounts,
   lower,
   sessions,
   users,
-  verificationTokens,
+  verification,
 } from "@easyshell/db/schema"
 
-import { MagicLink } from "@/components/emails/magic-link"
 import { db } from "@/db"
 import { env } from "@/env"
-import { sendMail } from "@/lib/server/smtp"
+import { sendEmail } from "@/lib/server/email"
 
 // =============================== Helper Utilities ===============================
 
@@ -134,7 +130,8 @@ async function fixUser(userId: string) {
     await db.select().from(users).where(eq(users.id, userId)).limit(1)
   )[0]!
 
-  let name = user.name ?? user.email.split("@")[0]!
+  // Magic-link sign-up leaves the name empty; start from the email local part.
+  let name = user.name || user.email.split("@")[0]!
   const validName = await isNameValid(name)
   if (!validName.valid) {
     name = await generateAnonymousName()
@@ -208,105 +205,142 @@ export async function getUserByUsername(username: string) {
 
 // ================================ Auth Configuration ===============================
 
-declare module "next-auth" {
-  interface Session extends DefaultSession {
-    user: {
-      id: string
-      name: string
-      username: string
-      image?: string
-    } & DefaultSession["user"]
-  }
+export type SocialProvider = "github" | "discord" | "google"
 
-  interface User {
-    username?: string | null
+function oauth(clientId?: string, clientSecret?: string) {
+  return clientId && clientSecret ? { clientId, clientSecret } : undefined
+}
+
+// Each provider is enabled only when both its client ID and secret are set.
+const socialProviders = {
+  github: oauth(env.GITHUB_CLIENT_ID, env.GITHUB_CLIENT_SECRET),
+  discord: oauth(env.DISCORD_CLIENT_ID, env.DISCORD_CLIENT_SECRET),
+  google: oauth(env.GOOGLE_CLIENT_ID, env.GOOGLE_CLIENT_SECRET),
+}
+
+/** Sign-in methods that are configured, for rendering login/settings UI. */
+export function getLoginMethods() {
+  return {
+    social: (Object.keys(socialProviders) as SocialProvider[]).filter(
+      (provider) => socialProviders[provider] !== undefined,
+    ),
+    email: !!env.EMAIL_FROM,
   }
 }
 
-export const { auth, handlers, signIn, signOut } = NextAuth({
-  pages: {
-    signIn: "/login",
-    signOut: "/logout",
-    error: "/error/auth",
-    verifyRequest: "/verify-request",
-  },
-  callbacks: {
-    session: async (ctx) => {
-      const { session } = ctx
-      if (
-        !session.user ||
-        !session.user.name ||
-        !session.user.username ||
-        !(await isNameValid(session.user.name)).valid ||
-        !(
-          await isUsernameValid({
-            username: session.user.username,
-            checkUnique: false,
-          })
-        ).valid
-      ) {
-        return {
-          ...session,
-          user: await fixUser(session.user.id),
-        }
-      }
-      return session
+function escapeHtml(text: string) {
+  return text.replace(
+    /[&<>"']/g,
+    (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        c
+      ]!,
+  )
+}
+
+// Abuse limits for sign-in email, on top of better-auth's per-IP rate limit.
+// In-memory: the website runs as a single process.
+const MAGIC_LINK_COOLDOWN_MS = 60_000
+const MAGIC_LINK_DAILY_LIMIT = 500
+const lastMagicLinkSent = new Map<string, number>()
+let magicLinkDay = ""
+let magicLinksToday = 0
+
+function allowMagicLink(email: string) {
+  const now = Date.now()
+  const day = new Date(now).toISOString().slice(0, 10)
+  if (day !== magicLinkDay) {
+    magicLinkDay = day
+    magicLinksToday = 0
+    lastMagicLinkSent.clear()
+  }
+  const key = email.toLowerCase()
+  const last = lastMagicLinkSent.get(key)
+  if (last !== undefined && now - last < MAGIC_LINK_COOLDOWN_MS) return false
+  if (magicLinksToday >= MAGIC_LINK_DAILY_LIMIT) return false
+  lastMagicLinkSent.set(key, now)
+  magicLinksToday++
+  return true
+}
+
+export const authServer = betterAuth({
+  database: drizzleAdapter(db, {
+    provider: "pg",
+    schema: { user: users, session: sessions, account: accounts, verification },
+  }),
+  user: {
+    // easyshell_user keeps its existing joined_at column as createdAt.
+    fields: { createdAt: "joinedAt" },
+    additionalFields: {
+      username: { type: "string", required: false, input: false },
     },
   },
-  events: {
-    async createUser(event) {
-      // TODO: send welcome email
-      const { user } = event
-      if (!user.id) return
-      await fixUser(user.id)
-    },
-    async updateUser() {
-      // TODO: send alert email
-    },
-    async linkAccount() {
-      // TODO: send alert email
-    },
-  },
-  adapter: DrizzleAdapter(db, {
-    usersTable: users,
-    accountsTable: accounts,
-    sessionsTable: sessions,
-    verificationTokensTable: verificationTokens,
-  }) as Adapter,
-  providers: [
-    DiscordProvider({
-      clientId: env.DISCORD_CLIENT_ID,
-      clientSecret: env.DISCORD_CLIENT_SECRET,
-      allowDangerousEmailAccountLinking: true,
-    }),
-    GithubProvider({
-      clientId: env.GITHUB_CLIENT_ID,
-      clientSecret: env.GITHUB_CLIENT_SECRET,
-      allowDangerousEmailAccountLinking: true,
-    }),
-    GoogleProvider({
-      clientId: env.GOOGLE_CLIENT_ID,
-      clientSecret: env.GOOGLE_CLIENT_SECRET,
-      allowDangerousEmailAccountLinking: true,
-    }),
-    Nodemailer({
-      server: {
-        host: env.SMTP_HOST,
-        port: 587,
-        auth: {
-          user: env.SMTP_USERNAME,
-          pass: env.SMTP_PASSWORD,
+  socialProviders: Object.fromEntries(
+    Object.entries(socialProviders).filter(([, value]) => value !== undefined),
+  ),
+  plugins: env.EMAIL_FROM
+    ? [
+        magicLink({
+          expiresIn: 60 * 10,
+          storeToken: "hashed",
+          sendMagicLink: async ({ email, url }) => {
+            if (!allowMagicLink(email)) {
+              throw new Error("Too many sign-in emails; try again later")
+            }
+            await sendEmail({
+              to: email,
+              subject: "Sign in to easyshell",
+              text: `Sign in to easyshell.sh with this link (valid for 10 minutes):\n\n${url}\n\nIf you did not request this, you can ignore this email.`,
+              html: `<p>Sign in to easyshell.sh with the link below. It is valid for 10 minutes.</p><p><a href="${escapeHtml(url)}">Sign in to easyshell</a></p><p>If you did not request this, you can ignore this email.</p>`,
+            })
+          },
+        }),
+      ]
+    : [],
+  databaseHooks: {
+    user: {
+      create: {
+        // Give new users a valid display name and unique username.
+        after: async (user) => {
+          await fixUser(user.id)
         },
       },
-      from: env.SMTP_MAIL_FROM,
-      async sendVerificationRequest(params) {
-        const { identifier, url } = params
-        await sendMail({
-          to: identifier,
-          subject: `Sign-In to EasyShell`,
-          react: MagicLink({ url }),
-        })
-      },
-    }),
-  ],
+    },
+  },
 })
+
+export type Session = {
+  user: {
+    id: string
+    name: string
+    username: string
+    image?: string
+  }
+}
+
+/** The signed-in user's session, with name/username repaired if needed. */
+export async function auth(): Promise<Session | null> {
+  const session = await authServer.api.getSession({ headers: await headers() })
+  if (!session) return null
+  let user = {
+    id: session.user.id,
+    name: session.user.name,
+    username: (session.user as { username?: string | null }).username ?? "",
+    image: session.user.image ?? undefined,
+  }
+  if (
+    !(await isNameValid(user.name)).valid ||
+    !(await isUsernameValid({ username: user.username, checkUnique: false }))
+      .valid
+  ) {
+    user = await fixUser(user.id)
+  }
+  return {
+    user: {
+      id: user.id,
+      name: user.name,
+      username: user.username,
+      image: user.image,
+    },
+  }
+}

@@ -11,6 +11,7 @@ const config: NextConfig = {
   },
   output: "standalone",
   async rewrites() {
+    if (!env.POSTHOG_HOST) return []
     return [
       {
         source: "/ph/static/:path*",

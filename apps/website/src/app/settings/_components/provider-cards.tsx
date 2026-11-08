@@ -1,6 +1,5 @@
 "use client"
 
-import { signIn } from "next-auth/react"
 import {
   PiDiscordLogo,
   PiDiscordLogoDuotone,
@@ -11,6 +10,7 @@ import {
 } from "react-icons/pi"
 import { toast } from "sonner"
 
+import { authClient } from "@/lib/auth-client"
 import { cn } from "@/lib/utils"
 
 type ProviderType = "discord" | "github" | "google"
@@ -52,7 +52,7 @@ export function ProviderCard({ provider, connected }: ProviderCardProps) {
           })
           return
         }
-        await signIn(provider)
+        await authClient.linkSocial({ provider, callbackURL: "/settings" })
       }}
     >
       {connected ? icons[provider].connected : icons[provider].disconnected}

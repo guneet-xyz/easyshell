@@ -192,7 +192,7 @@ async function countActiveTerminalSessions(
 }
 
 /** Starts the container for an inserted session; releases the row on failure. */
-async function startTerminalSession({
+export async function startTerminalSession({
   problemId,
   testcaseId,
   sessionId,
@@ -207,6 +207,16 @@ async function startTerminalSession({
       testcaseId: testcaseId.toString(),
       sessionId,
     })
+    // A kill that arrived while the container was starting found nothing to
+    // kill on the coordinator yet; finish it now so no container is orphaned.
+    const row = (
+      await db
+        .select({ deletedAt: terminalSessions.deletedAt })
+        .from(terminalSessions)
+        .where(eq(terminalSessions.id, sessionId))
+        .limit(1)
+    )[0]
+    if (row?.deletedAt) await coordinatorKill(sessionId)
   } catch (err) {
     // Otherwise the dead row would count toward the cap until it expires.
     await db
@@ -235,6 +245,8 @@ export async function getActiveTerminalSession({
         eq(terminalSessions.problemId, problemId),
         eq(terminalSessions.testcaseId, testcaseId),
         isNull(terminalSessions.deletedAt),
+        // Expired rows are gone (the watchdog releases them).
+        gt(terminalSessions.expiresAt, new Date()),
       ),
     )
     .limit(1)

@@ -375,14 +375,16 @@ describe("terminalSessions.exec", () => {
 
 describe("terminalSessions.isAlive", () => {
   it("returns the runner's is_running flag on the happy path", async () => {
-    selectLimitSpy.mockResolvedValueOnce([
-      {
-        terminalSessionId: 100,
-        runnerId: "r-1",
-        containerName: "easyshell-test-uuid",
-        executionJobId: "job-1",
-      },
-    ])
+    selectLimitSpy
+      .mockResolvedValueOnce([
+        {
+          terminalSessionId: 100,
+          runnerId: "r-1",
+          containerName: "easyshell-test-uuid",
+          executionJobId: "job-1",
+        },
+      ])
+      .mockResolvedValueOnce([{ status: "active", revokedAt: null }])
 
     const caller = terminalSessionsRouter.createCaller(websiteCtx)
     const result = await caller.isAlive({ terminal_session_id: 100 })
@@ -394,18 +396,39 @@ describe("terminalSessions.isAlive", () => {
   })
 
   it("reports an error, not 'dead', when the runner cannot be reached", async () => {
-    selectLimitSpy.mockResolvedValueOnce([
-      {
-        terminalSessionId: 100,
-        runnerId: "r-1",
-        containerName: "easyshell-test-uuid",
-        executionJobId: "job-1",
-      },
-    ])
+    selectLimitSpy
+      .mockResolvedValueOnce([
+        {
+          terminalSessionId: 100,
+          runnerId: "r-1",
+          containerName: "easyshell-test-uuid",
+          executionJobId: "job-1",
+        },
+      ])
+      .mockResolvedValueOnce([{ status: "active", revokedAt: null }])
     runnerClientIsRunningQuery.mockRejectedValueOnce(new Error("ECONNREFUSED"))
 
     const caller = terminalSessionsRouter.createCaller(websiteCtx)
     await expect(caller.isAlive({ terminal_session_id: 100 })).rejects.toThrow()
+  })
+
+  it("returns is_running=false for a stale runner without asking it", async () => {
+    selectLimitSpy
+      .mockResolvedValueOnce([
+        {
+          terminalSessionId: 100,
+          runnerId: "r-1",
+          containerName: "easyshell-test-uuid",
+          executionJobId: "job-1",
+        },
+      ])
+      .mockResolvedValueOnce([{ status: "stale", revokedAt: null }])
+
+    const caller = terminalSessionsRouter.createCaller(websiteCtx)
+    expect(await caller.isAlive({ terminal_session_id: 100 })).toEqual({
+      is_running: false,
+    })
+    expect(runnerClientIsRunningQuery).not.toHaveBeenCalled()
   })
 
   it("returns is_running=false when there is no route row", async () => {

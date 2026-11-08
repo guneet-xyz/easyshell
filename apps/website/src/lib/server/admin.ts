@@ -36,7 +36,9 @@ export type AdminUser = {
  * not return to the caller when the user is unauthenticated/not-admin).
  *
  * Auth model:
- * - Admin identity = better-auth session + email in ADMIN_EMAILS.
+ * - Admin identity = better-auth session + verified email in ADMIN_EMAILS.
+ *   OAuth sign-up accepts provider emails the provider has not verified, so
+ *   an unverified address must never grant admin.
  * - Session type does NOT include email (auth.ts:211-224); email is resolved
  *   from the users table by user.id.
  * - Unauthenticated -> redirect to /login?callback=/admin/runners.
@@ -50,6 +52,7 @@ export async function requireAdmin(pathname: string): Promise<AdminUser> {
     .select({
       id: users.id,
       email: users.email,
+      emailVerified: users.emailVerified,
       name: users.name,
       username: users.username,
     })
@@ -58,7 +61,10 @@ export async function requireAdmin(pathname: string): Promise<AdminUser> {
     .limit(1)
   const user = rows[0]
   if (!user?.email) redirect(`/login?callback=${encodeURIComponent(pathname)}`)
-  if (!adminEmails().has(user.email.trim().toLowerCase())) {
+  if (
+    !user.emailVerified ||
+    !adminEmails().has(user.email.trim().toLowerCase())
+  ) {
     throw new Response("Forbidden", { status: 403 })
   }
   return {
@@ -67,9 +73,4 @@ export async function requireAdmin(pathname: string): Promise<AdminUser> {
     name: user.name ?? "",
     username: user.username ?? "",
   }
-}
-
-export function isAdminEmail(email: string | null | undefined): boolean {
-  if (!email) return false
-  return adminEmails().has(email.trim().toLowerCase())
 }

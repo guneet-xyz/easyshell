@@ -41,6 +41,7 @@ vi.mock("@easyshell/db/schema", () => ({
   users: {
     id: {},
     email: {},
+    emailVerified: {},
     name: {},
     username: {},
   },
@@ -86,6 +87,7 @@ describe("requireAdmin", () => {
       {
         id: "u-1",
         email: "ADMIN@example.COM",
+        emailVerified: true,
         name: "Admin One",
         username: "admin1",
       },
@@ -112,6 +114,7 @@ describe("requireAdmin", () => {
       {
         id: "u-2",
         email: "Ops@Example.com",
+        emailVerified: true,
         name: "Ops",
         username: "ops",
       },
@@ -128,6 +131,7 @@ describe("requireAdmin", () => {
       {
         id: "u-1",
         email: "outsider@example.com",
+        emailVerified: true,
         name: "Not Admin",
         username: "notadmin",
       },
@@ -143,6 +147,23 @@ describe("requireAdmin", () => {
     // Non-admin authenticated user is a 403, NOT a redirect — the two
     // failure modes must stay distinct.
     expect(redirectMock).not.toHaveBeenCalled()
+  })
+
+  it("failure: an admin address that is not verified is refused (403)", async () => {
+    // OAuth sign-up can create a user with a provider email the provider has
+    // not verified; it must not be able to claim an ADMIN_EMAILS entry.
+    selectLimitSpy.mockResolvedValueOnce([
+      {
+        id: "u-3",
+        email: "admin@example.com",
+        emailVerified: false,
+        name: "Impostor",
+        username: "impostor",
+      },
+    ])
+    const err = await requireAdmin("/admin/runners").catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(Response)
+    if (err instanceof Response) expect(err.status).toBe(403)
   })
 
   it("failure: unauthenticated (auth() returns null) triggers redirect to /login?callback=<pathname>", async () => {

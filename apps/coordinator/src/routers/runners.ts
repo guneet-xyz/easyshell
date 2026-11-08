@@ -1,5 +1,5 @@
 import { initTRPC, TRPCError } from "@trpc/server"
-import { eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 
 import { runnerHeartbeats, runners } from "@easyshell/db/schema"
 import { createLogger } from "@easyshell/logger"
@@ -40,6 +40,15 @@ export const runnersRouter = router({
         .update(runners)
         .set({ lastSeenAt: now })
         .where(eq(runners.id, ctx.runnerId))
+
+      // The watchdog marks a silent runner stale; a heartbeat brings it back.
+      // Without this a runner down for over 30s (or not started within 30s of
+      // being created) never received work again. Draining and deregistered
+      // runners stay as they are.
+      await db
+        .update(runners)
+        .set({ status: "active" })
+        .where(and(eq(runners.id, ctx.runnerId), eq(runners.status, "stale")))
 
       await db
         .insert(runnerHeartbeats)

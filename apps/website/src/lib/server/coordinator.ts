@@ -108,16 +108,22 @@ export async function getTerminalSession({
   })
   if (!session) {
     // Count and insert under a per-user lock so parallel requests cannot
-    // exceed the cap.
-    const sessionId = await withUserLock(userId, "sessions", async (tx) => {
+    // exceed the cap or start two sessions for the same testcase.
+    const created = await withUserLock(userId, "sessions", async (tx) => {
+      if (
+        await hasLiveTerminalSessionRow({ userId, problemId, testcaseId }, tx)
+      )
+        return "exists" as const
       if (
         (await countActiveTerminalSessions(userId, tx)) >= MAX_ACTIVE_SESSIONS
       )
         return null
       return insertTerminalSession({ userId, problemId, testcaseId }, tx)
     })
-    if (sessionId === null) return null
-    await startTerminalSession({ problemId, testcaseId, sessionId })
+    if (created === null) return null
+    if (created !== "exists") {
+      await startTerminalSession({ problemId, testcaseId, sessionId: created })
+    }
     session = await getActiveTerminalSession({ userId, problemId, testcaseId })
   }
 
@@ -136,6 +142,36 @@ export async function getTerminalSession({
 
 /** Live terminal containers one user may have at once. */
 const MAX_ACTIVE_SESSIONS = 5
+/**
+ * How long a session may take to start (the runner allows 120s, including
+ * pulling the image). A younger session that is not running yet is starting,
+ * not dead.
+ */
+const SESSION_START_GRACE_MS = 150_000
+
+async function hasLiveTerminalSessionRow(
+  {
+    userId,
+    problemId,
+    testcaseId,
+  }: { userId: string; problemId: number; testcaseId: number },
+  tx: Pick<typeof db, "select"> = db,
+) {
+  const rows = await tx
+    .select({ id: terminalSessions.id })
+    .from(terminalSessions)
+    .where(
+      and(
+        eq(terminalSessions.userId, userId),
+        eq(terminalSessions.problemId, problemId),
+        eq(terminalSessions.testcaseId, testcaseId),
+        isNull(terminalSessions.deletedAt),
+        gt(terminalSessions.expiresAt, new Date()),
+      ),
+    )
+    .limit(1)
+  return rows.length > 0
+}
 
 async function countActiveTerminalSessions(
   userId: string,
@@ -208,10 +244,16 @@ export async function getActiveTerminalSession({
   const isRunning = await coordinatorIsRunning(session[0].id)
 
   if (isRunning) return session[0]
+  // Another request may still be starting it.
+  if (Date.now() - session[0].createdAt.getTime() < SESSION_START_GRACE_MS)
+    return session[0]
+
   await db
     .update(terminalSessions)
     .set({ deletedAt: new Date() })
     .where(eq(terminalSessions.id, session[0].id))
+  // Make sure nothing is left running for the released row.
+  await coordinatorKill(session[0].id).catch(() => undefined)
 
   return null
 }

@@ -158,8 +158,12 @@ function runSubmissionJob(params: {
       })
 
       const finishedAt = Date.now()
+      // User code can write more than the limit to /output.json directly, or
+      // leave more files under /home than fit in it.
+      const outputJsonTooLarge =
+        result.exitCode === 0 && fs.statSync(outputPath).size > MAX_OUTPUT_BYTES
 
-      if (result.timedOut || result.outputTooLarge) {
+      if (result.timedOut || result.outputTooLarge || outputJsonTooLarge) {
         // The user's code ran too long or printed too much: a result, not an
         // infrastructure error.
         db.prepare(
@@ -198,9 +202,6 @@ function runSubmissionJob(params: {
       // exitCode === 0 → parse the entrypoint's output.json.
       let out: EntrypointOutput
       try {
-        if (fs.statSync(outputPath).size > MAX_OUTPUT_BYTES) {
-          throw new Error("output.json too large")
-        }
         out = JSON.parse(
           fs.readFileSync(outputPath, "utf8"),
         ) as EntrypointOutput

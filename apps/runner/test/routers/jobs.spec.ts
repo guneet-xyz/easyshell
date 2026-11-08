@@ -313,6 +313,24 @@ describe("routers/jobs", () => {
       })
     })
 
+    it("reports an oversized output.json as a result, not a retry", async () => {
+      dockerState.run.mockImplementation(
+        async (args: { extraVolumes: string[] }) => {
+          const outputPath = args.extraVolumes[1]!.split(":")[0]!
+          fs.writeFileSync(outputPath, "x".repeat(1024 * 1024 + 1))
+          return { stdout: "", stderr: "", exitCode: 0 }
+        },
+      )
+      const caller = jobsRouter.createCaller({ actor: "coordinator" })
+      await caller.accept(buildInput({ job_id: "j-bigjson" }))
+      const row = await settle("j-bigjson")
+      expect(row).toMatchObject({
+        status: "succeeded",
+        exit_code: -1,
+        stderr: "Output too large.",
+      })
+    })
+
     it("fails (for retry) when the image cannot be pulled", async () => {
       dockerState.pull.mockResolvedValue({ ok: false, error: "not found" })
       const caller = jobsRouter.createCaller({ actor: "coordinator" })

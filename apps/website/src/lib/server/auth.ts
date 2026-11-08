@@ -263,51 +263,68 @@ function allowMagicLink(email: string) {
   return true
 }
 
-export const authServer = betterAuth({
-  database: drizzleAdapter(db, {
-    provider: "pg",
-    schema: { user: users, session: sessions, account: accounts, verification },
-  }),
-  user: {
-    // easyshell_user keeps its existing joined_at column as createdAt.
-    fields: { createdAt: "joinedAt" },
-    additionalFields: {
-      username: { type: "string", required: false, input: false },
-    },
-  },
-  socialProviders: Object.fromEntries(
-    Object.entries(socialProviders).filter(([, value]) => value !== undefined),
-  ),
-  plugins: env.EMAIL_FROM
-    ? [
-        magicLink({
-          expiresIn: 60 * 10,
-          storeToken: "hashed",
-          sendMagicLink: async ({ email, url }) => {
-            if (!allowMagicLink(email)) {
-              throw new Error("Too many sign-in emails; try again later")
-            }
-            await sendEmail({
-              to: email,
-              subject: "Sign in to easyshell",
-              text: `Sign in to easyshell.sh with this link (valid for 10 minutes):\n\n${url}\n\nIf you did not request this, you can ignore this email.`,
-              html: `<p>Sign in to easyshell.sh with the link below. It is valid for 10 minutes.</p><p><a href="${escapeHtml(url)}">Sign in to easyshell</a></p><p>If you did not request this, you can ignore this email.</p>`,
-            })
-          },
-        }),
-      ]
-    : [],
-  databaseHooks: {
+function createAuthServer() {
+  return betterAuth({
+    database: drizzleAdapter(db, {
+      provider: "pg",
+      schema: {
+        user: users,
+        session: sessions,
+        account: accounts,
+        verification,
+      },
+    }),
     user: {
-      create: {
-        // Give new users a valid display name and unique username.
-        after: async (user) => {
-          await fixUser(user.id)
+      // easyshell_user keeps its existing joined_at column as createdAt.
+      fields: { createdAt: "joinedAt" },
+      additionalFields: {
+        username: { type: "string", required: false, input: false },
+      },
+    },
+    socialProviders: Object.fromEntries(
+      Object.entries(socialProviders).filter(
+        ([, value]) => value !== undefined,
+      ),
+    ),
+    plugins: env.EMAIL_FROM
+      ? [
+          magicLink({
+            expiresIn: 60 * 10,
+            storeToken: "hashed",
+            sendMagicLink: async ({ email, url }) => {
+              if (!allowMagicLink(email)) {
+                throw new Error("Too many sign-in emails; try again later")
+              }
+              await sendEmail({
+                to: email,
+                subject: "Sign in to easyshell",
+                text: `Sign in to easyshell.sh with this link (valid for 10 minutes):\n\n${url}\n\nIf you did not request this, you can ignore this email.`,
+                html: `<p>Sign in to easyshell.sh with the link below. It is valid for 10 minutes.</p><p><a href="${escapeHtml(url)}">Sign in to easyshell</a></p><p>If you did not request this, you can ignore this email.</p>`,
+              })
+            },
+          }),
+        ]
+      : [],
+    databaseHooks: {
+      user: {
+        create: {
+          // Give new users a valid display name and unique username.
+          after: async (user) => {
+            await fixUser(user.id)
+          },
         },
       },
     },
-  },
-})
+  })
+}
+
+// Created on first use: the secret and URL are runtime settings, not
+// available while Next builds pages.
+let authServerInstance: ReturnType<typeof createAuthServer> | undefined
+export function getAuthServer() {
+  authServerInstance ??= createAuthServer()
+  return authServerInstance
+}
 
 export type Session = {
   user: {
@@ -320,7 +337,9 @@ export type Session = {
 
 /** The signed-in user's session, with name/username repaired if needed. */
 export async function auth(): Promise<Session | null> {
-  const session = await authServer.api.getSession({ headers: await headers() })
+  const session = await getAuthServer().api.getSession({
+    headers: await headers(),
+  })
   if (!session) return null
   let user = {
     id: session.user.id,

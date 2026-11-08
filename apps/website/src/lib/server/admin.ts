@@ -16,7 +16,12 @@ function parseAdminEmails(raw: string): Set<string> {
   )
 }
 
-const ADMIN_EMAIL_SET = parseAdminEmails(env.ADMIN_EMAILS)
+// Parsed on first use: env values are not available while Next builds pages.
+let adminEmailSet: Set<string> | undefined
+function adminEmails(): Set<string> {
+  adminEmailSet ??= parseAdminEmails(env.ADMIN_EMAILS)
+  return adminEmailSet
+}
 
 export type AdminUser = {
   id: string
@@ -53,7 +58,7 @@ export async function requireAdmin(pathname: string): Promise<AdminUser> {
     .limit(1)
   const user = rows[0]
   if (!user?.email) redirect(`/login?callback=${encodeURIComponent(pathname)}`)
-  if (!ADMIN_EMAIL_SET.has(user.email.trim().toLowerCase())) {
+  if (!adminEmails().has(user.email.trim().toLowerCase())) {
     throw new Response("Forbidden", { status: 403 })
   }
   return {
@@ -66,5 +71,5 @@ export async function requireAdmin(pathname: string): Promise<AdminUser> {
 
 export function isAdminEmail(email: string | null | undefined): boolean {
   if (!email) return false
-  return ADMIN_EMAIL_SET.has(email.trim().toLowerCase())
+  return adminEmails().has(email.trim().toLowerCase())
 }

@@ -22,6 +22,20 @@
       "when": 1794120375757,
       "tag": "0002_admin_revocation",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794120402312,
+      "tag": "0003_drop_authjs_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794120420425,
+      "tag": "0004_better_auth_tables",
+      "breakpoints": true
     }
   ]
 }

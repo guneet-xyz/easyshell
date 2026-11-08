@@ -139,7 +139,7 @@ async function pushOnce(): Promise<void> {
       `SELECT job_id, status, stdout, stderr, exit_code, fs,
               error_message, started_at, finished_at
          FROM accepted_job
-        WHERE status IN ('succeeded','failed','cancelled')
+        WHERE status IN ('succeeded','failed','cancelled','lost')
           AND push_acked=0
         ORDER BY finished_at ASC
         LIMIT ?`,

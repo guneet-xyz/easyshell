@@ -20,6 +20,7 @@ import { createLogger } from "@easyshell/logger"
 import { getDb } from "../db/sqlite"
 import { dockerInspect, dockerKill, listExpiredSessions } from "../docker/cli"
 import { env } from "../env"
+import { isSubmissionInFlight } from "../services/in-flight"
 import { endSession } from "../services/session-lifecycle"
 import { drainCleanupQueue } from "./recovery"
 
@@ -44,6 +45,8 @@ export async function scanOnce(): Promise<void> {
   if (active.length === 0) return
 
   for (const row of active) {
+    // Its docker run is still being awaited here and will record the outcome.
+    if (row.mode === "submission" && isSubmissionInFlight(row.job_id)) continue
     try {
       const inspect = await dockerInspect(row.container_name)
       if (inspect.exists && inspect.running) continue
@@ -64,9 +67,17 @@ export async function scanOnce(): Promise<void> {
         continue
       }
 
-      db.prepare(
-        "UPDATE accepted_job SET status='lost', error_message=?, finished_at=? WHERE job_id=?",
-      ).run("container gone during reconciliation", Date.now(), row.job_id)
+      // Only if still active: the job may have finished during the inspect.
+      const changed = db
+        .prepare(
+          "UPDATE accepted_job SET status='lost', error_message=?, finished_at=? WHERE job_id=? AND status IN ('accepted','starting','running')",
+        )
+        .run(
+          "container gone during reconciliation",
+          Date.now(),
+          row.job_id,
+        ).changes
+      if (changed === 0) continue
       db.prepare(
         "INSERT OR IGNORE INTO cleanup_pending (container_name, reason, queued_at) VALUES (?,?,?)",
       ).run(row.container_name, "orphaned", Date.now())

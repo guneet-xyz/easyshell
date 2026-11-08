@@ -49,6 +49,10 @@ import {
   getCapacity,
   incrementSubmission,
 } from "../services/capacity"
+import {
+  clearSubmissionInFlight,
+  markSubmissionInFlight,
+} from "../services/in-flight"
 
 const log = createLogger("runner:jobs")
 
@@ -111,6 +115,7 @@ function runSubmissionJob(params: {
 }): void {
   const { jobId, containerName, image, input, memory, cpus } = params
   const db = getDb(env.RUNNER_DB_PATH)
+  markSubmissionInFlight(jobId)
 
   void (async () => {
     const containerDir = path.join(
@@ -232,6 +237,7 @@ function runSubmissionJob(params: {
       ).run(Date.now(), message, jobId)
       log.error({ job_id: jobId, error: message }, "job.submission.error")
     } finally {
+      clearSubmissionInFlight(jobId)
       // Decrement exactly once, after the docker run lifecycle is fully done.
       decrementSubmission()
       // Enqueue cleanup for the cleanup worker (T22) to GC the directory and

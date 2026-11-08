@@ -93,7 +93,7 @@ function seedTerminalJob(
   db: Database.Database,
   row: {
     job_id: string
-    status: "succeeded" | "failed" | "cancelled"
+    status: "succeeded" | "failed" | "cancelled" | "lost"
     push_acked?: number
     stdout?: string
     stderr?: string
@@ -206,6 +206,27 @@ describe("workers/push-retry", () => {
     expect(reportResultMock).toHaveBeenCalledWith({
       job_id: "job-fail",
       outcome: { status: "failed", error: "exit 137" },
+    })
+  })
+
+  it("pushes a lost job as failed so the coordinator retries it", async () => {
+    seedTerminalJob(dbHolder.db!, {
+      job_id: "job-lost",
+      status: "lost",
+      error_message: "container gone during reconciliation",
+    })
+    reportResultMock.mockResolvedValue({ acked: true })
+
+    const { pushRetryLoop } = await import("../../src/workers/push-retry")
+    void pushRetryLoop().catch(() => {})
+    await tick(10_001)
+
+    expect(reportResultMock).toHaveBeenCalledWith({
+      job_id: "job-lost",
+      outcome: {
+        status: "failed",
+        error: "container gone during reconciliation",
+      },
     })
   })
 

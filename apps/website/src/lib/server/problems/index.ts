@@ -30,6 +30,36 @@ export async function getProblems() {
   return Object.keys(parsedData)
 }
 
+/**
+ * Whether the ids name a real problem/testcase. Server actions receive these
+ * from the client; they end up in container and image names.
+ */
+export async function isKnownTestcase(
+  problemId: unknown,
+  testcaseId: unknown,
+): Promise<boolean> {
+  if (!Number.isInteger(problemId) || !Number.isInteger(testcaseId))
+    return false
+  try {
+    const info = await getProblemInfo(
+      await getProblemSlugFromId(problemId as number),
+    )
+    return info.testcases.some((t) => t.id === testcaseId)
+  } catch {
+    return false
+  }
+}
+
+export async function isKnownProblem(problemId: unknown): Promise<boolean> {
+  if (!Number.isInteger(problemId)) return false
+  try {
+    await getProblemSlugFromId(problemId as number)
+    return true
+  } catch {
+    return false
+  }
+}
+
 export async function getProblemSlugFromId(problemId: number) {
   const problems = await getProblems()
   for (const problem of problems) {

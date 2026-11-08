@@ -1,10 +1,20 @@
 "use server"
 
+import { and, count, eq, inArray } from "drizzle-orm"
+
 import { submissions, submissionTestcaseQueue } from "@easyshell/db/schema"
 
 import { db } from "@/db"
 import { auth } from "@/lib/server/auth"
-import { getProblemInfo, getProblemSlugFromId } from "@/lib/server/problems"
+import {
+  getProblemInfo,
+  getProblemSlugFromId,
+  isKnownProblem,
+} from "@/lib/server/problems"
+
+const MAX_INPUT_LENGTH = 10_000
+/** Queued or running testcases one user may have at once. */
+const MAX_PENDING_TESTCASES = 20
 
 export async function newSubmission({
   problemId,
@@ -15,6 +25,30 @@ export async function newSubmission({
 }) {
   const user = (await auth())?.user
   if (!user) return null
+  if (!(await isKnownProblem(problemId))) return null
+  if (
+    typeof input !== "string" ||
+    input.trim() === "" ||
+    input.length > MAX_INPUT_LENGTH
+  )
+    return null
+
+  const pending = (
+    await db
+      .select({ pending: count() })
+      .from(submissionTestcaseQueue)
+      .innerJoin(
+        submissions,
+        eq(submissions.id, submissionTestcaseQueue.submissionId),
+      )
+      .where(
+        and(
+          eq(submissions.userId, user.id),
+          inArray(submissionTestcaseQueue.status, ["pending", "running"]),
+        ),
+      )
+  )[0]!.pending
+  if (pending >= MAX_PENDING_TESTCASES) return null
 
   const problemSlug = await getProblemSlugFromId(problemId)
 

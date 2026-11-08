@@ -9,6 +9,7 @@ import {
 } from "@easyshell/db/schema"
 
 import { db } from "@/db"
+import { auth } from "@/lib/server/auth"
 
 export async function getSubmissionInfo({
   submissionId,
@@ -23,7 +24,10 @@ export async function getSubmissionInfo({
       .limit(1)
   )[0]
 
-  if (!submission) throw new Error("Submission not found")
+  // Submissions (including their input) are private to their author.
+  const userId = (await auth())?.user.id
+  if (!submission || submission.userId !== userId)
+    throw new Error("Submission not found")
 
   const attempt_number = (
     await db

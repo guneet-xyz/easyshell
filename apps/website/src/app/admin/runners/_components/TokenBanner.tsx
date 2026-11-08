@@ -45,7 +45,7 @@ export function TokenBanner({
         <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
           RUNNER_ID
         </label>
-        <code className="block break-all rounded bg-white px-3 py-2 font-mono text-xs dark:bg-gray-800">
+        <code className="block rounded bg-white px-3 py-2 font-mono text-xs break-all dark:bg-gray-800">
           {runnerId}
         </code>
       </div>
@@ -53,7 +53,7 @@ export function TokenBanner({
         <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">
           RUNNER_TOKEN
         </label>
-        <code className="block break-all rounded bg-white px-3 py-2 font-mono text-xs dark:bg-gray-800">
+        <code className="block rounded bg-white px-3 py-2 font-mono text-xs break-all dark:bg-gray-800">
           {token}
         </code>
       </div>

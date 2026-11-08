@@ -122,7 +122,9 @@ export async function runRecovery(): Promise<void> {
   log.info("runner.recovery.complete")
 }
 
-async function drainCleanupQueue(db: ReturnType<typeof getDb>): Promise<void> {
+export async function drainCleanupQueue(
+  db: ReturnType<typeof getDb>,
+): Promise<void> {
   const pending = db
     .prepare(
       "SELECT container_name, reason FROM cleanup_pending WHERE attempts < ?",

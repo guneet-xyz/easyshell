@@ -7,7 +7,9 @@ const log = createLogger("runner:auth-state")
 const authState = { rejectStreak: 0, inBackoff: false }
 
 function formatQueueDepth(d: number | "unknown"): string {
-  return typeof d === "number" ? `queue depth: ${d} rows` : "queue depth: unknown"
+  return typeof d === "number"
+    ? `queue depth: ${d} rows`
+    : "queue depth: unknown"
 }
 
 export async function onAuthReject(): Promise<void> {

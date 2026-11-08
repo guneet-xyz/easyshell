@@ -15,8 +15,17 @@
 
 import { EventEmitter } from "node:events"
 import fs from "node:fs"
+import net from "node:net"
 import Database from "better-sqlite3"
-import { afterAll, beforeEach, describe, expect, it, vi } from "vitest"
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest"
 
 import { migrate } from "../../src/db/migrations"
 
@@ -67,6 +76,9 @@ vi.mock("../../src/docker/cli", () => ({
   dockerRun: (...args: unknown[]) => dockerState.run(...args),
   dockerKill: (...args: unknown[]) => dockerState.kill(...args),
   dockerInspect: (...args: unknown[]) => dockerState.inspect(...args),
+  isSafeContainerName: (name: string) =>
+    /^[a-z0-9][a-z0-9_.-]{0,127}$/.test(name),
+  SESSION_EXPIRES_LABEL: "easyshell.session-expires",
 }))
 
 vi.mock("../../src/db/sqlite", () => ({
@@ -290,8 +302,28 @@ describe("routers/terminal-sessions", () => {
   })
 
   describe("exec", () => {
-    function seedTerminalSession(containerName: string): string {
-      const socketPath = `${TEST_WORKING_DIR}/sessions/${containerName}/main.sock`
+    const servers: net.Server[] = []
+    afterEach(async () => {
+      await Promise.all(
+        servers.splice(0).map((s) => new Promise((r) => s.close(r))),
+      )
+    })
+
+    /** Seeds the rows and binds a real unix socket at the session path. */
+    async function seedTerminalSession(
+      containerName: string,
+      { symlink = false }: { symlink?: boolean } = {},
+    ): Promise<string> {
+      const sessionDir = `${TEST_WORKING_DIR}/sessions/${containerName}`
+      const socketPath = `${sessionDir}/main.sock`
+      fs.mkdirSync(sessionDir, { recursive: true })
+      fs.rmSync(socketPath, { force: true })
+      const target = symlink ? `${sessionDir}/elsewhere.sock` : socketPath
+      fs.rmSync(target, { force: true })
+      const server = net.createServer()
+      servers.push(server)
+      await new Promise<void>((r) => server.listen(target, r))
+      if (symlink) fs.symlinkSync(target, socketPath)
       const now = Date.now()
       dbHolder.db!.transaction(() => {
         dbHolder
@@ -327,7 +359,7 @@ describe("routers/terminal-sessions", () => {
     }
 
     it("returns success and writes a command_log row with exit_status='ok'", async () => {
-      const socketPath = seedTerminalSession("easyshell-sess-exec")
+      const socketPath = await seedTerminalSession("easyshell-sess-exec")
       mockSocketResponse({
         statusCode: 200,
         body: JSON.stringify({ stdout: "out\n", stderr: "" }),
@@ -353,7 +385,9 @@ describe("routers/terminal-sessions", () => {
         path: string
         method: string
       }
-      expect(httpCallOpts.socketPath).toBe(socketPath)
+      // Dialed through an O_PATH descriptor for the seeded socket.
+      expect(socketPath).toContain("main.sock")
+      expect(httpCallOpts.socketPath).toMatch(/^\/proc\/self\/fd\/\d+$/)
       expect(httpCallOpts.path).toBe("/")
       expect(httpCallOpts.method).toBe("POST")
 
@@ -383,8 +417,41 @@ describe("routers/terminal-sessions", () => {
       expect(ts.last_exec_at).toBeGreaterThan(0)
     })
 
+    it("refuses a symlinked session socket without connecting", async () => {
+      await seedTerminalSession("easyshell-sess-link", { symlink: true })
+      const caller = terminalSessionsRouter.createCaller({
+        actor: "coordinator",
+      })
+      const result = await caller.exec({
+        container_name: "easyshell-sess-link",
+        command: "id",
+      })
+      expect(result).toMatchObject({
+        status: "error",
+        type: "session_not_running",
+      })
+      expect(httpRequestMock).not.toHaveBeenCalled()
+    })
+
+    it("bounds the size of a session response", async () => {
+      await seedTerminalSession("easyshell-sess-big")
+      const req = mockSocketResponse({
+        statusCode: 200,
+        body: "x".repeat(1024 * 1024 + 1),
+      })
+      const caller = terminalSessionsRouter.createCaller({
+        actor: "coordinator",
+      })
+      const result = await caller.exec({
+        container_name: "easyshell-sess-big",
+        command: "yes",
+      })
+      expect(result).toMatchObject({ status: "error" })
+      expect(req.destroy).toHaveBeenCalled()
+    })
+
     it("returns error/container_locked and writes exit_status='locked' on 423", async () => {
-      seedTerminalSession("easyshell-sess-locked")
+      await seedTerminalSession("easyshell-sess-locked")
       mockSocketResponse({ statusCode: 423 })
 
       const caller = terminalSessionsRouter.createCaller({
@@ -408,7 +475,7 @@ describe("routers/terminal-sessions", () => {
     })
 
     it("returns error/session_error and writes exit_status='error' on 5xx", async () => {
-      seedTerminalSession("easyshell-sess-500")
+      await seedTerminalSession("easyshell-sess-500")
       mockSocketResponse({ statusCode: 500, body: "internal" })
 
       const caller = terminalSessionsRouter.createCaller({
@@ -432,7 +499,7 @@ describe("routers/terminal-sessions", () => {
     })
 
     it("returns error/session_not_running when the socket file is gone", async () => {
-      seedTerminalSession("easyshell-sess-down")
+      await seedTerminalSession("easyshell-sess-down")
       mockSocketRequestError(
         Object.assign(new Error("ENOENT"), { code: "ENOENT" }),
       )

@@ -27,6 +27,22 @@ import { env } from "../env"
 const execFileAsync = promisify(execFile)
 const log = createLogger("runner:docker")
 
+/** Container names: also used as a single path element under WORKING_DIR. */
+const SAFE_CONTAINER_NAME = /^[a-z0-9][a-z0-9_.-]{0,127}$/
+/** Image references, optionally with registry host/port, tag or digest. */
+const SAFE_IMAGE = /^[a-z0-9][a-z0-9._/:@-]{0,254}$/
+
+export function isSafeContainerName(name: string): boolean {
+  return SAFE_CONTAINER_NAME.test(name)
+}
+
+export function isSafeImage(image: string): boolean {
+  return SAFE_IMAGE.test(image) && !image.includes("..")
+}
+
+/** Label on every session container: unix seconds after which it is reaped. */
+export const SESSION_EXPIRES_LABEL = "easyshell.session-expires"
+
 export interface DockerRunResult {
   stdout: string
   stderr: string
@@ -65,6 +81,10 @@ export interface DockerRunArgs {
   extraVolumes?: string[]
   extraEnv?: string[]
   detach?: boolean
+  /** Extra `--label key=value` pairs. */
+  labels?: Record<string, string>
+  /** Kill and remove the container if `docker run` takes longer than this. */
+  timeoutMs?: number
 }
 
 /**
@@ -84,18 +104,37 @@ export async function dockerRun(args: DockerRunArgs): Promise<DockerRunResult> {
     extraVolumes = [],
     extraEnv = [],
     detach = false,
+    labels = {},
+    timeoutMs,
   } = args
 
   const fullImage = expandImageName(image)
+  if (!isSafeContainerName(containerName) || !isSafeImage(fullImage)) {
+    log.warn({ container_name: containerName, image }, "docker.run.refused")
+    return {
+      stdout: "",
+      stderr: "invalid container or image name",
+      exitCode: 1,
+    }
+  }
   const argv: string[] = [
     "run",
     "--rm",
     "--name",
     containerName,
+    // User code is untrusted: no network (problem daemons use loopback) and a
+    // bounded process count on top of the memory/CPU limits.
+    "--network",
+    "none",
+    "--pids-limit",
+    "256",
     "-m",
     memory,
     "--cpus",
     cpus,
+    "--label",
+    `easyshell.mode=${mode}`,
+    ...Object.entries(labels).flatMap(([k, v]) => ["--label", `${k}=${v}`]),
     ...pullArgs(),
     ...(detach ? ["-d"] : []),
     ...extraVolumes.flatMap((v) => ["-v", v]),
@@ -111,7 +150,10 @@ export async function dockerRun(args: DockerRunArgs): Promise<DockerRunResult> {
   )
 
   try {
-    const { stdout, stderr } = await execFileAsync("docker", argv)
+    const { stdout, stderr } = await execFileAsync("docker", argv, {
+      timeout: timeoutMs ?? 0,
+      maxBuffer: 1024 * 1024,
+    })
     return { stdout, stderr, exitCode: 0 }
   } catch (err: unknown) {
     const e = err as {
@@ -119,6 +161,17 @@ export async function dockerRun(args: DockerRunArgs): Promise<DockerRunResult> {
       stderr?: string
       code?: number
       message?: string
+      killed?: boolean
+      signal?: string
+    }
+    if (e.killed || e.signal) {
+      // Timeout: the CLI was killed, but the container may still be running.
+      await dockerRm(containerName)
+      log.warn(
+        { container_name: containerName, timeout_ms: timeoutMs },
+        "docker.run.timeout",
+      )
+      return { stdout: e.stdout ?? "", stderr: "timed out", exitCode: 124 }
     }
     log.warn(
       {
@@ -150,6 +203,9 @@ export async function dockerKill(
   containerName: string,
 ): Promise<DockerKillResult> {
   log.debug({ container_name: containerName }, "docker.kill")
+  if (!isSafeContainerName(containerName)) {
+    return { ok: false, error: "invalid container name" }
+  }
   try {
     await execFileAsync("docker", ["container", "kill", containerName])
     return { ok: true }
@@ -183,6 +239,8 @@ export async function dockerInspect(
   containerName: string,
 ): Promise<DockerInspectResult> {
   log.debug({ container_name: containerName }, "docker.inspect")
+  if (!isSafeContainerName(containerName))
+    return { exists: false, running: false }
   try {
     const { stdout } = await execFileAsync("docker", [
       "inspect",
@@ -203,9 +261,34 @@ export async function dockerInspect(
  */
 export async function dockerRm(containerName: string): Promise<void> {
   log.debug({ container_name: containerName }, "docker.rm")
+  if (!isSafeContainerName(containerName)) return
   try {
     await execFileAsync("docker", ["rm", "-f", containerName])
   } catch {
     // Ignore — container may already be gone, which is the desired terminal state.
   }
+}
+
+/**
+ * Names of running session containers whose expiry label is in the past.
+ * Containers without a parseable label are left alone.
+ */
+export async function listExpiredSessions(
+  nowMs = Date.now(),
+): Promise<string[]> {
+  const { stdout } = await execFileAsync("docker", [
+    "ps",
+    "--filter",
+    "label=easyshell.mode=session",
+    "--format",
+    `{{.Names}} {{.Label "${SESSION_EXPIRES_LABEL}"}}`,
+  ])
+  const expired: string[] = []
+  for (const line of stdout.split("\n")) {
+    const [name, expires] = line.trim().split(/\s+/)
+    if (!name || !isSafeContainerName(name) || !expires) continue
+    const at = Number(expires)
+    if (Number.isFinite(at) && at * 1000 <= nowMs) expired.push(name)
+  }
+  return expired
 }

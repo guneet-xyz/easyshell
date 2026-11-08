@@ -74,6 +74,9 @@ vi.mock("../../src/docker/cli", () => ({
   dockerRun: (...args: unknown[]) => dockerState.run(...args),
   dockerKill: (...args: unknown[]) => dockerState.kill(...args),
   dockerInspect: (...args: unknown[]) => dockerState.inspect(...args),
+  isSafeContainerName: (name: string) =>
+    /^[a-z0-9][a-z0-9_.-]{0,127}$/.test(name),
+  SESSION_EXPIRES_LABEL: "easyshell.session-expires",
 }))
 
 vi.mock("../../src/db/sqlite", () => ({

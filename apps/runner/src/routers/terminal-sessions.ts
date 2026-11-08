@@ -35,7 +35,13 @@ import { createLogger } from "@easyshell/logger"
 
 import { type Context } from "../context"
 import { getDb } from "../db/sqlite"
-import { dockerInspect, dockerKill, dockerRun } from "../docker/cli"
+import {
+  dockerInspect,
+  dockerKill,
+  dockerRun,
+  isSafeContainerName,
+  SESSION_EXPIRES_LABEL,
+} from "../docker/cli"
 import { env } from "../env"
 import {
   CreateSessionInputSchema,
@@ -47,7 +53,8 @@ import {
   type IsRunningOutputSchema,
   type KillSessionOutputSchema,
 } from "../schemas"
-import { decrementSession, incrementSession } from "../services/capacity"
+import { incrementSession } from "../services/capacity"
+import { endSession } from "../services/session-lifecycle"
 
 const log = createLogger("runner:terminal-sessions")
 
@@ -87,24 +94,75 @@ type SocketExecResult =
       message: string
     }
 
+/** Session containers live this long, matching the website's session expiry. */
+const SESSION_LIFETIME_MS = 60 * 60 * 1000
+/** Upper bound for one exec response from a session daemon. */
+const MAX_EXEC_RESPONSE_BYTES = 1024 * 1024
+// Linux O_PATH (not exported by node:fs); same value on x86_64 and arm64.
+const O_PATH = 0o10000000
+
+/**
+ * Open the session socket without following symlinks. The session directory
+ * is writable by user code inside the container, so a planted symlink could
+ * otherwise redirect the runner to another session's socket. The returned
+ * descriptor is dialed through /proc/self/fd, so swapping the file after the
+ * check cannot change what is connected.
+ */
+function openSessionSocket(socketPath: string): number | null {
+  let fd: number
+  try {
+    fd = fs.openSync(socketPath, O_PATH | fs.constants.O_NOFOLLOW)
+  } catch {
+    return null
+  }
+  if (!fs.fstatSync(fd).isSocket()) {
+    fs.closeSync(fd)
+    return null
+  }
+  return fd
+}
+
 function execViaSocket(
   socketPath: string,
   command: string,
   timeoutMs: number,
 ): Promise<SocketExecResult> {
   return new Promise<SocketExecResult>((resolve) => {
+    const fd = openSessionSocket(socketPath)
+    if (fd === null) {
+      resolve({
+        status: "error",
+        type: "session_not_running",
+        message: "session socket unavailable",
+      })
+      return
+    }
     let settled = false
     const settle = (result: SocketExecResult): void => {
       if (settled) return
       settled = true
+      fs.closeSync(fd)
       resolve(result)
     }
 
     const req = http.request(
-      { socketPath, path: "/", method: "POST" },
+      { socketPath: `/proc/self/fd/${fd}`, path: "/", method: "POST" },
       (res) => {
         const chunks: Buffer[] = []
-        res.on("data", (chunk: Buffer) => chunks.push(chunk))
+        let received = 0
+        res.on("data", (chunk: Buffer) => {
+          received += chunk.length
+          if (received > MAX_EXEC_RESPONSE_BYTES) {
+            req.destroy()
+            settle({
+              status: "error",
+              type: "session_error",
+              message: "session response too large",
+            })
+            return
+          }
+          chunks.push(chunk)
+        })
         res.on("end", () => {
           const body = Buffer.concat(chunks).toString("utf8")
           if (res.statusCode === 423) {
@@ -226,7 +284,16 @@ export const terminalSessionsRouter = router({
           input.container_name,
         )
         const socketPath = path.join(sessionDir, "main.sock")
+        if (!isSafeContainerName(input.container_name)) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "invalid container name",
+          })
+        }
         fs.mkdirSync(sessionDir, { recursive: true })
+        // The sandbox engine remaps container root to an unprivileged host
+        // UID, which must be able to create the session socket here.
+        fs.chmodSync(sessionDir, 0o777)
 
         const now = Date.now()
 
@@ -270,6 +337,13 @@ export const terminalSessionsRouter = router({
           cpus: "0.1",
           extraVolumes: [`${sessionDir}:/tmp/easyshell`],
           detach: true,
+          labels: {
+            [SESSION_EXPIRES_LABEL]: String(
+              Math.floor((now + SESSION_LIFETIME_MS) / 1000),
+            ),
+          },
+          // Covers pulling the testcase image from the registry.
+          timeoutMs: 120_000,
         })
 
         if (result.exitCode !== 0) {
@@ -391,24 +465,12 @@ export const terminalSessionsRouter = router({
     .mutation(
       async ({ input }): Promise<z.infer<typeof KillSessionOutputSchema>> => {
         const db = getDb(env.RUNNER_DB_PATH)
-        const jobId = sessionJobId(input.container_name)
-
         // docker container kill is idempotent at the cli adapter level —
         // it returns ok:false if the container is already gone but does
         // not throw. We swallow that and continue to the SQLite updates
         // because the desired terminal state is the same either way.
         await dockerKill(input.container_name)
-
-        db.prepare(
-          "UPDATE accepted_job SET status='cancelled', finished_at=? WHERE job_id=?",
-        ).run(Date.now(), jobId)
-        db.prepare(
-          "UPDATE container SET docker_state='removed' WHERE container_name=?",
-        ).run(input.container_name)
-        db.prepare(
-          "INSERT OR IGNORE INTO cleanup_pending (container_name, reason, queued_at) VALUES (?,?,?)",
-        ).run(input.container_name, "cancelled", Date.now())
-        decrementSession()
+        endSession(db, input.container_name, "cancelled", "cancelled")
 
         log.info(
           { container_name: input.container_name },

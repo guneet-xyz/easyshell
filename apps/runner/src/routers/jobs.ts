@@ -29,7 +29,7 @@ import { createLogger } from "@easyshell/logger"
 
 import { type Context } from "../context"
 import { getDb } from "../db/sqlite"
-import { dockerKill, dockerRun } from "../docker/cli"
+import { dockerKill, dockerRun, isSafeContainerName } from "../docker/cli"
 import { env } from "../env"
 import {
   AcceptJobInputSchema,
@@ -80,6 +80,11 @@ type EntrypointOutput = {
   fs?: Record<string, string>
 }
 
+/** One testcase run, including starting the container and pulling its image. */
+const SUBMISSION_TIMEOUT_MS = 60_000
+/** User code can write /output.json directly; bound what is read back. */
+const MAX_OUTPUT_BYTES = 1024 * 1024
+
 // ─── Background submission runner ────────────────────────────────────────────
 //
 // Kicks off the docker run in a detached async IIFE. Does NOT await — the
@@ -104,14 +109,20 @@ function runSubmissionJob(params: {
       "submissions",
       containerName,
     )
-    fs.mkdirSync(containerDir, { recursive: true })
-
     const inputPath = path.join(containerDir, "input.sh")
     const outputPath = path.join(containerDir, "output.json")
 
     try {
-      fs.writeFileSync(inputPath, input, { mode: 0o600 })
-      fs.writeFileSync(outputPath, "{}", { mode: 0o600 })
+      if (!isSafeContainerName(containerName)) {
+        throw new Error("invalid container name")
+      }
+      fs.mkdirSync(containerDir, { recursive: true })
+      fs.writeFileSync(inputPath, input)
+      fs.writeFileSync(outputPath, "{}")
+      // The sandbox engine remaps container root to an unprivileged host UID:
+      // it must read the input and write the output.
+      fs.chmodSync(inputPath, 0o644)
+      fs.chmodSync(outputPath, 0o666)
 
       // Transition: accepted → running. started_at is set ONCE here.
       db.prepare(
@@ -128,6 +139,7 @@ function runSubmissionJob(params: {
         memory,
         cpus,
         extraVolumes: [`${inputPath}:/input.sh`, `${outputPath}:/output.json`],
+        timeoutMs: SUBMISSION_TIMEOUT_MS,
       })
 
       const finishedAt = Date.now()
@@ -150,6 +162,9 @@ function runSubmissionJob(params: {
       // exitCode === 0 → parse the entrypoint's output.json.
       let out: EntrypointOutput
       try {
+        if (fs.statSync(outputPath).size > MAX_OUTPUT_BYTES) {
+          throw new Error("output.json too large")
+        }
         out = JSON.parse(
           fs.readFileSync(outputPath, "utf8"),
         ) as EntrypointOutput

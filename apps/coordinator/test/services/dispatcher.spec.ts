@@ -110,7 +110,7 @@ const baseJob = {
   id: "job-1",
   mode: "submission" as const,
   containerName: "easyshell-1",
-  image: "easyshell-list-files-1",
+  image: "easyshell-problems/list-files-1",
   submissionId: 10,
   testcaseId: 2,
   result: { input: "ls -la" },
@@ -189,7 +189,7 @@ describe("dispatch — happy path (runner accepts)", () => {
       job_id: "job-1",
       container_name: "easyshell-1",
       mode: "submission",
-      image: "easyshell-list-files-1",
+      image: "easyshell-problems/list-files-1",
       input: "ls -la",
       resource_limits: { memory: "64m", cpus: "0.1" },
     })

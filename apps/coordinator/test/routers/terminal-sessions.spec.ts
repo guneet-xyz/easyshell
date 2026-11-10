@@ -218,7 +218,7 @@ describe("terminalSessions.create", () => {
     const caller = terminalSessionsRouter.createCaller(websiteCtx)
     const result = await caller.create({
       terminal_session_id: 100,
-      image: "easyshell-list-files-1",
+      image: "easyshell-problems/list-files-1",
     })
 
     expect(result).toEqual({
@@ -235,13 +235,13 @@ describe("terminalSessions.create", () => {
     // The runner tracks the session under the coordinator's job id.
     expect(runnerClientCreateMutate).toHaveBeenCalledWith({
       container_name: "easyshell-test-uuid",
-      image: "easyshell-list-files-1",
+      image: "easyshell-problems/list-files-1",
       job_id: (params as { id: string }).id,
     })
     expect(params).toMatchObject({
       runnerId: "r-1",
       mode: "session",
-      image: "easyshell-list-files-1",
+      image: "easyshell-problems/list-files-1",
       terminalSessionId: 100,
       containerName: "easyshell-test-uuid",
     })
@@ -269,7 +269,7 @@ describe("terminalSessions.create", () => {
     await expect(
       caller.create({
         terminal_session_id: 100,
-        image: "easyshell-list-files-1",
+        image: "easyshell-problems/list-files-1",
       }),
     ).rejects.toThrow(/no session-capable runner available/)
 
@@ -288,7 +288,7 @@ describe("terminalSessions.create", () => {
     await expect(
       caller.create({
         terminal_session_id: 100,
-        image: "easyshell-list-files-1",
+        image: "easyshell-problems/list-files-1",
       }),
     ).rejects.toThrow(/runner create failed: container exists/)
 

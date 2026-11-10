@@ -3,6 +3,7 @@ import { and, asc, eq, sql } from "drizzle-orm"
 
 import { submissions, submissionTestcaseQueue } from "@easyshell/db/schema"
 import { createLogger } from "@easyshell/logger"
+import { problemImageName } from "@easyshell/problems/image"
 import { sleep } from "@easyshell/utils"
 
 import { db } from "../db"
@@ -138,7 +139,7 @@ async function resolveClaim(
   }
 
   const problemSlug = await getProblemSlugFromId(submission.problemId)
-  const image = `easyshell-${problemSlug}-${updated.testcaseId}`
+  const image = problemImageName(problemSlug, updated.testcaseId)
 
   return {
     jobId,

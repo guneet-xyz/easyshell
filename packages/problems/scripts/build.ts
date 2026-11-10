@@ -2,6 +2,7 @@ import { cp, mkdir, rm, stat, writeFile } from "fs/promises"
 import { $ } from "execa"
 
 import { getProblemInfo, getProblems } from "@easyshell/problems"
+import { problemImageName } from "@easyshell/problems/image"
 import { PROBLEMS_DIR, PROJECT_ROOT } from "@easyshell/utils/build"
 
 import { env } from "../env"
@@ -62,9 +63,9 @@ async function buildProblemTasks(problem: string): Promise<Array<Task>> {
   const tasks: Array<Task> = []
   const info = await getProblemInfo(problem)
   for (const testcase of info.testcases) {
-    const tag = `easyshell-${problem}-${testcase.id}`
+    const tag = problemImageName(problem, testcase.id)
 
-    const IMAGE_DIR = `${WORKING_DIR}/images/${tag}`
+    const IMAGE_DIR = `${WORKING_DIR}/images/${problem}-${testcase.id}`
     await mkdir(IMAGE_DIR, {
       recursive: true,
     })
@@ -114,7 +115,7 @@ async function buildProblemTasks(problem: string): Promise<Array<Task>> {
     }
 
     await writeFile(
-      `${WORKING_DIR}/images/${tag}/Dockerfile`,
+      `${IMAGE_DIR}/Dockerfile`,
       `
 ${
   daemon_build_steps

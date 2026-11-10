@@ -6,6 +6,7 @@ import { and, asc, count, eq, gt, isNull } from "drizzle-orm"
 
 import { createCoordinatorClient } from "@easyshell/coordinator/client"
 import { terminalSessionLogs, terminalSessions } from "@easyshell/db/schema"
+import { problemImageName } from "@easyshell/problems/image"
 
 import { db } from "@/db"
 import { env } from "@/env"
@@ -88,7 +89,7 @@ export async function runTerminalSession({
 
   await coordinatorCreate({
     terminal_session_id: sessionId,
-    image: `easyshell-${problemSlug}-${testcaseId}`,
+    image: problemImageName(problemSlug, testcaseId),
   })
 }
 

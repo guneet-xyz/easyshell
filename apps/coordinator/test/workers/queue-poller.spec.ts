@@ -222,7 +222,7 @@ describe("claimNextQueueItem", () => {
     expect(result?.submissionId).toBe(42)
     expect(result?.testcaseId).toBe(7)
     expect(result?.input).toBe("ls -la")
-    expect(result?.image).toBe("easyshell-list-files-7")
+    expect(result?.image).toBe("easyshell-problems/list-files-7")
     expect(result?.containerName).toBe("easyshell-test-container")
     expect(result?.jobId).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
@@ -330,7 +330,7 @@ describe("processClaimedItem", () => {
     submissionId: 1,
     testcaseId: 2,
     input: "echo hi",
-    image: "easyshell-greeting-2",
+    image: "easyshell-problems/greeting-2",
   }
 
   it("inserts an execution_job row inside a transaction on success", async () => {
@@ -346,7 +346,7 @@ describe("processClaimedItem", () => {
       // Sentinel runner row (migration 0005) until a runner accepts the job.
       runnerId: "unassigned",
       mode: "submission",
-      image: "easyshell-greeting-2",
+      image: "easyshell-problems/greeting-2",
       submissionId: 1,
       testcaseId: 2,
       attempt: 1,
@@ -385,7 +385,7 @@ describe("processClaimedItem result", () => {
     submissionId: 3,
     testcaseId: 1,
     input: "echo hi",
-    image: "easyshell-greeting-1",
+    image: "easyshell-problems/greeting-1",
   }
 
   it("reports whether a runner accepted the job", async () => {

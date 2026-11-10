@@ -47,7 +47,7 @@ describe("insertExecutionJob", () => {
       containerName: "easyshell-1",
       runnerId: "runner-1",
       mode: "submission",
-      image: "easyshell-list-files-1",
+      image: "easyshell-problems/list-files-1",
       submissionId: 10,
       testcaseId: 1,
     })

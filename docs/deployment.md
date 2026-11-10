@@ -10,7 +10,7 @@ This guide covers the current deployment paths for easyshell after the Coordinat
 | `migrator` image    | `apps/migrator/Dockerfile`           | Runs Drizzle migrations before application services start.                                                |
 | `coordinator` image | `apps/coordinator/Dockerfile`        | HTTP control plane. Owns queue polling, runner selection, retry procedures, and terminal-session routing. |
 | `runner` image      | `apps/runner/Dockerfile`             | Executes jobs through Docker. Owns Docker socket access and embedded SQLite state.                        |
-| problem images      | `packages/problems/scripts/build.ts` | Testcase containers tagged as `easyshell-{problemSlug}-{testcaseId}`.                                     |
+| problem images      | `packages/problems/scripts/build.ts` | Testcase containers tagged as `easyshell-problems/{problemSlug}-{testcaseId}`.                            |
 
 The local Compose stack in `compose.yml` starts `migrator`, `coordinator`, and `website` by default. `runner` and `runner-2` sit behind the `runners` Compose profile and are started explicitly (either directly with `docker compose --profile runners up -d runner runner-2`, or via `pnpm run docker:up:full`, which also seeds the two dev runner rows so their fixed tokens work). `session-manager` and `submission-manager` are legacy-profile placeholders only.
 
@@ -24,7 +24,7 @@ The local Compose stack in `compose.yml` starts `migrator`, `coordinator`, and `
   - `easyshell/migrator:latest`
   - `easyshell/coordinator:latest`
   - `easyshell/runner:latest`
-  - problem images under `easyshell/easyshell-{problemSlug}-{testcaseId}`
+  - problem images in their own project, `easyshell-problems/{problemSlug}-{testcaseId}`
 - GitHub Actions environment named `registry-push` with registry and Tailscale credentials.
 
 ## GitHub Actions release paths
@@ -108,16 +108,16 @@ Release steps:
 4. Run `pnpm run build ${{ inputs.problem }}` in `packages/problems`.
 5. Run `pnpm run push ${{ inputs.problem }}` in `packages/problems` with `DOCKER_REGISTRY` set.
 
-Problem image tags are generated as:
+Problem image names come from `problemImageName` in `packages/problems/image.ts`:
 
 ```text
-easyshell-{problemSlug}-{testcaseId}
+easyshell-problems/{problemSlug}-{testcaseId}
 ```
 
 When `DOCKER_REGISTRY` is set, the push script tags and pushes each image as:
 
 ```text
-${DOCKER_REGISTRY}/easyshell/easyshell-{problemSlug}-{testcaseId}
+${DOCKER_REGISTRY}/easyshell-problems/{problemSlug}-{testcaseId}
 ```
 
 ### Release all
@@ -368,8 +368,10 @@ DOCKER_REGISTRY=registry.example.com pnpm --filter @easyshell/problems run push 
 Runners pull testcase images by name. If `DOCKER_REGISTRY` is set on the runner, it prefixes image names as:
 
 ```text
-${DOCKER_REGISTRY}/easyshell/easyshell-{problemSlug}-{testcaseId}
+${DOCKER_REGISTRY}/easyshell-problems/{problemSlug}-{testcaseId}
 ```
+
+The website, coordinator and runner must agree on this layout, so deploy them together when it changes.
 
 ## Post-deploy verification
 
@@ -395,7 +397,7 @@ Website rollback is an image rollback:
 Problem image rollback is a registry tag rollback:
 
 1. Re-tag the last known-good testcase image.
-2. Push it back to the same `easyshell/easyshell-{problemSlug}-{testcaseId}` tag.
+2. Push it back to the same `easyshell-problems/{problemSlug}-{testcaseId}` tag.
 3. Restart affected runners if they have cached stale images.
 
 Coordinator/Runner rollback depends on schema compatibility. The coordinator-runner migration adds queue and runner tables used by the new runtime; do not roll back to legacy `session-manager` or `submission-manager` services unless you have also restored their source and deployment definitions. The Compose legacy-profile services are placeholders for rollback drills, not full production services.

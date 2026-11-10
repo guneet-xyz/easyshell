@@ -56,18 +56,22 @@ describe("docker CLI adapter", () => {
   describe("expandImageName", () => {
     it("returns image as-is when no registry", () => {
       envState.DOCKER_REGISTRY = ""
-      expect(expandImageName("easyshell-foo-7")).toBe("easyshell-foo-7")
+      expect(expandImageName("easyshell-problems/foo-7")).toBe(
+        "easyshell-problems/foo-7",
+      )
     })
 
     it("returns image as-is when registry is undefined", () => {
       envState.DOCKER_REGISTRY = undefined
-      expect(expandImageName("easyshell-foo-7")).toBe("easyshell-foo-7")
+      expect(expandImageName("easyshell-problems/foo-7")).toBe(
+        "easyshell-problems/foo-7",
+      )
     })
 
-    it("prefixes with registry + /easyshell/ when registry is set", () => {
+    it("prefixes with the registry when registry is set", () => {
       envState.DOCKER_REGISTRY = "ghcr.io/myorg"
-      expect(expandImageName("easyshell-foo-7")).toBe(
-        "ghcr.io/myorg/easyshell/easyshell-foo-7",
+      expect(expandImageName("easyshell-problems/foo-7")).toBe(
+        "ghcr.io/myorg/easyshell-problems/foo-7",
       )
     })
   })
@@ -187,7 +191,7 @@ describe("docker CLI adapter", () => {
 
       const result = await dockerRun({
         containerName: "easyshell-session-x",
-        image: "easyshell-foo-7",
+        image: "easyshell-problems/foo-7",
         mode: "session",
         detach: true,
         extraVolumes: [
@@ -222,7 +226,7 @@ describe("docker CLI adapter", () => {
         "-d",
         "-v",
         "/tmp/easyshell/sessions/easyshell-session-x:/tmp/easyshell",
-        "easyshell-foo-7",
+        "easyshell-problems/foo-7",
         "-mode",
         "session",
       ])
@@ -233,7 +237,7 @@ describe("docker CLI adapter", () => {
 
       await dockerRun({
         containerName: "easyshell-foo-7-submission-42-deadbeef",
-        image: "easyshell-foo-7",
+        image: "easyshell-problems/foo-7",
         mode: "submission",
         extraVolumes: [
           "/tmp/easyshell/submissions/x/input.sh:/input.sh",
@@ -259,15 +263,15 @@ describe("docker CLI adapter", () => {
 
       await dockerRun({
         containerName: "easyshell-session-x",
-        image: "easyshell-foo-7",
+        image: "easyshell-problems/foo-7",
         mode: "session",
         detach: true,
       })
 
       const [, argv] = execFileMock.mock.calls[0] as [string, string[]]
       expect(argv).toContain("--pull=always")
-      expect(argv).toContain("ghcr.io/myorg/easyshell/easyshell-foo-7")
-      expect(argv).not.toContain("easyshell-foo-7")
+      expect(argv).toContain("ghcr.io/myorg/easyshell-problems/foo-7")
+      expect(argv).not.toContain("easyshell-problems/foo-7")
     })
 
     it("returns non-zero exit code and captures stderr on docker failure", async () => {
@@ -356,8 +360,8 @@ describe("docker CLI adapter", () => {
       ])
         expect(isSafeContainerName(bad)).toBe(false)
       for (const ok of [
-        "easyshell-foo-7",
-        "cr.guneet.dev/easyshell/easyshell-foo-7",
+        "easyshell-problems/foo-7",
+        "cr.guneet.dev/easyshell-problems/foo-7",
         "localhost:5000/a/b@sha256:abc",
       ])
         expect(isSafeImage(ok)).toBe(true)
@@ -368,7 +372,7 @@ describe("docker CLI adapter", () => {
     it("refuses unsafe names without invoking docker", async () => {
       const result = await dockerRun({
         containerName: "x;id",
-        image: "easyshell-foo-7",
+        image: "easyshell-problems/foo-7",
         mode: "session",
       })
       expect(result.exitCode).toBe(1)
@@ -395,7 +399,7 @@ describe("docker CLI adapter", () => {
 
       const result = await dockerRun({
         containerName: "easyshell-foo-7-submission-1",
-        image: "easyshell-foo-7",
+        image: "easyshell-problems/foo-7",
         mode: "submission",
         labels: { "easyshell.session-expires": "123" },
         timeoutMs: 5000,
@@ -435,22 +439,26 @@ describe("docker CLI adapter", () => {
 
   describe("separate pull", () => {
     it("is a no-op without a registry", async () => {
-      expect(await dockerPull("easyshell-foo-7", 1000)).toEqual({ ok: true })
+      expect(await dockerPull("easyshell-problems/foo-7", 1000)).toEqual({
+        ok: true,
+      })
       expect(execFileMock).not.toHaveBeenCalled()
     })
 
     it("pulls the registry image, and runs with --pull=never when asked", async () => {
       envState.DOCKER_REGISTRY = "cr.example"
       execFileMock.mockResolvedValue({ stdout: "", stderr: "" })
-      expect(await dockerPull("easyshell-foo-7", 1000)).toEqual({ ok: true })
+      expect(await dockerPull("easyshell-problems/foo-7", 1000)).toEqual({
+        ok: true,
+      })
       expect(execFileMock).toHaveBeenCalledWith(
         "docker",
-        ["pull", "--quiet", "cr.example/easyshell/easyshell-foo-7"],
+        ["pull", "--quiet", "cr.example/easyshell-problems/foo-7"],
         { timeout: 1000 },
       )
       await dockerRun({
         containerName: "easyshell-x",
-        image: "easyshell-foo-7",
+        image: "easyshell-problems/foo-7",
         mode: "submission",
         pull: false,
       })
@@ -464,7 +472,7 @@ describe("docker CLI adapter", () => {
       execFileMock.mockRejectedValue(
         Object.assign(new Error("x"), { stderr: "manifest unknown" }),
       )
-      expect(await dockerPull("easyshell-foo-7", 1000)).toEqual({
+      expect(await dockerPull("easyshell-problems/foo-7", 1000)).toEqual({
         ok: false,
         error: "manifest unknown",
       })
@@ -476,7 +484,7 @@ describe("docker CLI adapter", () => {
       execFileMock.mockResolvedValue({ stdout: "", stderr: "" })
       await dockerRun({
         containerName: "easyshell-x",
-        image: "easyshell-foo-7",
+        image: "easyshell-problems/foo-7",
         mode: "submission",
         timeoutMs: 1000,
       })
@@ -498,7 +506,7 @@ describe("docker CLI adapter", () => {
         .mockResolvedValue({ stdout: "", stderr: "" })
       const result = await dockerRun({
         containerName: "easyshell-x",
-        image: "easyshell-foo-7",
+        image: "easyshell-problems/foo-7",
         mode: "submission",
       })
       expect(result).toMatchObject({ outputTooLarge: true })

@@ -1,6 +1,7 @@
 import { $ } from "execa"
 
 import { getProblemInfo, getProblems } from "@easyshell/problems"
+import { problemImageName } from "@easyshell/problems/image"
 
 import { env } from "../env"
 import { RunParallelStuff, Task } from "./_utils"
@@ -8,15 +9,15 @@ import { RunParallelStuff, Task } from "./_utils"
 async function dockerPush(tag: string) {
   if (!env.DOCKER_REGISTRY) return
   const registry = env.DOCKER_REGISTRY
-  await $`docker tag ${tag} ${registry}/easyshell/${tag}`
-  await $`docker push ${registry}/easyshell/${tag}`
+  await $`docker tag ${tag} ${registry}/${tag}`
+  await $`docker push ${registry}/${tag}`
 }
 
 async function pushProblemTasks(problem: string): Promise<Array<Task>> {
   const tasks: Array<Task> = []
   const info = await getProblemInfo(problem)
   for (const testcase of info.testcases) {
-    const tag = `easyshell-${problem}-${testcase.id}`
+    const tag = problemImageName(problem, testcase.id)
     tasks.push({
       name: `push-${tag}`,
       callable: async () => {

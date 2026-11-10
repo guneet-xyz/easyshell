@@ -8,9 +8,10 @@
 // run-submission}/*.go), which build a shell string with fmt.Sprintf and
 // hand it to `exec.Command("sh", "-c", cmd)`.
 //
-// Image-name expansion mirrors the Go logic exactly:
-//   - if env.DOCKER_REGISTRY is set: `{DOCKER_REGISTRY}/easyshell/{image}`
-//     and the docker invocation gets `--pull=always`
+// Image-name expansion:
+//   - if env.DOCKER_REGISTRY is set: `{DOCKER_REGISTRY}/{image}`, where
+//     `{image}` already names its project (`easyshell-problems/...`), and
+//     the docker invocation gets `--pull=always`
 //   - otherwise: `{image}` as-is, no pull policy
 //
 // Every command is logged at debug level on entry. Non-zero exits are
@@ -59,15 +60,13 @@ export interface DockerRunResult {
 }
 
 /**
- * Expands a bare image name to the full registry-prefixed name.
- * If DOCKER_REGISTRY is set: `{DOCKER_REGISTRY}/easyshell/{image}`.
+ * Expands an image name (`project/image`) to the full registry-prefixed name.
+ * If DOCKER_REGISTRY is set: `{DOCKER_REGISTRY}/{image}`.
  * Otherwise: `{image}` as-is.
- * Matches logic in apps/session-manager/handlers/create/create.go:43-48
- * and apps/session-manager/handlers/run-submission/run-submission.go:201-206.
  */
 export function expandImageName(image: string): string {
   if (env.DOCKER_REGISTRY) {
-    return `${env.DOCKER_REGISTRY}/easyshell/${image}`
+    return `${env.DOCKER_REGISTRY}/${image}`
   }
   return image
 }

@@ -17,6 +17,7 @@
   - [Scripts](#scripts)
   - [Problems](#problems)
 - [Deployment Guide](docs/deployment.md)
+- [Releases](docs/releases.md)
 
 ## Architecture and Features
 
@@ -153,9 +154,7 @@ Directory for temporary files. If not specified, `/tmp/easyshell` is used.
 
 #### `DOCKER_REGISTRY`
 
-Docker registry to use for pushing images. This is required for pushing images to the registry. If unset, the images will not be pushed.
-
-If you are using a registry, then make sure you are already logged in.
+Registry the runner pulls problem images from, e.g. `cr.guneet.dev`. If unset, the runner uses local images. Images are published only by [releases](docs/releases.md).
 
 #### `DATABASE_URL`
 
@@ -295,13 +294,12 @@ Might require the following environment variables.
 
 #### `problems:build`
 
-Build (and push) the problem images.
+Build the problem images locally. Releases publish them; see [Releases](docs/releases.md#problem-images).
 
 Might require the following environment variables.
 
 - `APP` - This is required and should be set to `script`. Already set in [package.json](package.json).
 - `PROJECT_ROOT` - required if the script is not run from within the git repository.
-- `DOCKER_REGISTRY` - required if the images need to be pushed to a registry.
 - `WORKING_DIR` - optional, defaults to `/tmp/easyshell`.
 
 #### `problems:cache:website`

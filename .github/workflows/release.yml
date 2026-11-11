@@ -1,0 +1,318 @@
+name: Release
+
+# Maintains the release PR and, when a release PR is merged, publishes that
+# release: full CI on the exact release commit, then the application images
+# and the changed problem images. There is deliberately no manual trigger;
+# recover a failed publication with "Re-run failed jobs" (see docs/releases.md).
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Never cancel a publication halfway through.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  REGISTRY: cr.guneet.dev
+
+jobs:
+  release-please:
+    name: Update the release PR or create the release
+    if: github.repository == 'guneet-xyz/easyshell'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      actions: write
+    outputs:
+      created: ${{ steps.release.outputs.release_created }}
+      tag: ${{ steps.release.outputs.tag_name }}
+      sha: ${{ steps.release.outputs.sha }}
+    steps:
+      - name: Run Release Please
+        id: release
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          target-branch: main
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+      # Pull requests opened or updated with GITHUB_TOKEN don't trigger
+      # workflows, but a workflow_dispatch does.
+      - name: Dispatch CI for the release PR
+        if: steps.release.outputs.prs_created == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_PRS: ${{ steps.release.outputs.prs }}
+        run: |
+          jq --raw-output '.[].headBranchName' <<<"$RELEASE_PRS" | while read -r branch; do
+            gh workflow run ci.yml --ref "$branch"
+          done
+
+  prepare:
+    name: Validate the release and plan problem images
+    needs: release-please
+    if: needs.release-please.outputs.created == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      sha: ${{ steps.release.outputs.sha }}
+      promote: ${{ steps.release.outputs.promote }}
+      problem-batches: ${{ steps.problems.outputs.batches }}
+      problem-count: ${{ steps.problems.outputs.count }}
+    steps:
+      - name: Check out the release
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.release-please.outputs.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate the release
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ needs.release-please.outputs.tag }}
+          RELEASE_SHA: ${{ needs.release-please.outputs.sha }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "::error::Expected a stable vX.Y.Z release tag, got $TAG"
+            exit 1
+          fi
+          gh release view "$TAG" --json isDraft,isPrerelease \
+            | jq --exit-status '.isDraft == false and .isPrerelease == false' >/dev/null
+          sha=$(git rev-parse --verify "$TAG^{commit}")
+          if [ "$sha" != "$RELEASE_SHA" ]; then
+            echo "::error::$TAG points at $sha, not the release commit $RELEASE_SHA"
+            exit 1
+          fi
+          git merge-base --is-ancestor "$sha" origin/main
+          version=${TAG#v}
+          if [ "$(jq --raw-output .version package.json)" != "$version" ]; then
+            echo "::error::package.json does not have version $version"
+            exit 1
+          fi
+          # latest and the version aliases never move back to an older release.
+          promote=false
+          if [ "$(gh api "repos/$GH_REPO/releases/latest" --jq .tag_name)" = "$TAG" ]; then
+            promote=true
+          fi
+          {
+            echo "version=$version"
+            echo "sha=$sha"
+            echo "promote=$promote"
+          } >> "$GITHUB_OUTPUT"
+      - name: Set up pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22.14.0
+          package-manager-cache: false
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      # Problem images whose inputs changed since the previous release, or all
+      # of them for the first release.
+      - name: Select changed problems
+        id: problems
+        working-directory: packages/problems
+        run: |
+          plan=$(pnpm --silent run changed --since-release)
+          {
+            echo "batches=$(jq --compact-output .batches <<<"$plan")"
+            echo "count=$(jq '.problems | length' <<<"$plan")"
+          } >> "$GITHUB_OUTPUT"
+          jq --raw-output '"Problem images to publish: \(if .problems == [] then "none" else .problems | join(", ") end)"' <<<"$plan" >> "$GITHUB_STEP_SUMMARY"
+
+  ci:
+    name: CI on the release commit
+    needs: prepare
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: ${{ needs.prepare.outputs.sha }}
+
+  # Each platform is pushed by digest only, with SBOM and provenance
+  # attestations, then pulled back and smoke-tested on its native runner. No
+  # tag points at it until publish-app-images runs after every test passed.
+  build-app-images:
+    name: Build and smoke-test ${{ matrix.app }} (${{ matrix.arch }})
+    needs: [prepare, ci]
+    environment: release
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [coordinator, runner, website, migrator]
+        arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    env:
+      APP: ${{ matrix.app }}
+      ARCH: ${{ matrix.arch }}
+      PLATFORM: ${{ matrix.platform }}
+      IMAGE: cr.guneet.dev/easyshell/${{ matrix.app }}
+    steps:
+      - name: Check out the release commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          persist-credentials: false
+      - name: Check registry credentials
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          if [ -z "$DOCKER_USERNAME" ] || [ -z "$DOCKER_PASSWORD" ]; then
+            echo "::error::Set DOCKER_USERNAME and DOCKER_PASSWORD in the release environment"
+            exit 1
+          fi
+      - name: Log in to the registry
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Build and push the platform image by digest
+        id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: apps/${{ matrix.app }}/Dockerfile
+          platforms: ${{ matrix.platform }}
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          provenance: mode=max
+          sbom: true
+          # Public website settings, compiled into the website image; unused by
+          # the other images. Not secrets.
+          build-args: |
+            NEXT_PUBLIC_POSTHOG_KEY=${{ vars.NEXT_PUBLIC_POSTHOG_KEY }}
+            POSTHOG_HOST=${{ vars.POSTHOG_HOST }}
+          labels: |
+            org.opencontainers.image.title=easyshell ${{ matrix.app }}
+            org.opencontainers.image.version=v${{ needs.prepare.outputs.version }}
+            org.opencontainers.image.revision=${{ needs.prepare.outputs.sha }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+      - name: Verify the platform image and its attestations
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: scripts/verify-image-attestations.sh "$IMAGE" "$DIGEST" "$ARCH"
+      - name: Pull the pushed digest
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          docker pull --platform "$PLATFORM" "$IMAGE@$DIGEST"
+          pulled=$(docker image inspect --format '{{.Os}}/{{.Architecture}}' "$IMAGE@$DIGEST")
+          if [ "$pulled" != "$PLATFORM" ]; then
+            echo "::error::Pulled $pulled instead of $PLATFORM"
+            exit 1
+          fi
+      - name: Smoke-test the pushed digest
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: scripts/smoke-image.sh "$APP" "$IMAGE@$DIGEST"
+      - name: Record the tested digest
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/digests"
+          echo "$DIGEST" > "$RUNNER_TEMP/digests/$APP-$ARCH"
+      - name: Upload the tested digest
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: app-digest-${{ matrix.app }}-${{ matrix.arch }}
+          path: ${{ runner.temp }}/digests/${{ matrix.app }}-${{ matrix.arch }}
+          if-no-files-found: error
+          overwrite: true
+
+  publish-app-images:
+    name: Tag the application images
+    needs: [prepare, build-app-images]
+    environment: release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Download the tested digests
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: app-digest-*
+          path: ${{ runner.temp }}/digests
+          merge-multiple: true
+      - name: Log in to the registry
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Tag the tested digests and verify the published indexes
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+          PROMOTE: ${{ needs.prepare.outputs.promote }}
+          SOURCE_SHA: ${{ needs.prepare.outputs.sha }}
+        run: |
+          set -euo pipefail
+          major=${VERSION%%.*}
+          minor=${VERSION%.*}
+          tags=("v$VERSION")
+          if [ "$PROMOTE" = true ]; then
+            tags+=("v$minor")
+            if [ "$major" != 0 ]; then tags+=("v$major"); fi
+            tags+=(latest)
+          fi
+          {
+            echo "## Application images v$VERSION"
+            echo
+            echo "Source: \`$SOURCE_SHA\`. Platforms: \`linux/amd64\`, \`linux/arm64\`, each with SBOM and provenance attestations."
+            echo "Tags: $(printf "\`%s\` " "${tags[@]}")"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+          for app in coordinator runner website migrator; do
+            image="$REGISTRY/easyshell/$app"
+            sources=()
+            for arch in amd64 arm64; do
+              digest=$(< "$RUNNER_TEMP/digests/$app-$arch")
+              if [[ ! "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+                echo "::error::Missing or invalid tested digest for $app $arch"
+                exit 1
+              fi
+              sources+=("$image@$digest")
+            done
+            args=()
+            for tag in "${tags[@]}"; do args+=(--tag "$image:$tag"); done
+            docker buildx imagetools create "${args[@]}" "${sources[@]}"
+            docker buildx imagetools inspect --raw "$image:v$VERSION" \
+              | jq --exit-status '
+                  ([.manifests[] | select(.platform.os == "linux") | .platform.architecture] | sort == ["amd64", "arm64"])
+                  and ([.manifests[] | select(.annotations["vnd.docker.reference.type"] == "attestation-manifest")] | length == 2)
+                ' >/dev/null
+            index=$(docker buildx imagetools inspect "$image:v$VERSION" --format '{{json .Manifest}}' | jq --raw-output .digest)
+            echo "- \`$image:v$VERSION@$index\`" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+  problem-images:
+    name: Problem images
+    needs: [prepare, ci]
+    # Only the newest release may move a problem image's latest tag.
+    if: needs.prepare.outputs.problem-count != '0' && needs.prepare.outputs.promote == 'true'
+    uses: ./.github/workflows/publish-problem-images.yml
+    with:
+      sha: ${{ needs.prepare.outputs.sha }}
+      version: ${{ needs.prepare.outputs.version }}
+      batches: ${{ needs.prepare.outputs.problem-batches }}

@@ -4,7 +4,7 @@ easyshell is released with [release-please](https://github.com/googleapis/releas
 
 ## How a release happens
 
-1. Pull requests are merged into `main` with [Conventional Commits](https://www.conventionalcommits.org/) titles (squash merges use the PR title). `fix:` is a patch release, `feat:` a minor release, and `feat!:` or a `BREAKING CHANGE:` footer a major release. `docs:`, `ci:`, `test:` and `chore:` don't cause a release on their own.
+1. Pull requests are merged into `main` with [Conventional Commits](https://www.conventionalcommits.org/) titles (squash merges use the PR title). `fix:` is a patch release, `feat:` a minor release, and `feat!:` or a `BREAKING CHANGE:` footer a major release. Before 1.0 (`bump-minor-pre-major`), a breaking change bumps the minor version instead, so 0.x never becomes 1.0.0 by itself; `v1.0.0` will be released deliberately by setting `release-as` in the release-please configuration. `docs:`, `ci:`, `test:` and `chore:` don't cause a release on their own.
 2. On every push to `main`, the **Release** workflow (`.github/workflows/release.yml`) updates a single release PR. It bumps the version in `package.json` and `.release-please-manifest.json` and adds the changes to `CHANGELOG.md`. Those files are generated: don't edit them by hand.
 3. Pull requests opened with `GITHUB_TOKEN` don't trigger workflows, so the release workflow dispatches **CI** (`.github/workflows/ci.yml`) on the release-PR branch whenever it creates or updates the release PR. Its checks show on the PR.
 4. **Merging the release PR approves the release.** release-please creates the `vX.Y.Z` tag and the GitHub Release, and the same workflow run publishes it:

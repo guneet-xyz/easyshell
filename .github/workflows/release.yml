@@ -312,6 +312,10 @@ jobs:
     # Only the newest release may move a problem image's latest tag.
     if: needs.prepare.outputs.problem-count != '0' && needs.prepare.outputs.promote == 'true'
     uses: ./.github/workflows/publish-problem-images.yml
+    # The called jobs read DOCKER_USERNAME/DOCKER_PASSWORD from the release
+    # environment; environment secrets only reach a reusable workflow whose
+    # caller passes its secrets.
+    secrets: inherit
     with:
       sha: ${{ needs.prepare.outputs.sha }}
       version: ${{ needs.prepare.outputs.version }}

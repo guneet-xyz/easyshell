@@ -7,6 +7,11 @@ name: Publish problem images
 #
 # Changing this file changes how every problem image is built, so the next
 # release rebuilds all of them.
+#
+# The caller must pass `secrets: inherit`: the build and publish jobs use the
+# release environment's DOCKER_USERNAME/DOCKER_PASSWORD, and environment
+# secrets don't reach a reusable workflow otherwise (v0.1.0's problem images
+# failed at the credentials check for this reason).
 on:
   workflow_call:
     inputs:

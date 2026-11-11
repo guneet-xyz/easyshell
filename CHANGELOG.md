@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/guneet-xyz/easyshell/compare/v0.1.0...v0.1.1) (2026-11-11)
+
+
+### Bug Fixes
+
+* **ci:** pass release environment secrets to the problem image publisher ([#350](https://github.com/guneet-xyz/easyshell/issues/350)) ([a2e6c18](https://github.com/guneet-xyz/easyshell/commit/a2e6c18516a6632ba2e7a95b2c78bd0a3429f405))
+
 ## 0.1.0 (2026-11-11)
 
 

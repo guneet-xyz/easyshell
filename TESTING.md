@@ -26,6 +26,8 @@ E2E (Vitest + Testcontainers, real Postgres + Docker)
 | `pnpm test:e2e`                                   | E2E suite, requires Docker                                 |
 | `pnpm --filter @easyshell/coordinator test:watch` | Watch mode for coordinator                                 |
 
+CI (`.github/workflows/ci.yml`) runs the unit tests, type checks, lint and formatting on every pull request, along with image smoke tests and the problem tests of changed problems (`pnpm --filter @easyshell/problems run test <problem>`, which needs Docker and the problem's images from `run build <problem>`). The e2e suite is not part of CI. See [docs/releases.md](docs/releases.md#ci).
+
 ## Unit test conventions
 
 ### File layout

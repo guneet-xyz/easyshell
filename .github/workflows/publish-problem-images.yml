@@ -1,0 +1,216 @@
+name: Publish problem images
+
+# Only called by the release workflow, for the problems whose image inputs
+# changed since the previous release (see packages/problems/scripts/changed.ts).
+# There is deliberately no manual trigger; recover a failed publication with
+# "Re-run failed jobs" on the release run.
+#
+# Changing this file changes how every problem image is built, so the next
+# release rebuilds all of them.
+on:
+  workflow_call:
+    inputs:
+      sha:
+        description: Release commit
+        type: string
+        required: true
+      version:
+        description: Release version, for example 0.1.0
+        type: string
+        required: true
+      batches:
+        description: 'JSON list of {"id", "problems"} batches to build'
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: cr.guneet.dev
+
+jobs:
+  # Each batch of problems is built natively for each architecture and every
+  # testcase image is pushed by digest only, with SBOM and provenance
+  # attestations. The pushed digests are pulled back and the problems' tests
+  # run against them; no tag moves until publish runs after every test passed.
+  build:
+    name: Build and test ${{ matrix.arch }} (${{ matrix.batch.problems }})
+    environment: release
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix:
+        batch: ${{ fromJSON(inputs.batches) }}
+        arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            platform: linux/amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    env:
+      ARCH: ${{ matrix.arch }}
+      PLATFORM: ${{ matrix.platform }}
+      PROBLEMS: ${{ matrix.batch.problems }}
+      BATCH: ${{ matrix.batch.id }}
+    steps:
+      - name: Use a job-local working directory
+        run: echo "WORKING_DIR=$RUNNER_TEMP/easyshell" >> "$GITHUB_ENV"
+      - name: Check out the release commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.sha }}
+          persist-credentials: false
+      - name: Check registry credentials
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          if [ -z "$DOCKER_USERNAME" ] || [ -z "$DOCKER_PASSWORD" ]; then
+            echo "::error::Set DOCKER_USERNAME and DOCKER_PASSWORD in the release environment"
+            exit 1
+          fi
+      - name: Set up pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22.14.0
+          package-manager-cache: false
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Write the build contexts
+        working-directory: packages/problems
+        run: |
+          read -ra problems <<<"$PROBLEMS"
+          pnpm run build --contexts-only "${problems[@]}"
+      - name: Log in to the registry
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Build, push by digest, verify and pull each image
+        env:
+          VERSION: ${{ inputs.version }}
+          SOURCE_SHA: ${{ inputs.sha }}
+          SOURCE_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          set -euo pipefail
+          digests="$RUNNER_TEMP/digests/problems-$ARCH-$BATCH"
+          mkdir -p "$(dirname "$digests")"
+          : > "$digests"
+          while IFS=$'\t' read -r -u 3 image context; do
+            repository="$REGISTRY/$image"
+            echo "::group::$image"
+            docker buildx build "$context" \
+              --platform "$PLATFORM" \
+              --provenance mode=max \
+              --sbom true \
+              --label "org.opencontainers.image.title=easyshell $image" \
+              --label "org.opencontainers.image.version=v$VERSION" \
+              --label "org.opencontainers.image.revision=$SOURCE_SHA" \
+              --label "org.opencontainers.image.source=$SOURCE_URL" \
+              --output "type=image,name=$repository,push-by-digest=true,name-canonical=true,push=true" \
+              --metadata-file "$RUNNER_TEMP/metadata.json"
+            digest=$(jq --raw-output '."containerimage.digest"' "$RUNNER_TEMP/metadata.json")
+            scripts/verify-image-attestations.sh "$repository" "$digest" "$ARCH"
+            docker pull --quiet --platform "$PLATFORM" "$repository@$digest"
+            pulled=$(docker image inspect --format '{{.Os}}/{{.Architecture}}' "$repository@$digest")
+            if [ "$pulled" != "$PLATFORM" ]; then
+              echo "::error::Pulled $pulled instead of $PLATFORM for $image"
+              exit 1
+            fi
+            # The tests run the image under its local name.
+            docker tag "$repository@$digest" "$image"
+            printf '%s %s\n' "$image" "$digest" >> "$digests"
+            echo "::endgroup::"
+          done 3< <(jq --raw-output '.[] | [.image, .context] | @tsv' "$WORKING_DIR/build/images.json")
+          if [ ! -s "$digests" ]; then
+            echo "::error::No images were built for $PROBLEMS"
+            exit 1
+          fi
+      - name: Log out of the registry
+        run: docker logout "$REGISTRY"
+      - name: Test the problems against the pulled images
+        working-directory: packages/problems
+        run: |
+          read -ra problems <<<"$PROBLEMS"
+          pnpm run test "${problems[@]}"
+      - name: Upload the tested digests
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: problem-digests-${{ matrix.arch }}-${{ matrix.batch.id }}
+          path: ${{ runner.temp }}/digests/problems-${{ matrix.arch }}-${{ matrix.batch.id }}
+          if-no-files-found: error
+          overwrite: true
+
+  publish:
+    name: Move the problem images' latest tags
+    needs: build
+    environment: release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Download the tested digests
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: problem-digests-*
+          path: ${{ runner.temp }}/digests
+          merge-multiple: true
+      - name: Log in to the registry
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Tag the tested digests as latest and verify the indexes
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          declare -A amd64 arm64
+          for file in "$RUNNER_TEMP"/digests/problems-amd64-*; do
+            while read -r image digest; do amd64[$image]=$digest; done < "$file"
+          done
+          for file in "$RUNNER_TEMP"/digests/problems-arm64-*; do
+            while read -r image digest; do arm64[$image]=$digest; done < "$file"
+          done
+          if [ "${#amd64[@]}" -eq 0 ] || [ "${#amd64[@]}" -ne "${#arm64[@]}" ]; then
+            echo "::error::Expected tested amd64 and arm64 digests for the same images"
+            exit 1
+          fi
+          {
+            echo "## Problem images (v$VERSION)"
+            echo
+            echo "Each moved to \`latest\`; platforms \`linux/amd64\`, \`linux/arm64\`, each with SBOM and provenance attestations."
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+          mapfile -t images < <(printf '%s\n' "${!amd64[@]}" | sort)
+          for image in "${images[@]}"; do
+            amd=${amd64[$image]}
+            arm=${arm64[$image]:-}
+            for digest in "$amd" "$arm"; do
+              if [[ ! "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+                echo "::error::Missing or invalid tested digest for $image"
+                exit 1
+              fi
+            done
+            repository="$REGISTRY/$image"
+            docker buildx imagetools create --tag "$repository:latest" "$repository@$amd" "$repository@$arm"
+            docker buildx imagetools inspect --raw "$repository:latest" \
+              | jq --exit-status '
+                  ([.manifests[] | select(.platform.os == "linux") | .platform.architecture] | sort == ["amd64", "arm64"])
+                  and ([.manifests[] | select(.annotations["vnd.docker.reference.type"] == "attestation-manifest")] | length == 2)
+                ' >/dev/null
+            index=$(docker buildx imagetools inspect "$repository:latest" --format '{{json .Manifest}}' | jq --raw-output .digest)
+            echo "- \`$repository:latest@$index\`" >> "$GITHUB_STEP_SUMMARY"
+          done

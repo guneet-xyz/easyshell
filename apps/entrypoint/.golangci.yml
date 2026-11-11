@@ -1,0 +1,8 @@
+version: "2"
+
+linters:
+  exclusions:
+    # Keep golangci-lint v1's default exclusions for unchecked Close, Remove
+    # and print errors.
+    presets:
+      - std-error-handling

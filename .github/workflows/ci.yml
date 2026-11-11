@@ -1,0 +1,294 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  # Release PRs: the release workflow dispatches CI on their branch, because
+  # pull requests opened with GITHUB_TOKEN don't trigger workflows.
+  workflow_dispatch:
+  # The release workflow runs CI on the exact release commit before publishing.
+  workflow_call:
+    inputs:
+      ref:
+        description: Exact commit to verify
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ inputs.ref || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  NODE_VERSION: 22.14.0
+
+jobs:
+  format:
+    name: Formatting
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          persist-credentials: false
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: apps/entrypoint/go.mod
+          cache: false
+      # Before installing dependencies, so that node_modules isn't checked.
+      - name: Check Go formatting
+        run: |
+          unformatted=$(gofmt -l -s .)
+          if [ -n "$unformatted" ]; then
+            echo "$unformatted"
+            echo "::error::Format these files with gofmt -w -s"
+            exit 1
+          fi
+      - name: Set up pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Check formatting
+        run: pnpm exec prettier --check .
+
+  lint:
+    name: Types and lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          persist-credentials: false
+      - name: Set up pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Generate the website's problem cache
+        run: pnpm run cache:website
+        working-directory: packages/problems
+      - name: Check types
+        run: pnpm run lint:tsc
+      - name: Lint the website
+        run: pnpm run lint:next
+
+  unit-tests:
+    name: Unit tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          persist-credentials: false
+      - name: Set up pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Run unit tests
+        run: pnpm test
+
+  entrypoint:
+    name: Entrypoint lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          persist-credentials: false
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: apps/entrypoint/go.mod
+          cache: false
+      - name: Lint
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v2.15.0
+          working-directory: apps/entrypoint
+
+  workflows:
+    name: Workflow lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          persist-credentials: false
+      - name: Lint workflows with actionlint
+        run: |
+          curl --fail --silent --show-error --location --retry 3 \
+            https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz \
+            --output "$RUNNER_TEMP/actionlint.tar.gz"
+          echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  $RUNNER_TEMP/actionlint.tar.gz" | sha256sum --check
+          tar --extract --gzip --file "$RUNNER_TEMP/actionlint.tar.gz" --directory "$RUNNER_TEMP" actionlint
+          "$RUNNER_TEMP/actionlint" -color
+
+  # The same build and smoke test as a release, on both architectures, without
+  # pushing anything.
+  app-images:
+    name: Image smoke test (${{ matrix.app }}, ${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [coordinator, runner, website, migrator]
+        arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    env:
+      APP: ${{ matrix.app }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          persist-credentials: false
+      - name: Build the image
+        run: docker build --file "apps/$APP/Dockerfile" --tag "easyshell-ci/$APP" .
+      - name: Smoke-test the image
+        run: scripts/smoke-image.sh "$APP" "easyshell-ci/$APP"
+
+  problems-plan:
+    name: Plan problem tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      batches: ${{ steps.plan.outputs.batches }}
+      count: ${{ steps.plan.outputs.count }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Check problem configs, series and wiki
+        run: pnpm run test base
+        working-directory: packages/problems
+        env:
+          SKIP_SUBMISSION_TESTS: "1"
+      # Pull requests test the problems they change. Everything else (main,
+      # release PRs and releases) tests the problems changed since the previous
+      # release, which are the ones the next release publishes.
+      - name: Select changed problems
+        id: plan
+        working-directory: packages/problems
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ "$EVENT_NAME" = pull_request ]; then
+            plan=$(pnpm --silent run changed --base "$PR_BASE")
+          else
+            plan=$(pnpm --silent run changed --since-release)
+          fi
+          {
+            echo "batches=$(jq --compact-output .batches <<<"$plan")"
+            echo "count=$(jq '.problems | length' <<<"$plan")"
+          } >> "$GITHUB_OUTPUT"
+          jq --raw-output '"Problems to test: \(if .problems == [] then "none" else .problems | join(", ") end)"' <<<"$plan" >> "$GITHUB_STEP_SUMMARY"
+
+  problems:
+    name: Problem tests (${{ matrix.batch.problems }})
+    needs: problems-plan
+    if: needs.problems-plan.outputs.count != '0'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix:
+        batch: ${{ fromJSON(needs.problems-plan.outputs.batches) }}
+    env:
+      PROBLEMS: ${{ matrix.batch.problems }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          persist-credentials: false
+      - name: Set up pnpm
+        uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build the problem images
+        working-directory: packages/problems
+        run: |
+          read -ra problems <<<"$PROBLEMS"
+          pnpm run build "${problems[@]}"
+      - name: Test the problems against their images
+        working-directory: packages/problems
+        run: |
+          read -ra problems <<<"$PROBLEMS"
+          pnpm run test "${problems[@]}"
+
+  # A single check to require in branch protection.
+  result:
+    name: CI result
+    needs:
+      [
+        format,
+        lint,
+        unit-tests,
+        entrypoint,
+        workflows,
+        app-images,
+        problems-plan,
+        problems,
+      ]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check that every job passed
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          jq --raw-output 'to_entries[] | "\(.key): \(.value.result)"' <<<"$RESULTS"
+          jq --exit-status 'all(.[]; .result == "success" or .result == "skipped")' <<<"$RESULTS" >/dev/null

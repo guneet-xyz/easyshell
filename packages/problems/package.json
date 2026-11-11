@@ -12,9 +12,8 @@
     "build": "tsx ./scripts/build.ts",
     "cache:coordinator": "tsx ./scripts/cache-coordinator.ts",
     "cache:website": "tsx ./scripts/cache-website.ts",
-    "generate-workflows": "tsx ./scripts/generate-workflows.ts",
+    "changed": "tsx ./scripts/changed.ts",
     "new": "tsx ./scripts/new.ts",
-    "push": "tsx ./scripts/push.ts",
     "test": "tsx ./scripts/test.ts"
   },
   "dependencies": {

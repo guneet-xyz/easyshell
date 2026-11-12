@@ -203,8 +203,7 @@ describe("routers/jobs", () => {
           "SELECT job_id, mode, image FROM accepted_job WHERE job_id=?",
         )
         .get("j-accept") as
-        | { job_id: string; mode: string; image: string }
-        | undefined
+        { job_id: string; mode: string; image: string } | undefined
       expect(job).toEqual({
         job_id: "j-accept",
         mode: "submission",

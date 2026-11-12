@@ -34,9 +34,7 @@ export type AcceptJobInput = {
 }
 
 export type AcceptJobOutput =
-  | { status: "accepted" }
-  | { status: "at_capacity" }
-  | { status: "duplicate" }
+  { status: "accepted" } | { status: "at_capacity" } | { status: "duplicate" }
 
 export type GetJobOutput =
   | { status: "unknown" }

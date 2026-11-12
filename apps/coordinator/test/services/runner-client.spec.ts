@@ -95,9 +95,8 @@ vi.mock("../../src/db", () => {
 })
 
 // ── Import the SUT after all mocks are in place ─────────────────────────────
-const { createRunnerClientFromCreds, createRunnerClientFromDb } = await import(
-  "../../src/services/runner-client"
-)
+const { createRunnerClientFromCreds, createRunnerClientFromDb } =
+  await import("../../src/services/runner-client")
 
 beforeEach(() => {
   createTRPCClientSpy.mockReset()

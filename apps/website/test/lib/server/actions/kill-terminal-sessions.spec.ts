@@ -43,9 +43,8 @@ vi.mock("@/db", () => ({
 }))
 
 // ─── SUT import (dynamic, after mocks) ──────────────────────────────────────
-const { killTerminalSessions } = await import(
-  "@/lib/server/actions/kill-terminal-sessions"
-)
+const { killTerminalSessions } =
+  await import("@/lib/server/actions/kill-terminal-sessions")
 
 beforeEach(() => {
   vi.clearAllMocks()

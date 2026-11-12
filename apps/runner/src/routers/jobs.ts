@@ -421,8 +421,7 @@ export const jobsRouter = router({
             "SELECT status, container_name FROM accepted_job WHERE job_id=?",
           )
           .get(input.job_id) as
-          | { status: string; container_name: string }
-          | undefined
+          { status: string; container_name: string } | undefined
 
         if (!row) {
           log.info({ job_id: input.job_id }, "job.cancel.unknown")

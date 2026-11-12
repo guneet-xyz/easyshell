@@ -345,20 +345,14 @@ beforeEach(() => {
 // ── Tests ────────────────────────────────────────────────────────────────
 describe("myExport", () => {
   it("happy path: returns expected value", async () => {
-    const result = await myExport({
-      /* valid input */
-    })
-    expect(result).toMatchObject({
-      /* expected shape */
-    })
+    const result = await myExport({/* valid input */})
+    expect(result).toMatchObject({/* expected shape */})
   })
 
   it("failure path: throws / returns error on invalid input", async () => {
-    await expect(
-      myExport({
-        /* invalid input */
-      }),
-    ).rejects.toThrow(/expected error/)
+    await expect(myExport({/* invalid input */})).rejects.toThrow(
+      /expected error/,
+    )
     // OR: expect(result.status).toBe("error")
   })
 })

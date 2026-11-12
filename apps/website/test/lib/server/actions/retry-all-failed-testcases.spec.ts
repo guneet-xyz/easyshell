@@ -35,9 +35,8 @@ vi.mock("@/lib/server/auth", () => ({
 }))
 
 // ─── SUT import (dynamic, after mocks) ──────────────────────────────────────
-const { retryAllFailedTestcases } = await import(
-  "@/lib/server/actions/retry-all-failed-testcases"
-)
+const { retryAllFailedTestcases } =
+  await import("@/lib/server/actions/retry-all-failed-testcases")
 
 beforeEach(() => {
   vi.clearAllMocks()

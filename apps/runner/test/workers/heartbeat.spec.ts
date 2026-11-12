@@ -138,9 +138,8 @@ describe("workers/heartbeat", () => {
     envState.RUNNER_TOKEN = "secret"
     heartbeatMutateMock.mockResolvedValue({ status: "drain" })
 
-    const { heartbeatLoop, isDraining } = await import(
-      "../../src/workers/heartbeat"
-    )
+    const { heartbeatLoop, isDraining } =
+      await import("../../src/workers/heartbeat")
     expect(isDraining()).toBe(false)
 
     void heartbeatLoop(() => DEFAULT_SNAPSHOT).catch(() => {
@@ -157,9 +156,8 @@ describe("workers/heartbeat", () => {
     envState.RUNNER_TOKEN = "secret"
     heartbeatMutateMock.mockResolvedValue({ status: "ack" })
 
-    const { heartbeatLoop, isDraining } = await import(
-      "../../src/workers/heartbeat"
-    )
+    const { heartbeatLoop, isDraining } =
+      await import("../../src/workers/heartbeat")
     void heartbeatLoop(() => DEFAULT_SNAPSHOT).catch(() => {
       /* loop is infinite */
     })

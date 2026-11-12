@@ -176,9 +176,8 @@ vi.mock("../../src/db", () => {
 })
 
 // ── Import the SUT after mocks are registered ──────────────────────────────
-const { terminalSessionsRouter } = await import(
-  "../../src/routers/terminal-sessions"
-)
+const { terminalSessionsRouter } =
+  await import("../../src/routers/terminal-sessions")
 
 beforeEach(() => {
   selectColumnsSpy.mockReset()

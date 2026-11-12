@@ -1,7 +1,7 @@
+import { execa } from "execa"
+
 import type { ProblemConfig } from "@easyshell/problems/schema"
 import { testcaseDir } from "@easyshell/utils/build"
-
-import { execa } from "execa"
 
 const SLUG = "filter-logs"
 

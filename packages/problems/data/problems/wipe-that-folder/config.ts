@@ -1,5 +1,5 @@
 import type { FsType, ProblemConfig } from "@easyshell/problems/schema"
-import { PROBLEMS_DIR, getFs } from "@easyshell/utils/build"
+import { getFs, PROBLEMS_DIR } from "@easyshell/utils/build"
 
 const SLUG = "wipe-that-folder"
 

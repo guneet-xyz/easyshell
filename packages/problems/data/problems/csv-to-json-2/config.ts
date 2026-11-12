@@ -1,7 +1,7 @@
-import type { ProblemConfig } from "@easyshell/problems/schema"
-
 import { readFile } from "fs/promises"
 import { testcaseDir } from "packages/utils/build"
+
+import type { ProblemConfig } from "@easyshell/problems/schema"
 
 const SLUG = "csv-to-json-2"
 

@@ -30,12 +30,12 @@ export const appRouter = router({
   terminalSessions: terminalSessionsRouter,
   health: router({
     // INTENTIONALLY unauth — this is the compose healthcheck endpoint.
-    ping: publicProcedure.input(HealthPingInputSchema).query(
-      (): z.infer<typeof HealthPingOutputSchema> => ({
+    ping: publicProcedure
+      .input(HealthPingInputSchema)
+      .query((): z.infer<typeof HealthPingOutputSchema> => ({
         ok: true as const,
         version: "0.1.0",
-      }),
-    ),
+      })),
     capacity: coordinatorProcedure
       .input(HealthCapacityInputSchema)
       .query((): z.infer<typeof HealthCapacityOutputSchema> => getCapacity()),

@@ -41,9 +41,8 @@ type SecretModule = typeof import("../../src/services/secret")
 
 describe("secret — no COORDINATOR_SECRET_KEY (dev/test fallback)", () => {
   it("encryptSecret returns a base64 plaintext envelope with nonce=plaintext", async () => {
-    const { encryptSecret }: SecretModule = await import(
-      "../../src/services/secret"
-    )
+    const { encryptSecret }: SecretModule =
+      await import("../../src/services/secret")
     const { ciphertext, nonce } = encryptSecret("my-runner-secret")
     expect(nonce).toBe("plaintext")
     expect(Buffer.from(ciphertext, "base64").toString("utf8")).toBe(
@@ -52,17 +51,15 @@ describe("secret — no COORDINATOR_SECRET_KEY (dev/test fallback)", () => {
   })
 
   it("decryptSecret reverses the plaintext envelope round-trip", async () => {
-    const { encryptSecret, decryptSecret }: SecretModule = await import(
-      "../../src/services/secret"
-    )
+    const { encryptSecret, decryptSecret }: SecretModule =
+      await import("../../src/services/secret")
     const envelope = encryptSecret("hello")
     expect(decryptSecret(envelope.ciphertext, envelope.nonce)).toBe("hello")
   })
 
   it("decryptSecret throws when nonce is non-plaintext but no key is configured", async () => {
-    const { decryptSecret }: SecretModule = await import(
-      "../../src/services/secret"
-    )
+    const { decryptSecret }: SecretModule =
+      await import("../../src/services/secret")
     // 12-byte hex nonce that isn't the literal "plaintext" marker.
     expect(() =>
       decryptSecret("ZmFrZWNpcGhlcnRleHQ=", "ab".repeat(12)),
@@ -76,9 +73,8 @@ describe("secret — with COORDINATOR_SECRET_KEY (real AES-256-GCM)", () => {
 
   it("encryptSecret / decryptSecret roundtrip returns the original plaintext", async () => {
     vi.stubEnv("COORDINATOR_SECRET_KEY", KEY)
-    const { encryptSecret, decryptSecret }: SecretModule = await import(
-      "../../src/services/secret"
-    )
+    const { encryptSecret, decryptSecret }: SecretModule =
+      await import("../../src/services/secret")
 
     const plain = "abcdefghijklmnopqrstuvwxyz012345"
     const envelope = encryptSecret(plain)
@@ -92,9 +88,8 @@ describe("secret — with COORDINATOR_SECRET_KEY (real AES-256-GCM)", () => {
 
   it("produces a fresh random nonce on every encryption", async () => {
     vi.stubEnv("COORDINATOR_SECRET_KEY", KEY)
-    const { encryptSecret }: SecretModule = await import(
-      "../../src/services/secret"
-    )
+    const { encryptSecret }: SecretModule =
+      await import("../../src/services/secret")
     const a = encryptSecret("same-plaintext")
     const b = encryptSecret("same-plaintext")
     expect(a.nonce).not.toBe(b.nonce)
@@ -103,9 +98,8 @@ describe("secret — with COORDINATOR_SECRET_KEY (real AES-256-GCM)", () => {
 
   it("decryptSecret throws when ciphertext is shorter than the GCM tag", async () => {
     vi.stubEnv("COORDINATOR_SECRET_KEY", KEY)
-    const { decryptSecret }: SecretModule = await import(
-      "../../src/services/secret"
-    )
+    const { decryptSecret }: SecretModule =
+      await import("../../src/services/secret")
     // "YWFh" is 3 bytes of base64 → too short for the 16-byte GCM tag.
     expect(() => decryptSecret("YWFh", "ab".repeat(12))).toThrow(
       /too short to contain GCM tag/,
@@ -114,9 +108,8 @@ describe("secret — with COORDINATOR_SECRET_KEY (real AES-256-GCM)", () => {
 
   it("decryptSecret throws when the GCM tag does not verify under a different key", async () => {
     vi.stubEnv("COORDINATOR_SECRET_KEY", KEY)
-    const { encryptSecret }: SecretModule = await import(
-      "../../src/services/secret"
-    )
+    const { encryptSecret }: SecretModule =
+      await import("../../src/services/secret")
     const envelope = encryptSecret("hello")
 
     // Re-load the module under a DIFFERENT key. resetModules invalidates
@@ -124,9 +117,8 @@ describe("secret — with COORDINATOR_SECRET_KEY (real AES-256-GCM)", () => {
     vi.resetModules()
     for (const [k, v] of Object.entries(REQUIRED_ENV)) vi.stubEnv(k, v)
     vi.stubEnv("COORDINATOR_SECRET_KEY", "b".repeat(64))
-    const { decryptSecret }: SecretModule = await import(
-      "../../src/services/secret"
-    )
+    const { decryptSecret }: SecretModule =
+      await import("../../src/services/secret")
 
     expect(() => decryptSecret(envelope.ciphertext, envelope.nonce)).toThrow()
   })

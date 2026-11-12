@@ -85,12 +85,10 @@ function seedAcceptedJob(
   )
 }
 
-const { scanOnce, startReconciliation } = await import(
-  "../../src/workers/reconciliation"
-)
-const { markInFlight, clearInFlight } = await import(
-  "../../src/services/in-flight"
-)
+const { scanOnce, startReconciliation } =
+  await import("../../src/workers/reconciliation")
+const { markInFlight, clearInFlight } =
+  await import("../../src/services/in-flight")
 
 describe("workers/reconciliation", () => {
   beforeEach(() => {
@@ -132,8 +130,7 @@ describe("workers/reconciliation", () => {
           "SELECT container_name, reason FROM cleanup_pending WHERE container_name=?",
         )
         .get("easyshell-job-1") as
-        | { container_name: string; reason: string }
-        | undefined
+        { container_name: string; reason: string } | undefined
       expect(pending).toEqual({
         container_name: "easyshell-job-1",
         reason: "orphaned",

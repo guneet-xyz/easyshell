@@ -174,9 +174,8 @@ function mockSocketRequestError(err: Error): FakeReq {
   return req
 }
 
-const { terminalSessionsRouter } = await import(
-  "../../src/routers/terminal-sessions"
-)
+const { terminalSessionsRouter } =
+  await import("../../src/routers/terminal-sessions")
 
 afterAll(() => {
   if (fs.existsSync(TEST_WORKING_DIR)) {

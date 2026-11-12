@@ -55,8 +55,7 @@ describe("easyshell e2e — coordinator + runner", () => {
     // getStatus returns a testcase array, or it fails gracefully with a
     // tRPC client error (proves the coordinator routed and validated input).
     let enqueueResult:
-      | { submission_id: number; testcase_count: number }
-      | undefined
+      { submission_id: number; testcase_count: number } | undefined
     try {
       enqueueResult = await client.submissions.enqueue.mutate({
         user_id: "u-1",

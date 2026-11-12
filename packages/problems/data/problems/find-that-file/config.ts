@@ -1,7 +1,7 @@
+import { readdir } from "fs/promises"
+
 import type { ProblemConfig } from "@easyshell/problems/schema"
 import { PROBLEMS_DIR } from "@easyshell/utils/build"
-
-import { readdir } from "fs/promises"
 
 const SLUG = "find-that-file"
 

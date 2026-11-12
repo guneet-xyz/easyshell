@@ -1,8 +1,6 @@
-import type { ProblemConfig } from "@easyshell/problems/schema"
+import { cp, readFile, writeFile } from "fs/promises"
 
-import { writeFile } from "fs/promises"
-import { readFile } from "fs/promises"
-import { cp } from "fs/promises"
+import type { ProblemConfig } from "@easyshell/problems/schema"
 
 async function testcaseConfig({
   id,

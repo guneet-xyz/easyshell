@@ -1,6 +1,8 @@
 node_modules
 .next
 .env
+# Problem testcases may ship a .env fixture on purpose.
+!packages/problems/data/problems/*/testcases/*/.env
 .easyshell
 tsconfig.tsbuildinfo
 bun.lock

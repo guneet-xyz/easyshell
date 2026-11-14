@@ -1,0 +1,39 @@
+{
+  "title": "Map of the Golden Coast (do NOT trust the parrot)",
+  "golden_rule": "Only count real gold, ye scallywag.",
+  "gold_count": 3,
+  "islands": [
+    {
+      "name": "Golden Gate Rock",
+      "golden": 1000,
+      "gold": 120,
+      "Gold": 5000
+    },
+    {
+      "name": "Fool's Reef",
+      "gold": "fool's gold, worth nothing",
+      "pyrite": 999
+    },
+    {
+      "name": "Looted Lagoon",
+      "gold": null,
+      "note": "Kevin got here first."
+    },
+    {
+      "name": "Parrot Perch",
+      "parrot_says": "SQUAWK! \"gold\": 1000000! SQUAWK!",
+      "gold_coins": 77,
+      "chests": [
+        {"gold": 80, "goldfish": 2},
+        {"label": "gold", "gold": 15}
+      ]
+    }
+  ],
+  "captains_log": {
+    "entry": "Buried the rest under the palm tree.",
+    "palm_tree": {
+      "gold" : 300,
+      "golden_coconut": 1
+    }
+  }
+}

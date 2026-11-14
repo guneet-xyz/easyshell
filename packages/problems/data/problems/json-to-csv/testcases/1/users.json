@@ -1,0 +1,5 @@
+[
+  {"id": 1, "name": "Melon Usk", "email": "melon@chirp.dev", "followers": 180000000, "verified": true},
+  {"id": 2, "name": "Alice Byte", "email": "alice@shellmail.dev", "followers": 312, "verified": false},
+  {"id": 3, "name": "Grandma", "email": "grandma.recipes@aol.com", "followers": 9001, "verified": true}
+]

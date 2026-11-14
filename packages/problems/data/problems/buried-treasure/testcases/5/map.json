@@ -1,0 +1,19 @@
+{
+  "title": "Captain Shellbeard's Final Map",
+  "islands": [
+    {
+      "name": "Disappointment Island",
+      "chest": {
+        "gold": "the friends we made along the way",
+        "golden_memories": 1000
+      }
+    },
+    {
+      "name": "Also Disappointment Island",
+      "chest": {
+        "gold": null,
+        "note": "IOU. - Shellbeard"
+      }
+    }
+  ]
+}

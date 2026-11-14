@@ -1,0 +1,12 @@
+{"title":"Shellbeard's Archipelago (drawn in a hurry, sorry)","fleet":[{"ship":"The Segfault","crew":[{"name":"One-Eyed Pete","gold":12},{"name":"Polly the Parrot","gold":3,"crackers":40}],"cargo":[[{"crate":1,"gold":100}],[{"crate":2,"gold":200},{"crate":3,"contents":[{"gold":30},{"gold":30},{"gold":40}]}]]},{"ship":"The Dangling Pointer","crew":[],"cargo":[{"crate":4,"gold":500}]}],
+"islands": [
+  {
+    "name": "Isle of Cron",
+    "x_marks_the_spot": [
+      [3, 4],
+      {"dig_here": true, "gold" : 7},
+      [[[{"gold":   1000}]]]
+    ]
+  },
+  {"name": "Null Point", "gold": 8}
+]}

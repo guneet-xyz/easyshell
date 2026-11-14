@@ -1,0 +1,1 @@
+Remember: do not flatten anything outside inbox/.

@@ -77,6 +77,16 @@ export const SeriesList: Array<{
           "mdx-no-more",
         ],
       },
+      {
+        title: "Copying & Organizing",
+        description:
+          "Back things up before you wreck them, sort the chaos, and flatten the nesting. Your boss is watching, and this time he's taking notes.",
+        problems: [
+          "backup-before-you-wreck",
+          "sort-by-extension",
+          "flatten-the-folders",
+        ],
+      },
     ],
   },
   {

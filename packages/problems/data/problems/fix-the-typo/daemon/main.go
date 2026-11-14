@@ -24,6 +24,7 @@ type StoredPost struct {
 
 type Data struct {
 	Token string        `json:"token"`
+	Salt  string        `json:"salt"`
 	Posts []*StoredPost `json:"posts"`
 }
 
@@ -61,8 +62,9 @@ func writeError(w http.ResponseWriter, status int, message string) {
 }
 
 // Revisions look like CouchDB's: "<number of edits>-<hash of the content>".
+// The hash is salted so that it can't be computed without the server.
 func revision(post *StoredPost) string {
-	hash := sha256.Sum256([]byte(post.Content))
+	hash := sha256.Sum256([]byte(data.Salt + post.Content))
 	return fmt.Sprintf("%d-%s", post.Revision, hex.EncodeToString(hash[:])[:8])
 }
 

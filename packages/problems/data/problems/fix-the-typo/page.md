@@ -4,7 +4,7 @@ It's 11:58 p.m. You just announced your new job on your own Twitter clone:
 
 > I love my new jog!
 
-Jog. **Jog.** You don't jog. You have never jogged. And your new boss (the one who yelled at you about bearer tokens) follows you and checks his feed at exactly 6:00 a.m. every day.
+Jog. **Jog.** You don't jog. You have never jogged. And your boss (the one who yelled at you about bearer tokens) follows you and checks his feed at exactly 6:00 a.m. every day.
 
 There's no "edit" button in the web UI yet (that's on the roadmap, right after "dark mode" and "stop Melon Usk"). But the API supports replacing a post with a `PUT` request. Your corrected post is ready in `fix.json`, and your trusty bearer token is still lying around in `token.txt`.
 
@@ -36,7 +36,7 @@ Fix it. Quietly.
      "id": 1337,
      "author": "easyshell-user",
      "content": "I love my new job!",
-     "revision": "2-3c6cfcf0"
+     "revision": "2-39c91a50"
    }
    ```
 
@@ -51,5 +51,5 @@ Fix it. Quietly.
 For the response above, you should print:
 
 ```
-2-3c6cfcf0
+2-39c91a50
 ```

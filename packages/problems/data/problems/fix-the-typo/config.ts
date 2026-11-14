@@ -5,6 +5,7 @@ import type { ProblemConfig } from "@easyshell/problems/schema"
 import { testcaseDir } from "@easyshell/utils/build"
 
 const SLUG = "fix-the-typo"
+const REVISION_SALT = "jog-is-not-a-job:"
 
 type Post = { id: number; author: string; content: string; revision: number }
 
@@ -27,8 +28,12 @@ async function testcaseConfig({
   const post = posts.find((post) => post.id === fix.id)
   if (!post) throw new Error(`${SLUG} testcase ${id}: post ${fix.id} missing`)
 
-  // The daemon's revision after one PUT: "<edits>-<sha256 of the content>".
-  const hash = createHash("sha256").update(fix.content).digest("hex")
+  // The daemon's revision after one PUT: "<edits>-<sha256 of salt+content>".
+  // The salt stays on the server, so the revision can't be computed locally
+  // from fix.json without sending the PUT.
+  const hash = createHash("sha256")
+    .update(REVISION_SALT + fix.content)
+    .digest("hex")
   const revision = `${post.revision + 1}-${hash.slice(0, 8)}`
 
   return {
@@ -41,7 +46,7 @@ async function testcaseConfig({
       })
       await writeFile(
         `${image_dir}/daemon/data.json`,
-        JSON.stringify({ token, posts }),
+        JSON.stringify({ token, salt: REVISION_SALT, posts }),
       )
 
       return `
@@ -157,6 +162,12 @@ curl -s --request PUT --header "Authorization: Bearer $(cat token.txt)" --json @
       testcase: "all",
       pass: false,
       input: `jq -c '{content}' fix.json | curl -s -X PUT -d @- "http://localhost:4000/posts/$(jq .id fix.json)" | jq -r .revision`,
+    },
+    {
+      testcase: "all",
+      pass: false,
+      input: `edits=$(curl -s "http://localhost:4000/posts/$(jq .id fix.json)" | jq -r .revision | cut -d - -f 1)
+echo "$((edits + 1))-$(jq -j .content fix.json | sha256sum | cut -c 1-8)"`,
     },
     {
       testcase: [3, 4],

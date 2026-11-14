@@ -1,0 +1,11 @@
+PassVault Pro(TM) export file
+Generated for: you
+By reading this file you agree to the PassVault Terms of Service,
+the PassVault Privacy Policy, and the PassVault Pinky Promise.
+PassVault is not responsible for lost, stolen or embarrassing passwords.
+-----BEGIN SECRET-----
+email: hunter2
+twitter clone: correct-horse-battery-staple
+-----END SECRET-----
+Thank you for choosing PassVault Pro(TM).
+Please do not print this file. Please do not read it aloud on a bus.

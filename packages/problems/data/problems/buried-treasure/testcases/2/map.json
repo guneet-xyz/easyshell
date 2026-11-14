@@ -1,0 +1,61 @@
+{
+  "title": "Captain Shellbeard's Treasure Map (the real one)",
+  "warning": "Arr. Ye be needin' more than grep fer this one.",
+  "sea": {
+    "name": "The Sea of Pipes",
+    "islands": {
+      "skull_island": {
+        "gold": 10,
+        "beach": {
+          "sand": "lots",
+          "cave": {
+            "entrance": "behind the waterfall",
+            "gold": 20,
+            "tunnel": {
+              "length_m": 300,
+              "chamber": {
+                "torches": 4,
+                "chest": {
+                  "lock": "rusty",
+                  "gold": 300,
+                  "chest": {
+                    "lock": "less rusty",
+                    "chest": {
+                      "lock": "suspiciously shiny",
+                      "chest": {
+                        "note": "Ye be close now.",
+                        "chest": {
+                          "gold": 5000,
+                          "chest": {
+                            "note": "Told ye. Enjoy, matey.",
+                            "gold": 1
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "parrot_cay": {
+        "parrots": 37,
+        "gold": 42,
+        "lagoon": {
+          "depth_m": 12,
+          "shipwreck": {
+            "name": "The Mutable Default",
+            "hold": {
+              "barrel": {
+                "rum": 0,
+                "gold": 99
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

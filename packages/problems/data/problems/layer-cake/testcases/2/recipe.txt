@@ -1,0 +1,4 @@
+rot13
+hex
+rev
+base64

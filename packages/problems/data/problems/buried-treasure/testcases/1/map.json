@@ -1,0 +1,20 @@
+{
+  "title": "Captain Shellbeard's Treasure Map (the easy one)",
+  "gold": 50,
+  "islands": [
+    {
+      "name": "Bash Island",
+      "gold": 100,
+      "dangers": ["crabs", "unquoted variables"]
+    },
+    {
+      "name": "Zsh Atoll",
+      "gold": 250,
+      "rum": 3
+    }
+  ],
+  "ship": {
+    "name": "The Segfault",
+    "gold": 75
+  }
+}

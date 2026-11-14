@@ -1,0 +1,13 @@
+# USS Bourne Again - crew manifest (revision 12)
+Shellbeard:captain:Earth:47
+Anne Bonny:boatswain:Earth:37
+# --- engineering deck ---
+Unit #7:repair droid:Mars:0
+Glorbo:chief engineer:Kepler-22b:58
+Sir Reginald Wobblesworth III:diplomat:Venus:44
+# Gary was promoted, do NOT call him "the intern" anymore
+Gary:junior intern:Earth:42
+# --- cargo hold ---
+The Blob:stowaway:unknown:none
+Pickles:ship's cat:Mars:2
+# end of manifest

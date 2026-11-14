@@ -106,6 +106,16 @@ for k in $(seq 1 25); do
   if echo "$out" | grep -q CROUTONS; then echo "$out"; fi
 done`,
     },
+    {
+      testcase: 3,
+      pass: false,
+      input: `A=ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ
+a=abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz
+for k in $(seq 1 25); do
+  tr 'A-Za-z' "\${A:$k:26}\${a:$k:26}" < note.txt > /tmp/try
+  grep -q 'CROUTONS!$' /tmp/try && cat /tmp/try
+done`,
+    },
   ],
 }
 

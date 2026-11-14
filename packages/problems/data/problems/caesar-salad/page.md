@@ -14,7 +14,7 @@ Today's note is in `note.txt`.
 2. Exactly one shift decrypts the note so that its **last line ends with `CROUTONS!`**.
 3. Find that shift and print the whole decrypted note.
 
-> **Note:** a wrong shift can still produce the word `CROUTONS` somewhere in the middle of the note (Chef Julius's nephew is Max. Yes, _that_ Max. He brought ROT13 into the kitchen.). Only the last line counts.
+> **Note:** a wrong shift can still produce `CROUTONS` (even a line ending with `CROUTONS!`) somewhere in the middle of the note. Chef Julius's nephew is Max. Yes, _that_ Max. He brought ROT13 into the kitchen. Only the last line counts.
 
 # Example
 

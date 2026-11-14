@@ -4,7 +4,7 @@
 //
 //   <ip> - - [<dd>/<Mon>/<yyyy>:<HH>:<MM>:<SS> +0000] "<METHOD> <path> HTTP/1.1" <status> <bytes> <ms>
 //
-// The output is deterministic: every testcase uses its own seeded generator,
+// The output is deterministic: every problem uses its own seeded generator,
 // and the gzipped logs have no file name or timestamp in their headers. The
 // problem configs compute the expected output from the generated files.
 //
@@ -625,12 +625,13 @@ function fiveHundredReasons() {
     log: string,
     expected: string,
     ignoringQueries?: string,
+    grepping?: string,
   ) => {
-    const count = (strip: boolean) => {
+    const count = (strip: boolean, grep = false) => {
       const c = new Map<string, number>()
       for (const line of lines(log)) {
         const f = fields(line)
-        if (!f[8]!.startsWith("5")) continue
+        if (grep ? !/ 5\d\d /.test(line) : !f[8]!.startsWith("5")) continue
         const path = strip ? f[6]!.split("?")[0]! : f[6]!
         c.set(path, (c.get(path) ?? 0) + 1)
       }
@@ -646,6 +647,8 @@ function fiveHundredReasons() {
         count(false)[0]![0] === ignoringQueries,
         `${slug}/${id}: query trap`,
       )
+    if (grepping)
+      check(count(true, true)[0]![0] === grepping, `${slug}/${id}: grep trap`)
     return log
   }
 
@@ -693,7 +696,8 @@ function fiveHundredReasons() {
     ),
   })
 
-  // Lots of 4xx noise from WordPress scanners, plus decoys that contain 500.
+  // Lots of 4xx noise from WordPress scanners, plus successful 500-byte
+  // responses that win if you grep for " 500 " instead of reading the status.
   write(slug, 4, {
     "access.log": winner(
       4,
@@ -707,13 +711,15 @@ function fiveHundredReasons() {
         ...errors(2, "/api/notifications", 504),
         ...burst(
           r,
-          5,
+          12,
           ...day,
           () => ({ path: "/api/posts/500", bytes: 500 }),
           ips,
         ),
       ]),
       "/api/hot-takes",
+      undefined,
+      "/api/posts/500",
     ),
   })
 

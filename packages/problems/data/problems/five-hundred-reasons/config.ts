@@ -80,6 +80,12 @@ const config: ProblemConfig = {
       pass: false,
       input: `awk '$9 == 500 {split($7, p, "?"); print p[1]}' access.log | sort | uniq -c | sort -nr | head -n 1 | awk '{print $2}'`,
     },
+    {
+      // Also counts responses of 500 bytes.
+      testcase: [4],
+      pass: false,
+      input: `grep -E ' 5[0-9]{2} ' access.log | awk '{print $7}' | cut -d'?' -f1 | sort | uniq -c | sort -rn | head -n 1 | awk '{print $2}'`,
+    },
   ],
 }
 

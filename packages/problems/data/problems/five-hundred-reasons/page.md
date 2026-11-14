@@ -14,7 +14,7 @@ Your boss doesn't care whose fault it is: "I want to know _what_ is broken, and 
 
    The path is the 7th space-separated field (`/api/feed?page=2`) and the status code is the 9th (`502`).
 
-2. A server error is a request with a status code from `500` to `599` (`500`, `502`, `503`, `504`, ...). Ignore every other request, including `4xx` errors: those are the users' fault.
+2. A server error is a request with a status code from `500` to `599` (`500`, `502`, `503`, `504`, ...). Ignore every other request, including `4xx` errors: those are the users' fault. Only the status field counts: a `200` response of `500` bytes is not a server error.
 3. Group the server errors by path, ignoring the query string: drop everything from the first `?` on, so `/api/feed?page=2` counts as `/api/feed`. The method doesn't matter.
 4. Print only the path with the most server errors. There is always exactly one such path.
 

@@ -1,0 +1,2 @@
+Reminder: the shell expands $THINGS inside double quotes.
+Reminder 2: last pay day, Grandma's $5 turned into nothing at all. She noticed.

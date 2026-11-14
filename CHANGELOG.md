@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.0](https://github.com/guneet-xyz/easyshell/compare/v0.1.1...v0.2.0) (2026-11-14)
+
+
+### Features
+
+* **problems:** add Archive Janitor series ([#432](https://github.com/guneet-xyz/easyshell/issues/432)) ([b6bc380](https://github.com/guneet-xyz/easyshell/commit/b6bc3803ae5ddabda9a25283341ae46796d8aa4a))
+* **problems:** add Copying & Organizing section to File Management ([#426](https://github.com/guneet-xyz/easyshell/issues/426)) ([1493d98](https://github.com/guneet-xyz/easyshell/commit/1493d981cc030d4ab092cc6312e097cfa36f6287))
+* **problems:** add Data Wrangling series ([#429](https://github.com/guneet-xyz/easyshell/issues/429)) ([8448b29](https://github.com/guneet-xyz/easyshell/commit/8448b294dc71826f9fd88addebf30f1876d5e7d1))
+* **problems:** add Log Detective series ([#431](https://github.com/guneet-xyz/easyshell/issues/431)) ([0bae993](https://github.com/guneet-xyz/easyshell/commit/0bae99376507d6fcf2b6548ac29fec6eac9418a9))
+* **problems:** add Secrets & Ciphers series ([#428](https://github.com/guneet-xyz/easyshell/issues/428)) ([467e56f](https://github.com/guneet-xyz/easyshell/commit/467e56f080b82f5c8302e50cddfdb9cccbf9c230))
+* **problems:** add shell-basics series ([#427](https://github.com/guneet-xyz/easyshell/issues/427)) ([d851c27](https://github.com/guneet-xyz/easyshell/commit/d851c274f3a5dd066f8f12d012d3ff0f79b011f4))
+* **problems:** add Talking to Servers series ([#433](https://github.com/guneet-xyz/easyshell/issues/433)) ([04162c3](https://github.com/guneet-xyz/easyshell/commit/04162c3efe4fc86a6200ad5f7bad7f38a5c486c8))
+* **problems:** add Text Surgery series ([#430](https://github.com/guneet-xyz/easyshell/issues/430)) ([9574f53](https://github.com/guneet-xyz/easyshell/commit/9574f53a33d930b2a4e933ce827c87dafef59e23))
+
 ## [0.1.1](https://github.com/guneet-xyz/easyshell/compare/v0.1.0...v0.1.1) (2026-11-11)
 
 

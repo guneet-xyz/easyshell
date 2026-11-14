@@ -74,6 +74,11 @@ const config: ProblemConfig = {
       input: `grep -o '"gold": *[0-9]*' map.json | grep -o '[0-9]*$' | awk '{ sum += $1 } END { print sum + 0 }'`,
     },
     {
+      testcase: [4],
+      pass: false,
+      input: `grep -oE '"gold"[[:space:]]*:[[:space:]]*-?[0-9]+' map.json | grep -oE '[0-9]+$' | awk '{ sum += $1 } END { print sum + 0 }'`,
+    },
+    {
       testcase: [5],
       pass: false,
       input: `jq '[.. | .gold? | numbers] | add' map.json`,

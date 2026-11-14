@@ -1,0 +1,70 @@
+2026-11-14 02:54:02 INFO [feed] served 20 posts in 46ms
+2026-11-14 02:54:22 INFO [likes] grandma liked post 24
+2026-11-14 02:54:37 WARN [db] slow query on posts (1125ms)
+2026-11-14 02:55:02 WARN [auth] failed login for the-intern
+2026-11-14 02:55:17 ERROR [mail] could not send the daily digest to captain-shellbeard@example.com
+2026-11-14 02:55:21 WARN [db] slow query on posts (1183ms)
+2026-11-14 02:55:25 INFO [feed] served 12 posts in 78ms
+2026-11-14 02:55:30 INFO [auth] password reset requested for "grandma" from 203.0.113.66
+2026-11-14 02:55:35 WARN [auth] 400 password resets in 1 minute
+2026-11-14 02:55:51 FATAL [auth] rate limiter crashed: integer overflow
+2026-11-14 02:56:00 FATAL [storage] bucket deleted itself out of shame
+2026-11-14 02:56:08 INFO [supervisor] restarting the app
+2026-11-14 02:56:27 WARN [auth] failed login for melon-usk
+2026-11-14 02:56:37 INFO [likes] captain-shellbeard liked post 323
+2026-11-14 02:57:01 INFO [posts] new post by senku (79 characters)
+2026-11-14 02:57:08 WARN [auth] failed login for melon-usk
+2026-11-14 02:57:11 WARN [auth] failed login for grandma
+2026-11-14 02:57:23 WARN [db] slow query on posts (934ms)
+2026-11-14 02:57:28 WARN [auth] failed login for kevin
+2026-11-14 02:57:52 INFO [auth] melon-usk logged in
+2026-11-14 02:57:53 INFO [auth] the-intern logged in
+2026-11-14 02:58:12 WARN [db] slow query on posts (1791ms)
+2026-11-14 02:58:23 INFO [auth] the-strokes logged in
+2026-11-14 02:58:48 INFO [posts] new post by melon-usk (204 characters)
+2026-11-14 02:59:06 INFO [likes] senku liked post 789
+2026-11-14 02:59:19 DEBUG [cache] hit ratio 64%
+2026-11-14 02:59:30 WARN [db] slow query on posts (733ms)
+2026-11-14 02:59:44 WARN [db] connection pool at 10/10
+2026-11-14 03:00:01 ERROR [db] timed out waiting for a free connection
+2026-11-14 03:00:12 FATAL [db] connection pool exhausted, shutting down
+2026-11-14 03:00:32 WARN [feed] heap at 61/64 MiB
+2026-11-14 03:00:33 FATAL [feed] out of memory
+2026-11-14 03:00:39 INFO [supervisor] restarting the app
+2026-11-14 03:00:53 DEBUG [cache] hit ratio 92%
+2026-11-14 03:00:57 INFO [likes] grandma liked post 137
+2026-11-14 03:01:03 INFO [posts] new post by senku (164 characters)
+2026-11-14 03:01:24 INFO [auth] kevin logged in
+2026-11-14 03:01:42 INFO [search] "pirate jokes" returned 1 results
+2026-11-14 03:02:06 INFO [feed] served 23 posts in 6ms
+2026-11-14 03:02:29 INFO [auth] the-strokes logged in
+2026-11-14 03:02:38 WARN [db] slow query on posts (1988ms)
+2026-11-14 03:02:58 WARN [auth] failed login for senku
+2026-11-14 03:03:19 INFO [deploy] the intern started a deploy (Friday, 16:58)
+2026-11-14 03:03:24 WARN [deploy] skipping tests to save time
+2026-11-14 03:03:26 FATAL [api] config.yaml not found
+2026-11-14 03:03:42 WARN [disk] /var/log is 99% full
+2026-11-14 03:04:05 ERROR [logger] could not write to app.log
+2026-11-14 03:04:08 FATAL [disk] no space left on device
+2026-11-14 03:04:14 INFO [supervisor] restarting the app
+2026-11-14 03:04:25 INFO [auth] grandma logged in
+2026-11-14 03:04:45 INFO [search] "how to exit vim" returned 24 results
+2026-11-14 03:04:51 ERROR [mail] could not send the daily digest to grandma@example.com
+2026-11-14 03:05:09 INFO [likes] kevin liked post 828
+2026-11-14 03:05:34 ERROR [mail] could not send the daily digest to the-strokes@example.com
+2026-11-14 03:05:47 ERROR [mail] could not send the daily digest to captain-shellbeard@example.com
+2026-11-14 03:06:04 INFO [feed] served 15 posts in 76ms
+2026-11-14 03:06:14 WARN [db] slow query on posts (794ms)
+2026-11-14 03:06:28 INFO [search] "grandma cookie recipe" returned 38 results
+2026-11-14 03:06:51 INFO [likes] captain-shellbeard liked post 861
+2026-11-14 03:07:16 INFO [posts] new post by kevin (81 characters)
+2026-11-14 03:07:20 WARN [auth] failed login for the-intern
+2026-11-14 03:07:39 INFO [auth] senku logged in
+2026-11-14 03:07:45 WARN [db] slow query on posts (1817ms)
+2026-11-14 03:07:57 INFO [auth] password reset requested for "grandma" from 203.0.113.66
+2026-11-14 03:08:15 WARN [auth] 400 password resets in 1 minute
+2026-11-14 03:08:19 FATAL [auth] rate limiter crashed: integer overflow
+2026-11-14 03:08:41 INFO [supervisor] restarting the app
+2026-11-14 03:08:46 INFO [feed] served 16 posts in 33ms
+2026-11-14 03:09:07 DEBUG [scheduler] tick
+2026-11-14 03:09:16 ERROR [mail] could not send the daily digest to the-strokes@example.com

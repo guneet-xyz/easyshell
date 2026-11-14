@@ -71,4 +71,30 @@ export const SeriesList: Array<{
       },
     ],
   },
+  {
+    slug: "archive-janitor",
+    name: "Archive Janitor",
+    description:
+      "Tarballs, zips, empty files, duplicates and disk hogs. Become the janitor every server deserves. 🧹",
+    image: "",
+    sections: [
+      {
+        title: "Unpacking",
+        description:
+          "`tar`, `gzip`, `zip` and every combination of them. Somebody, somewhere, thought one layer of compression wasn't enough.",
+        problems: ["unwrap-the-present", "zip-peek", "matryoshka"],
+      },
+      {
+        title: "Cleaning House",
+        description:
+          "Find the junk that's eating your disk and get rid of it. Grab a mop: `find`, `du` and `md5sum` are in the closet.",
+        problems: [
+          "the-heavyweight",
+          "ghost-files",
+          "double-trouble",
+          "disk-hog",
+        ],
+      },
+    ],
+  },
 ]

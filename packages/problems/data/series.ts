@@ -71,4 +71,37 @@ export const SeriesList: Array<{
       },
     ],
   },
+  {
+    slug: "talking-to-servers",
+    name: "Talking to Servers",
+    description:
+      "Your Twitter clone at `localhost:4000` is back, and it has learned new tricks. Headers, status codes, auth, cookies, pagination and retries: all with `curl`.",
+    image: "",
+    sections: [
+      {
+        title: "Reading the Room",
+        description:
+          "A response is more than its body. Learn to read the status code, eavesdrop on the headers and ask questions the server actually understands.",
+        problems: ["pulse-check", "header-whisperer", "search-party"],
+      },
+      {
+        title: "Getting In",
+        description:
+          "Some doors need a password, others need a cookie. Grandpa's vault and the admin dashboard are waiting.",
+        problems: ["grandpas-vault", "cookie-monster"],
+      },
+      {
+        title: "Making Changes",
+        description:
+          "`PUT` and `DELETE`: fixing your mistakes, erasing other people's, and living with the consequences.",
+        problems: ["fix-the-typo", "delete-the-evidence"],
+      },
+      {
+        title: "Persistence",
+        description:
+          "Servers paginate, servers nap, servers fail. You keep going until they cooperate.",
+        problems: ["page-turner", "try-try-again"],
+      },
+    ],
+  },
 ]

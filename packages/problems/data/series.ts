@@ -10,6 +10,45 @@ export const SeriesList: Array<{
   }>
 }> = [
   {
+    slug: "shell-basics",
+    name: "Shell Basics",
+    description:
+      "Before you wrangle logs and bully APIs, learn to speak fluent shell: where output goes, how variables behave, and how to make decisions.",
+    image: "",
+    sections: [
+      {
+        title: "Talking Back",
+        description:
+          "Your commands have a lot to say. Point it at a file with `>` and `>>`, and learn which of the two is a paper shredder.",
+        problems: ["dear-diary", "dont-overwrite-grandma"],
+      },
+      {
+        title: "Two Streams",
+        description:
+          "Every program talks through two mouths: standard output for the good stuff, standard error for the complaining. Send each one where it belongs.",
+        problems: ["shhh-errors", "two-buckets"],
+      },
+      {
+        title: "Command Chaining",
+        description:
+          "`&&`, `||` and `;`: run the next thing only when it makes sense, and always have a backup plan (it's usually takeout).",
+        problems: ["coffee-or-takeout"],
+      },
+      {
+        title: "Variables & Quoting",
+        description:
+          "Load variables from files, survive filenames full of spaces, and stop the shell from eating your dollar signs.",
+        problems: ["mission-briefing", "spaces-are-evil", "literally-dollars"],
+      },
+      {
+        title: "Decisions & Loops",
+        description:
+          "Exit codes, `if`, `case` and `for`: teach your scripts to make choices, and to do the boring stuff thirty times so you don't have to.",
+        problems: ["exit-stage-left", "traffic-light", "thirty-days-of-files"],
+      },
+    ],
+  },
+  {
     slug: "file-management",
     name: "File Management",
     description: "Manage your files without leaving the terminal.",

@@ -1,0 +1,3 @@
+[x] Run ./deploy.sh
+[x] Keep the good news and the bad news in separate buckets
+[ ] Show the boss only the good bucket

@@ -1,0 +1,5 @@
+Shellbeard:captain:Earth:47
+Ripley:first officer:Earth:39
+Zorp:navigator:Neptune:12
+Pickles:ship's cat:Mars:2
+Dave:chef:Earth:44

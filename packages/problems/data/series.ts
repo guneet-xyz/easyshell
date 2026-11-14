@@ -71,4 +71,36 @@ export const SeriesList: Array<{
       },
     ],
   },
+  {
+    slug: "log-detective",
+    name: "Log Detective",
+    description:
+      "Your Twitter clone went viral and the access logs are piling up. Grab your magnifying glass: count visitors, hunt down errors and unmask the bots, using nothing but pipes.",
+    image: "",
+    sections: [
+      {
+        title: "Counting Heads",
+        description:
+          "Every case starts with the facts. Who knocked, what did they get, and when does everyone arrive at once?",
+        problems: ["who-knocked", "status-report", "rush-hour"],
+      },
+      {
+        title: "Hunting Errors",
+        description:
+          "Something is broken, something is slow, and something crashed at 3 a.m. Follow the clues, even the ones logrotate tried to hide.",
+        problems: [
+          "five-hundred-reasons",
+          "snail-mail",
+          "crime-scene",
+          "rotated-and-zipped",
+        ],
+      },
+      {
+        title: "Catching Bots",
+        description:
+          "Not every visitor is human. Some are scrapers, some are bots, and one is Grandma refreshing her feed. Learn to tell them apart.",
+        problems: ["bot-hunter"],
+      },
+    ],
+  },
 ]

@@ -1,0 +1,80 @@
+2026-11-14 02:54:01 INFO [likes] kevin liked post 630
+2026-11-14 02:54:02 ERROR [mail] could not send the daily digest to the-strokes@example.com
+2026-11-14 02:54:14 INFO [feed] served 29 posts in 48ms
+2026-11-14 02:54:17 INFO [feed] served 50 posts in 73ms
+2026-11-14 02:54:31 WARN [auth] failed login for grandma
+2026-11-14 02:54:44 WARN [db] slow query on posts (1104ms)
+2026-11-14 02:54:59 DEBUG [scheduler] tick
+2026-11-14 02:55:02 INFO [search] "how to exit vim" returned 19 results
+2026-11-14 02:55:22 INFO [auth] kevin logged in
+2026-11-14 02:55:39 DEBUG [cache] hit ratio 60%
+2026-11-14 02:55:52 INFO [posts] new post by kevin (221 characters)
+2026-11-14 02:56:12 INFO [likes] kevin liked post 423
+2026-11-14 02:56:20 INFO [auth] grandma logged in
+2026-11-14 02:56:42 INFO [feed] served 10 posts in 16ms
+2026-11-14 02:56:44 INFO [feed] served 47 posts in 51ms
+2026-11-14 02:57:01 ERROR [mail] could not send the daily digest to senku@example.com
+2026-11-14 02:57:23 INFO [auth] the-intern logged in
+2026-11-14 02:57:41 DEBUG [scheduler] tick
+2026-11-14 02:57:51 ERROR [mail] could not send the daily digest to kevin@example.com
+2026-11-14 02:58:07 INFO [posts] new post by the-intern (160 characters)
+2026-11-14 02:58:27 WARN [disk] /var/log is 99% full
+2026-11-14 02:58:39 ERROR [logger] could not write to app.log
+2026-11-14 02:58:43 FATAL [disk] no space left on device
+2026-11-14 02:58:49 INFO [supervisor] restarting the app
+2026-11-14 02:59:06 INFO [search] "rocket" returned 5 results
+2026-11-14 02:59:23 INFO [search] "is this twitter" returned 12 results
+2026-11-14 02:59:29 ERROR [mail] could not send the daily digest to the-intern@example.com
+2026-11-14 02:59:38 INFO [auth] senku logged in
+2026-11-14 02:59:46 WARN [db] slow query on posts (1811ms)
+2026-11-14 03:00:04 WARN [db] slow query on posts (1673ms)
+2026-11-14 03:00:13 INFO [likes] melon-usk liked post 51
+2026-11-14 03:00:23 INFO [posts] new post by grandma (207 characters)
+2026-11-14 03:00:25 WARN [db] slow query on posts (1839ms)
+2026-11-14 03:00:37 INFO [feed] served 45 posts in 11ms
+2026-11-14 03:00:39 INFO [posts] new post by captain-shellbeard (226 characters)
+2026-11-14 03:00:58 INFO [search] "cats" returned 6 results
+2026-11-14 03:01:12 WARN [db] slow query on posts (1289ms)
+2026-11-14 03:01:26 WARN [auth] failed login for grandma
+2026-11-14 03:01:27 DEBUG [scheduler] tick
+2026-11-14 03:01:42 INFO [posts] new post by the-intern (94 characters)
+2026-11-14 03:01:43 DEBUG [cache] hit ratio 88%
+2026-11-14 03:01:54 INFO [feed] served 23 posts in 24ms
+2026-11-14 03:02:10 INFO [feed] served 34 posts in 24ms
+2026-11-14 03:02:22 INFO [posts] new post by the-strokes (80 characters)
+2026-11-14 03:02:39 INFO [feed] served 15 posts in 50ms
+2026-11-14 03:02:48 INFO [auth] the-intern logged in
+2026-11-14 03:02:49 ERROR [mail] could not send the daily digest to kevin@example.com
+2026-11-14 03:03:13 ERROR [mail] could not send the daily digest to senku@example.com
+2026-11-14 03:03:29 DEBUG [cache] hit ratio 85%
+2026-11-14 03:03:34 WARN [db] slow query on posts (720ms)
+2026-11-14 03:03:44 WARN [db] slow query on posts (975ms)
+2026-11-14 03:03:57 INFO [auth] the-intern logged in
+2026-11-14 03:04:14 INFO [search] "cats" returned 22 results
+2026-11-14 03:04:24 DEBUG [scheduler] tick
+2026-11-14 03:04:26 WARN [db] slow query on posts (1986ms)
+2026-11-14 03:04:41 ERROR [mail] could not send the daily digest to the-strokes@example.com
+2026-11-14 03:05:04 INFO [likes] senku liked post 70
+2026-11-14 03:05:12 DEBUG [scheduler] tick
+2026-11-14 03:05:14 INFO [auth] password reset requested for "grandma" from 203.0.113.66
+2026-11-14 03:05:30 WARN [auth] 400 password resets in 1 minute
+2026-11-14 03:05:32 FATAL [auth] rate limiter crashed: integer overflow
+2026-11-14 03:05:37 INFO [supervisor] restarting the app
+2026-11-14 03:05:40 INFO [search] "melon usk" returned 32 results
+2026-11-14 03:05:55 INFO [feed] served 10 posts in 36ms
+2026-11-14 03:05:57 INFO [search] "pirate jokes" returned 38 results
+2026-11-14 03:06:01 WARN [auth] failed login for the-intern
+2026-11-14 03:06:16 DEBUG [scheduler] tick
+2026-11-14 03:06:22 DEBUG [cache] hit ratio 79%
+2026-11-14 03:06:26 DEBUG [scheduler] tick
+2026-11-14 03:06:36 INFO [feed] served 47 posts in 5ms
+2026-11-14 03:07:01 WARN [db] slow query on posts (792ms)
+2026-11-14 03:07:26 DEBUG [scheduler] tick
+2026-11-14 03:07:41 INFO [search] "how to exit vim" returned 23 results
+2026-11-14 03:07:59 INFO [likes] grandma liked post 958
+2026-11-14 03:08:05 DEBUG [scheduler] tick
+2026-11-14 03:08:25 WARN [auth] failed login for kevin
+2026-11-14 03:08:44 INFO [auth] the-strokes logged in
+2026-11-14 03:08:58 INFO [posts] new post by senku (106 characters)
+2026-11-14 03:09:21 WARN [db] slow query on posts (748ms)
+2026-11-14 03:09:30 INFO [search] "is this twitter" returned 27 results

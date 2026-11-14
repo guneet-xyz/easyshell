@@ -68,6 +68,21 @@ const config: ProblemConfig = {
       input: `grep -v '^#' .env | grep . | while IFS== read -r key value; do jq -n --arg k "$key" --arg v "$value" '{($k): $v}'; done | jq -s add`,
     },
     {
+      testcase: [4],
+      pass: false,
+      input: `grep -v -e '^#' -e '^$' .env | sed 's/=/\\t/; s/["'"'"']//g' | jq -Rn '[inputs | split("\\t") | {(.[0]): .[1]}] | add'`,
+    },
+    {
+      testcase: [4],
+      pass: false,
+      input: `jq -Rn '[inputs | select(test("^[^#].*=")) | capture("^(?<k>[^=]+)=(?<v>.*)$") | {(.k): (.v | gsub("^\\\\s+|\\\\s+$"; ""))}] | add' .env`,
+    },
+    {
+      testcase: [4],
+      pass: false,
+      input: `grep -v -e '^#' -e '^$' .env | sed 's/^\\([^=]*\\)=\\(.*\\)$/  "\\1": "\\2",/' | sed '$ s/,$//' | { echo '{'; cat; echo '}'; }`,
+    },
+    {
       testcase: [2, 3, 4],
       pass: false,
       input: `jq -Rn '[inputs | select(length > 0) | capture("^(?<k>[^=]+)=(?<v>.*)$") | {(.k): .v}] | add' .env`,

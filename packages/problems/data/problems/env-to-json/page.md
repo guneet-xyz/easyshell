@@ -18,7 +18,7 @@ EDIT_BUTTON_ENABLED=false
 1. The config is in `.env` (yes, it's a hidden file: `ls -a` will show it).
 2. Skip empty lines and lines that start with `#`. A `#` anywhere else is just part of the value.
 3. Every other line looks like `KEY=value`. Keys never contain `=`, but values can: split each line at the **first** `=` only.
-4. The value is everything after that first `=`, exactly as written: don't strip quotes or spaces. A value can be empty (`EMPTY=`), which becomes an empty string.
+4. The value is everything after that first `=`, exactly as written: don't strip quotes or spaces (`NAME="Chirp"` becomes `"\"Chirp\""`). A value can be empty (`EMPTY=`), which becomes an empty string.
 5. Every value is a JSON string, even if it looks like a number or a boolean.
 6. Print a single JSON object with one key per variable, in the same order as in the file, in `jq`'s default pretty-printed format (two-space indentation). Each key appears only once in the file.
 

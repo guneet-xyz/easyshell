@@ -1,0 +1,23 @@
+PassVault Pro(TM) export file
+Your vault contains 4 secret blocks.
+-----BEGIN SECRET-----
+wifi: pretty fly for a wifi
+-----END SECRET-----
+The following block was emptied by your cat walking across the keyboard.
+-----BEGIN SECRET-----
+-----END SECRET-----
+PassVault reminds you: never reuse passwords.
+-----BEGIN SECRET-----
+email: hunter2
+twitter clone: hunter2
+bank: hunter2
+-----END SECRET-----
+PassVault notices that you ignored the reminder above.
+
+-----BEGIN SECRET-----
+Twitter clone API token: pWCB9FtISBilgXOPyWdEcSXLHAEjwebPbDTdF12vDuUKeDTM
+
+(the boss said to store it somewhere safe, so here it is)
+-----END SECRET-----
+
+Legal: PassVault Inc. accepts no liability for anything, ever.

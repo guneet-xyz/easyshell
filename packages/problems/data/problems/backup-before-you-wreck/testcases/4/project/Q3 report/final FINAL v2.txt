@@ -1,0 +1,3 @@
+Revenue: up
+Costs: also up
+Mood: down

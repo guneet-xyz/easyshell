@@ -1,0 +1,8 @@
+[
+  {"id": 7, "name": "Alice Byte", "email": "alice@shellmail.dev", "plan": "free", "last_login": "2026-11-02"},
+  {"id": 12, "name": "Usk, Melon", "email": "melon@chirp.dev", "plan": "ultra-mega", "last_login": "2026-11-13"},
+  {"id": 13, "name": "The Strokes", "email": "band@thestrokes.example", "plan": "pro", "last_login": "2026-10-31"},
+  {"id": 21, "name": "Kevin", "email": "kevin.definitely.over.you@gmail.example", "plan": "free", "last_login": "2026-11-14"},
+  {"id": 42, "name": "Ishigami Senku", "email": "senku@kingdom-of-science.example", "plan": "pro", "last_login": "2026-11-09"},
+  {"id": 69, "name": "Brenda from Finance", "email": "brenda@finance.chirp.dev", "plan": "enterprise", "last_login": "2026-11-14"}
+]

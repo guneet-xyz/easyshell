@@ -1,0 +1,2 @@
+Things I will never do again:
+- rm -r logs

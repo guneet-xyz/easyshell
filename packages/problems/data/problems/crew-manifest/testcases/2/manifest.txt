@@ -1,0 +1,8 @@
+# USS Bourne Again - crew manifest
+# format: name:rank:home_planet:shoe_size
+Shellbeard:captain:Earth:47
+Glorbo:chief engineer:Kepler-22b:58
+Nova:pilot:Mars:38
+Bleep:science officer:Proxima b:7
+Gary:intern:Earth:42
+Mx. Fizz:quartermaster:Titan:36

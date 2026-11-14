@@ -1,0 +1,14 @@
+PassVault Pro(TM) export file
+Section 1 of 2: account passwords
+Your passwords are stored with military-grade encryption (citation needed).
+-----BEGIN SECRET-----
+bank: 1234
+bank (new, after the incident): 12345
+-----END SECRET-----
+Section 2 of 2: secure notes
+Secure notes are like passwords, but longer and more embarrassing.
+-----BEGIN SECRET-----
+Grandma's cookie recipe: 2 cups flour, 1 cup butter, 1 cup love,
+and a pinch of something she refuses to name.
+-----END SECRET-----
+End of export. Have a secure day!

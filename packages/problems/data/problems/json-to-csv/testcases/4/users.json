@@ -1,0 +1,28 @@
+[
+  {
+    "email": "intern@chirp.dev",
+    "plan": "free",
+    "id": 5,
+    "settings": {"theme": "dark", "notifications": false},
+    "name": "The Intern"
+  },
+  {
+    "name": "Priya",
+    "tags": ["early-adopter", "beta"],
+    "email": "priya@chirp.dev",
+    "id": 3
+  },
+  {
+    "last_login": null,
+    "id": 1,
+    "email": "dave@chirp.dev",
+    "name": "Dave (definitely not Dave_Backup)",
+    "followers": 4
+  },
+  {
+    "id": 8,
+    "name": "Marco",
+    "nickname": "Marco, Polo",
+    "email": "marco@chirp.dev"
+  }
+]

@@ -1,0 +1,17 @@
+PassVault Pro(TM) export file
+SECRET TIP: everything between the marker lines is your data.
+The marker lines look like -----BEGIN SECRET----- and -----END SECRET-----.
+Lines that only talk ABOUT a BEGIN or an END are just legal text.
+-----BEGIN SECRET----- is how a block starts, but this line is not a marker.
+   -----BEGIN SECRET-----   <- this is an example, not a real block
+TOP SECRET DISCLAIMER: PassVault employees cannot see your secrets.
+-----BEGIN SECRET-----
+spy friend's burner phone: 555-0199
+code phrase: the eagle has landed on the wrong roof
+-----END SECRET-----
+Is this the END? No. This is a footnote about the end of the block above.
+END SECRET-----
+-----BEGIN SECRET-----
+Captain Shellbeard's treasure: buried under the third palm tree from the left
+-----END SECRET-----
+Thanks for keeping your SECRETs with PassVault. THE END.

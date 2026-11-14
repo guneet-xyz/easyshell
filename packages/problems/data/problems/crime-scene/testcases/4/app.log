@@ -1,0 +1,30 @@
+2026-11-14 02:54:11 FATAL [disk] no space left on device
+2026-11-14 02:54:25 WARN [auth] 400 password resets in 1 minute
+2026-11-14 02:54:48 FATAL [auth] rate limiter crashed: integer overflow
+2026-11-14 02:55:04 INFO [supervisor] restarting the app
+2026-11-14 02:55:20 INFO [likes] senku liked post 951
+2026-11-14 02:55:34 INFO [feed] served 27 posts in 39ms
+2026-11-14 02:55:48 DEBUG [scheduler] tick
+2026-11-14 02:55:56 WARN [auth] failed login for the-strokes
+2026-11-14 02:56:00 DEBUG [cache] hit ratio 81%
+2026-11-14 02:56:18 ERROR [mail] could not send the daily digest to grandma@example.com
+2026-11-14 02:56:25 ERROR [mail] could not send the daily digest to kevin@example.com
+2026-11-14 02:56:26 INFO [auth] melon-usk logged in
+2026-11-14 02:56:45 DEBUG [cache] hit ratio 86%
+2026-11-14 02:57:04 WARN [db] slow query on posts (695ms)
+2026-11-14 02:57:17 INFO [posts] new post by the-strokes (190 characters)
+2026-11-14 02:57:34 INFO [auth] senku logged in
+2026-11-14 02:57:45 INFO [likes] senku liked post 173
+2026-11-14 02:57:51 INFO [cron] Captain Shellbeard's treasure-map backup started
+2026-11-14 02:57:54 ERROR [cron] backup is 4 TB, expected 4 MB
+2026-11-14 02:58:12 FATAL [storage] bucket deleted itself out of shame
+2026-11-14 02:58:16 INFO [supervisor] restarting the app
+2026-11-14 02:58:34 DEBUG [scheduler] tick
+2026-11-14 02:58:42 DEBUG [scheduler] tick
+2026-11-14 02:58:43 INFO [feed] served 47 posts in 74ms
+2026-11-14 02:58:46 WARN [auth] failed login for kevin
+2026-11-14 02:59:01 WARN [auth] failed login for kevin
+2026-11-14 02:59:03 DEBUG [cache] hit ratio 72%
+2026-11-14 02:59:13 DEBUG [cache] hit ratio 70%
+2026-11-14 02:59:25 INFO [likes] kevin liked post 285
+2026-11-14 02:59:49 INFO [posts] new post by the-intern (142 characters)

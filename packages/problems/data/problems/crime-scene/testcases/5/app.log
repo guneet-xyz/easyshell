@@ -1,0 +1,60 @@
+2026-11-14 02:54:24 WARN [auth] failed login for grandma
+2026-11-14 02:54:39 INFO [auth] the-intern logged in
+2026-11-14 02:54:44 INFO [feed] served 43 posts in 49ms
+2026-11-14 02:54:57 DEBUG [scheduler] tick
+2026-11-14 02:55:09 INFO [likes] kevin liked post 996
+2026-11-14 02:55:15 WARN [db] slow query on posts (560ms)
+2026-11-14 02:55:38 INFO [search] "is this twitter" returned 15 results
+2026-11-14 02:55:55 INFO [feed] served 12 posts in 20ms
+2026-11-14 02:55:59 DEBUG [scheduler] tick
+2026-11-14 02:56:15 DEBUG [scheduler] tick
+2026-11-14 02:56:25 INFO [likes] kevin liked post 625
+2026-11-14 02:56:44 WARN [auth] non-fatal: token refresh retried
+2026-11-14 02:56:47 INFO [search] "rocket" returned 6 results
+2026-11-14 02:57:07 DEBUG [scheduler] tick
+2026-11-14 02:57:11 INFO [games] Kevin won a round of Mortal Kombat in the break room: FATALITY
+2026-11-14 02:57:30 INFO [auth] melon-usk logged in
+2026-11-14 02:57:46 ERROR [mail] could not send the daily digest to grandma@example.com
+2026-11-14 02:57:53 INFO [posts] new post by melon-usk (113 characters)
+2026-11-14 02:57:58 ERROR [mail] could not send the daily digest to kevin@example.com
+2026-11-14 02:58:02 WARN [db] slow query on posts (1297ms)
+2026-11-14 02:58:05 WARN [auth] failed login for the-intern
+2026-11-14 02:58:22 WARN [auth] failed login for senku
+2026-11-14 02:58:31 DEBUG [cache] hit ratio 73%
+2026-11-14 02:58:54 INFO [auth] senku logged in
+2026-11-14 02:59:11 ERROR [feed] fatal-looking error, but we caught it
+2026-11-14 02:59:30 INFO [auth] melon-usk logged in
+2026-11-14 02:59:44 DEBUG [scheduler] tick
+2026-11-14 03:00:02 INFO [auth] the-intern logged in
+2026-11-14 03:00:10 WARN [db] slow query on posts (1420ms)
+2026-11-14 03:00:12 WARN [auth] failed login for melon-usk
+2026-11-14 03:00:34 WARN [auth] failed login for kevin
+2026-11-14 03:00:37 WARN [db] slow query on posts (1302ms)
+2026-11-14 03:00:46 DEBUG [cache] hit ratio 68%
+2026-11-14 03:01:00 INFO [feed] served 11 posts in 11ms
+2026-11-14 03:01:21 WARN [auth] failed login for the-intern
+2026-11-14 03:01:26 INFO [likes] kevin liked post 939
+2026-11-14 03:01:46 INFO [likes] kevin liked post 117
+2026-11-14 03:02:08 INFO [cron] Captain Shellbeard's treasure-map backup started
+2026-11-14 03:02:30 ERROR [cron] backup is 4 TB, expected 4 MB
+2026-11-14 03:02:39 FATAL [storage] bucket deleted itself out of shame
+2026-11-14 03:02:58 INFO [supervisor] restarting the app
+2026-11-14 03:03:18 WARN [auth] failed login for the-intern
+2026-11-14 03:03:38 INFO [auth] melon-usk logged in
+2026-11-14 03:03:48 INFO [search] "cats" returned 10 results
+2026-11-14 03:04:03 WARN [auth] failed login for the-intern
+2026-11-14 03:04:06 WARN [auth] failed login for the-strokes
+2026-11-14 03:04:12 INFO [posts] new post by senku (94 characters)
+2026-11-14 03:04:32 INFO [posts] new post by kevin (31 characters)
+2026-11-14 03:04:42 INFO [likes] kevin liked post 970
+2026-11-14 03:04:44 INFO [search] "melon usk" returned 8 results
+2026-11-14 03:05:04 INFO [posts] new post by grandma (35 characters)
+2026-11-14 03:05:24 INFO [supervisor] app restarted, no fatal errors since
+2026-11-14 03:05:45 INFO [posts] new post by kevin (39 characters)
+2026-11-14 03:06:03 INFO [auth] captain-shellbeard logged in
+2026-11-14 03:06:16 INFO [likes] captain-shellbeard liked post 297
+2026-11-14 03:06:33 INFO [feed] served 31 posts in 88ms
+2026-11-14 03:06:37 WARN [db] slow query on posts (1651ms)
+2026-11-14 03:06:50 WARN [auth] failed login for melon-usk
+2026-11-14 03:07:08 WARN [db] slow query on posts (1404ms)
+2026-11-14 03:07:29 WARN [db] slow query on posts (1653ms)

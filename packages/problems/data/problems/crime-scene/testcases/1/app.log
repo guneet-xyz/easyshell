@@ -1,0 +1,40 @@
+2026-11-14 02:54:19 INFO [auth] captain-shellbeard logged in
+2026-11-14 02:54:34 WARN [auth] failed login for grandma
+2026-11-14 02:54:59 WARN [db] slow query on posts (1387ms)
+2026-11-14 02:55:07 ERROR [mail] could not send the daily digest to captain-shellbeard@example.com
+2026-11-14 02:55:18 WARN [auth] failed login for captain-shellbeard
+2026-11-14 02:55:36 INFO [feed] served 23 posts in 50ms
+2026-11-14 02:55:55 DEBUG [cache] hit ratio 65%
+2026-11-14 02:56:16 DEBUG [cache] hit ratio 97%
+2026-11-14 02:56:27 WARN [db] slow query on posts (847ms)
+2026-11-14 02:56:40 INFO [auth] senku logged in
+2026-11-14 02:56:41 INFO [likes] senku liked post 699
+2026-11-14 02:56:55 WARN [db] slow query on posts (887ms)
+2026-11-14 02:57:20 INFO [likes] the-intern liked post 163
+2026-11-14 02:57:35 INFO [posts] new post by melon-usk (22 characters)
+2026-11-14 02:57:57 DEBUG [scheduler] tick
+2026-11-14 02:58:21 ERROR [mail] could not send the daily digest to the-intern@example.com
+2026-11-14 02:58:28 INFO [search] "cats" returned 1 results
+2026-11-14 02:58:50 INFO [search] "is this twitter" returned 19 results
+2026-11-14 02:59:03 INFO [search] "is this twitter" returned 32 results
+2026-11-14 02:59:24 DEBUG [scheduler] tick
+2026-11-14 02:59:29 INFO [feed] served 27 posts in 79ms
+2026-11-14 02:59:53 DEBUG [cache] hit ratio 73%
+2026-11-14 03:00:17 ERROR [mail] could not send the daily digest to grandma@example.com
+2026-11-14 03:00:31 INFO [posts] new post by melon-usk (159 characters)
+2026-11-14 03:00:37 WARN [disk] /var/log is 99% full
+2026-11-14 03:00:53 ERROR [logger] could not write to app.log
+2026-11-14 03:01:04 FATAL [disk] no space left on device
+2026-11-14 03:01:22 INFO [supervisor] restarting the app
+2026-11-14 03:01:32 ERROR [mail] could not send the daily digest to grandma@example.com
+2026-11-14 03:01:51 INFO [search] "the strokes tickets" returned 2 results
+2026-11-14 03:02:15 WARN [db] slow query on posts (743ms)
+2026-11-14 03:02:16 INFO [search] "cats" returned 14 results
+2026-11-14 03:02:21 INFO [posts] new post by senku (27 characters)
+2026-11-14 03:02:27 INFO [auth] kevin logged in
+2026-11-14 03:02:34 INFO [search] "melon usk" returned 35 results
+2026-11-14 03:02:57 INFO [feed] served 44 posts in 87ms
+2026-11-14 03:03:11 WARN [db] slow query on posts (615ms)
+2026-11-14 03:03:23 DEBUG [scheduler] tick
+2026-11-14 03:03:34 INFO [auth] the-strokes logged in
+2026-11-14 03:03:59 WARN [auth] failed login for captain-shellbeard

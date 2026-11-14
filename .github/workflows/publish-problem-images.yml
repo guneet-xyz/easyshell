@@ -161,7 +161,7 @@ jobs:
     needs: build
     environment: release
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - name: Download the tested digests
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -180,6 +180,7 @@ jobs:
       - name: Tag the tested digests as latest and verify the indexes
         env:
           VERSION: ${{ inputs.version }}
+          TAG_PARALLELISM: 6
         run: |
           set -euo pipefail
           declare -A amd64 arm64
@@ -200,22 +201,47 @@ jobs:
             echo
           } >> "$GITHUB_STEP_SUMMARY"
           mapfile -t images < <(printf '%s\n' "${!amd64[@]}" | sort)
+          # Validate every digest before any tag moves.
+          : > "$RUNNER_TEMP/problem-images"
           for image in "${images[@]}"; do
-            amd=${amd64[$image]}
-            arm=${arm64[$image]:-}
-            for digest in "$amd" "$arm"; do
+            for digest in "${amd64[$image]}" "${arm64[$image]:-}"; do
               if [[ ! "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then
                 echo "::error::Missing or invalid tested digest for $image"
                 exit 1
               fi
             done
-            repository="$REGISTRY/$image"
-            docker buildx imagetools create --tag "$repository:latest" "$repository@$amd" "$repository@$arm"
+            printf '%s %s %s\n' "$image" "${amd64[$image]}" "${arm64[$image]}" >> "$RUNNER_TEMP/problem-images"
+          done
+
+          # Each image takes a few seconds of registry round trips, so tag them
+          # in parallel: one at a time, v0.2.0's ~340 images outran the timeout.
+          summaries="$RUNNER_TEMP/problem-image-summaries"
+          mkdir -p "$summaries"
+          tag_image() {
+            set -euo pipefail
+            local image=$1 amd=$2 arm=$3
+            local repository="$REGISTRY/$image" index
+            docker buildx imagetools create --tag "$repository:latest" "$repository@$amd" "$repository@$arm" 2>&1 \
+              | sed "s|^|[$image] |"
             docker buildx imagetools inspect --raw "$repository:latest" \
               | jq --exit-status '
                   ([.manifests[] | select(.platform.os == "linux") | .platform.architecture] | sort == ["amd64", "arm64"])
                   and ([.manifests[] | select(.annotations["vnd.docker.reference.type"] == "attestation-manifest")] | length == 2)
                 ' >/dev/null
             index=$(docker buildx imagetools inspect "$repository:latest" --format '{{json .Manifest}}' | jq --raw-output .digest)
-            echo "- \`$repository:latest@$index\`" >> "$GITHUB_STEP_SUMMARY"
-          done
+            echo "- \`$repository:latest@$index\`" > "$SUMMARIES/${image//\//_}"
+            echo "[$image] latest -> $index"
+          }
+          export -f tag_image
+          export SUMMARIES=$summaries
+          if ! xargs -P "$TAG_PARALLELISM" -L 1 bash -c 'tag_image "$@"' _ < "$RUNNER_TEMP/problem-images"; then
+            echo "::error::Moving or verifying some problem images' latest tags failed; see the log above"
+            exit 1
+          fi
+          expected=$(wc -l < "$RUNNER_TEMP/problem-images")
+          actual=$(find "$summaries" -type f | wc -l)
+          if [ "$actual" -ne "$expected" ]; then
+            echo "::error::Expected $expected tagged problem images, got $actual"
+            exit 1
+          fi
+          cat "$summaries"/* >> "$GITHUB_STEP_SUMMARY"

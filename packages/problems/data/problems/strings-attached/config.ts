@@ -77,6 +77,11 @@ const config: ProblemConfig = {
       pass: false,
       input: `strings app.bin | grep '^PASSWORD=' | cut -d= -f2`,
     },
+    {
+      testcase: [3, 4],
+      pass: false,
+      input: `strings app.bin | grep 'PASSWORD=' | tail -n 1 | cut -d= -f2-`,
+    },
   ],
 }
 

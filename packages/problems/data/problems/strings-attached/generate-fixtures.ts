@@ -22,7 +22,7 @@ const TESTCASES: Record<number, { seed: number; strings: string[] }> = {
   1: { seed: 1, strings: ["PASSWORD=hunter2"] },
   2: { seed: 2, strings: ["PASSWORD=correct-horse-battery-staple"] },
   3: {
-    seed: 3,
+    seed: 9,
     strings: [
       "OLD_PASSWORD=melon123",
       "PASSWORD=Tw33t_Tw33t!",
@@ -30,7 +30,7 @@ const TESTCASES: Record<number, { seed: number; strings: string[] }> = {
     ],
   },
   4: {
-    seed: 4,
+    seed: 13,
     strings: [
       "error: set PASSWORD=<value> in your environment",
       "PASSWORD_HINT=the dog's name, backwards",

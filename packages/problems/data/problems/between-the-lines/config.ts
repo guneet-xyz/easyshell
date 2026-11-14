@@ -70,6 +70,11 @@ const config: ProblemConfig = {
       input: `awk '/END SECRET/ { f = 0 } f; /BEGIN SECRET/ { f = 1 }' vault.txt`,
     },
     {
+      testcase: 4,
+      pass: false,
+      input: `awk '/^-----END SECRET-----/ { f = 0 } f; /^-----BEGIN SECRET-----/ { f = 1 }' vault.txt`,
+    },
+    {
       testcase: 3,
       pass: false,
       input: `sed -n '/^-----BEGIN SECRET-----$/,/^-----END SECRET-----$/p' vault.txt | grep -v -e '-----' -e '^$'`,

@@ -221,6 +221,9 @@ jobs:
             set -euo pipefail
             local image=$1 amd=$2 arm=$3
             local repository="$REGISTRY/$image" index
+            # Name the failing image (the log interleaves them) and exit with 1,
+            # since xargs stops starting new images if a command exits with 255.
+            trap 'echo "::error::Moving or verifying the latest tag of $image failed"; exit 1' ERR
             docker buildx imagetools create --tag "$repository:latest" "$repository@$amd" "$repository@$arm" 2>&1 \
               | sed "s|^|[$image] |"
             docker buildx imagetools inspect --raw "$repository:latest" \
@@ -235,7 +238,7 @@ jobs:
           export -f tag_image
           export SUMMARIES=$summaries
           if ! xargs -P "$TAG_PARALLELISM" -L 1 bash -c 'tag_image "$@"' _ < "$RUNNER_TEMP/problem-images"; then
-            echo "::error::Moving or verifying some problem images' latest tags failed; see the log above"
+            echo "::error::Moving or verifying some problem images' latest tags failed; see the errors above"
             exit 1
           fi
           expected=$(wc -l < "$RUNNER_TEMP/problem-images")

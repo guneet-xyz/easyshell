@@ -158,4 +158,31 @@ export const SeriesList: Array<{
       },
     ],
   },
+  {
+    slug: "data-wrangling",
+    name: "Data Wrangling",
+    description:
+      "The sequel to Parsing. Group, reshape, join and convert JSON, CSV, .env and INI files until your boss finally stops asking for it as a spreadsheet.",
+    image: "",
+    sections: [
+      {
+        title: "JSON Gymnastics",
+        description:
+          "`jq` beyond `.key`: grouping, recursion and reshaping. Stretch first, these filters bend in ways you didn't know JSON could.",
+        problems: ["group-chat", "json-to-csv", "buried-treasure"],
+      },
+      {
+        title: "CSV & Friends",
+        description:
+          "Joins, pivots and the horrors of quoted fields. Spreadsheets were a mistake, but now they're your mistake.",
+        problems: ["join-the-party", "pivot-the-grades", "comma-chaos"],
+      },
+      {
+        title: "Config Files",
+        description:
+          "Every app has a config file, and no two of them agree on a format. Read them, convert them, and find that one value buried in the wrong section.",
+        problems: ["env-to-json", "ini-detective"],
+      },
+    ],
+  },
 ]

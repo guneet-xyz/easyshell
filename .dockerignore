@@ -14,3 +14,5 @@ drizzle.config.ts
 !drizzle
 !drizzle/**
 !drizzle.config.ts
+# Problem testcases may ship a .env fixture on purpose (config.ts reads it).
+!packages/problems/data/problems/*/testcases/*/.env

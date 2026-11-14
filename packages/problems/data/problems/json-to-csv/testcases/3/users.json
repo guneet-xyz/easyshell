@@ -1,0 +1,8 @@
+[
+  {"id": 101, "name": "Dwayne \"The Rock\" Johnson", "email": "therock@chirp.dev", "plan": "pro"},
+  {"id": 102, "name": "Shellbeard, Captain", "email": "captain@jolly-roger.example", "plan": "free"},
+  {"id": 103, "name": "Conan O'Brien", "email": "conan@chirp.dev", "plan": "pro"},
+  {"id": 104, "name": "\"Agent\" X, Esq.", "email": "classified@spy.example", "plan": "redacted"},
+  {"id": 105, "name": "Bobby \"); DROP TABLE users;--", "email": "bobby@tables.example", "plan": "free"},
+  {"id": 106, "name": "Zoë", "email": "zoe@chirp.dev", "plan": "free"}
+]

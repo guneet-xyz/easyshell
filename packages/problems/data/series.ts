@@ -120,4 +120,42 @@ export const SeriesList: Array<{
       },
     ],
   },
+  {
+    slug: "text-surgery",
+    name: "Text Surgery",
+    description:
+      "Scalpels out. Slice, stitch, sort and count text with the classic Unix tools: `tr`, `cut`, `sort`, `uniq`, `sed`, `awk`, `rev` and `tac`.",
+    image: "",
+    sections: [
+      {
+        title: "Slicing & Dicing",
+        description:
+          "Pick out exactly the characters, lines and columns you need, and leave the rest on the cutting board.",
+        problems: [
+          "shout-it-out",
+          "line-forty-two",
+          "crew-manifest",
+          "backwards-day",
+        ],
+      },
+      {
+        title: "Sorting Things Out",
+        description:
+          "`sort` and `uniq`, the dynamic duo. One lines everything up, the other knocks out the copies.",
+        problems: ["one-of-each", "top-of-the-pops", "word-up"],
+      },
+      {
+        title: "Search & Replace",
+        description:
+          "`sed` and friends: edit text without ever opening an editor. Your mouse will feel left out.",
+        problems: ["redact-the-ex", "between-the-lines", "does-it-spark-joy"],
+      },
+      {
+        title: "Number Crunching",
+        description:
+          "`awk` does the maths so you don't have to. It can't do your taxes. Yet.",
+        problems: ["penny-pincher"],
+      },
+    ],
+  },
 ]

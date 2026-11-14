@@ -1,0 +1,8 @@
+Version 2.0.1 is out now!!!
+
+What's new:
+- 37% fewer bugs (we counted twice).
+- Posts can now be 281 characters long. That's 1 more!
+- Fixed a crash when you typed "hello" at 3:00 a.m. on a Tuesday.
+
+Questions? Email support@example.com & we'll reply in 5-7 business days. 📬

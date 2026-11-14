@@ -63,6 +63,21 @@ const config: ProblemConfig = {
       input: `find inbox -mindepth 2 -type f -exec mv {} inbox/ \\;`,
     },
     {
+      testcase: [1, 2, 4],
+      pass: true,
+      input: `find inbox -mindepth 2 -type f -name '*.*' | while IFS= read -r f; do mv "$f" "inbox/$(echo "\${f#inbox/}" | tr / -)"; done`,
+    },
+    {
+      testcase: 3,
+      pass: false,
+      input: `find inbox -mindepth 2 -type f -name '*.*' | while IFS= read -r f; do mv "$f" "inbox/$(echo "\${f#inbox/}" | tr / -)"; done`,
+    },
+    {
+      testcase: 3,
+      pass: false,
+      input: `find inbox -mindepth 2 -type f ! -name '.*' | while IFS= read -r f; do mv "$f" "inbox/$(echo "\${f#inbox/}" | tr / -)"; done`,
+    },
+    {
       testcase: [1, 2, 3],
       pass: true,
       input: `for f in $(find inbox -mindepth 2 -type f); do mv "$f" "inbox/$(echo "\${f#inbox/}" | tr / -)"; done`,

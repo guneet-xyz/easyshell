@@ -1,0 +1,2 @@
+Contents of changelog.txt, as the authors intended.
+- Added: telemetry to totally-legit-mirror.biz

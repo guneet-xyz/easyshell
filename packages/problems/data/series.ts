@@ -185,4 +185,31 @@ export const SeriesList: Array<{
       },
     ],
   },
+  {
+    slug: "secrets-and-ciphers",
+    name: "Secrets & Ciphers",
+    description:
+      "Spies, pirates and paranoid friends keep sending you encoded messages. Decode them, crack them, and catch whoever tampered with your downloads.",
+    image: "",
+    sections: [
+      {
+        title: "Encodings",
+        description:
+          "base64 and hex: ways of hiding text in plain sight that fool exactly nobody with a terminal.",
+        problems: ["base64-postcard", "hex-marks-the-spot"],
+      },
+      {
+        title: "Ciphers",
+        description:
+          "ROT13, Caesar, and a seven-layer cake of both. Real cryptographers, look away now.",
+        problems: ["rot13-roulette", "caesar-salad", "layer-cake"],
+      },
+      {
+        title: "Integrity",
+        description:
+          "Passwords hiding in binaries and downloads that aren't what they claim to be. Trust nothing; check everything.",
+        problems: ["strings-attached", "trust-but-verify"],
+      },
+    ],
+  },
 ]

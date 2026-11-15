@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/guneet-xyz/easyshell/compare/v0.2.0...v0.2.1) (2026-11-14)
+
+
+### Bug Fixes
+
+* **ci:** move problem images' latest tags in parallel ([#436](https://github.com/guneet-xyz/easyshell/issues/436)) ([e7af2b5](https://github.com/guneet-xyz/easyshell/commit/e7af2b58e6dc645a70e8ad3dbda16a5c1b28950d))
+
 ## [0.2.0](https://github.com/guneet-xyz/easyshell/compare/v0.1.1...v0.2.0) (2026-11-14)
 
 
